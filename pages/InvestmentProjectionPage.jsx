@@ -8,10 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LineChart, Zap, Target, PiggyBank, BarChart } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { useFinance } from '@/contexts/FinanceDataContext';
-import { format, getMonth, getYear, startOfMonth, subMonths } from 'date-fns';
+import { format } from 'date-fns';
 
 export function InvestmentProjectionPage() {
-    const { totalInvestmentBalance, investmentGoal, investments } = useFinance();
+    const { investments, investmentGoal } = useFinance();
+
+    const totalInvestmentBalance = useMemo(() => {
+        return investments.reduce((sum, investment) => sum + (investment.valor_aporte || 0), 0);
+    }, [investments]);
 
     const averageMonthlyInvestment = useMemo(() => {
         if (!investments || investments.length === 0) return 0;
@@ -31,9 +35,9 @@ export function InvestmentProjectionPage() {
     }, [investments]);
 
     const [calcData, setCalcData] = useState({
-        initialAmount: '',
-        monthlyContribution: '',
-        goalContribution: '',
+        initialAmount: '0',
+        monthlyContribution: '0',
+        goalContribution: '0',
         annualRate: '10',
         years: '10'
     });
@@ -41,9 +45,9 @@ export function InvestmentProjectionPage() {
     useEffect(() => {
         setCalcData(prev => ({
             ...prev,
-            initialAmount: totalInvestmentBalance.toString(),
-            monthlyContribution: averageMonthlyInvestment.toString(),
-            goalContribution: investmentGoal.toString()
+            initialAmount: (totalInvestmentBalance || 0).toString(),
+            monthlyContribution: (averageMonthlyInvestment || 0).toString(),
+            goalContribution: (investmentGoal || 0).toString()
         }));
     }, [totalInvestmentBalance, averageMonthlyInvestment, investmentGoal]);
 

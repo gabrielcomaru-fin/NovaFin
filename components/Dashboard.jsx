@@ -1,24 +1,19 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, DollarSign, Target, AlertTriangle, Lightbulb } from 'lucide-react';
-import { useFinance } from '@/contexts/FinanceDataContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-export function Dashboard() {
-  const {
-    totalMonthlyExpenses,
-    totalMonthlyInvestments,
-    totalAccountBalance,
-    totalInvestmentBalance,
-    expensesByCategory,
-    investmentGoal,
-    categories,
-    monthlyExpenses,
-    monthlyInvestments,
-  } = useFinance();
-
+export function Dashboard({
+  totalMonthlyExpenses,
+  totalMonthlyInvestments,
+  totalAccountBalance,
+  totalInvestmentBalance,
+  expensesByCategory,
+  investmentGoal,
+  categories,
+}) {
   const netWorth = totalAccountBalance + totalInvestmentBalance;
   const investmentProgress = investmentGoal > 0 ? (totalMonthlyInvestments / investmentGoal) * 100 : 0;
   
@@ -66,17 +61,13 @@ export function Dashboard() {
 
   const tips = getFinancialTips();
 
-  const comparisonData = [
-    { name: 'Mês Atual', Despesas: totalMonthlyExpenses, Receitas: totalMonthlyInvestments }
-  ];
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Gastos do Mês</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Gastos no Período</CardTitle>
               <TrendingDown className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
@@ -90,7 +81,7 @@ export function Dashboard() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Aportes do Mês</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Aportes no Período</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
@@ -141,20 +132,32 @@ export function Dashboard() {
               <CardDescription>
                 {investmentGoal > 0
                   ? `Progresso: R$ ${totalMonthlyInvestments.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ ${investmentGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  : 'Defina uma meta de aportes nas configurações.'
+                  : 'Defina uma meta de aportes nos investimentos.'
                 }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Progress value={Math.min(investmentProgress, 100)} className="h-3 [&>*]:bg-primary" />
-              {investmentGoal > 0 &&
-                <p className="text-sm text-muted-foreground mt-2">
-                  {investmentProgress >= 100 
-                    ? '🎉 Meta atingida! Parabéns!'
-                    : `${Math.round(investmentProgress)}% da meta alcançada`
-                  }
-                </p>
-              }
+              <div className="space-y-3">
+                <Progress 
+                  value={Math.min(investmentProgress, 100)} 
+                  className="h-4 [&>*]:bg-gradient-to-r [&>*]:from-green-500 [&>*]:to-green-600 [&>*]:transition-all [&>*]:duration-500" 
+                />
+                {investmentGoal > 0 && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      {investmentProgress >= 100 
+                        ? '🎉 Meta atingida! Parabéns!'
+                        : `${Math.round(investmentProgress)}% da meta alcançada`
+                      }
+                    </p>
+                    {investmentProgress < 100 && (
+                      <p className="text-xs text-muted-foreground">
+                        Faltam R$ {(investmentGoal - totalMonthlyInvestments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -174,52 +177,45 @@ export function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Progress value={Math.min(expenseLimitProgress, 100)} className={`h-3 ${expenseLimitProgress > 90 ? '[&>*]:bg-destructive' : expenseLimitProgress > 70 ? '[&>*]:bg-yellow-400' : '[&>*]:bg-primary'}`} />
-                 {totalExpenseLimit > 0 &&
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {expenseLimitProgress >= 100 
-                      ? '⚠️ Limite de gastos atingido!'
-                      : `${Math.round(expenseLimitProgress)}% do limite utilizado`
-                    }
-                  </p>
-                }
+                <div className="space-y-3">
+                  <Progress 
+                    value={Math.min(expenseLimitProgress, 100)} 
+                    className={`h-4 transition-all duration-500 ${
+                      expenseLimitProgress > 90 
+                        ? '[&>*]:bg-gradient-to-r [&>*]:from-red-500 [&>*]:to-red-600' 
+                        : expenseLimitProgress > 70 
+                        ? '[&>*]:bg-gradient-to-r [&>*]:from-yellow-500 [&>*]:to-orange-500' 
+                        : '[&>*]:bg-gradient-to-r [&>*]:from-blue-500 [&>*]:to-blue-600'
+                    }`} 
+                  />
+                  {totalExpenseLimit > 0 && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        {expenseLimitProgress >= 100 
+                          ? '⚠️ Limite de gastos atingido!'
+                          : `${Math.round(expenseLimitProgress)}% do limite utilizado`
+                        }
+                      </p>
+                      {expenseLimitProgress < 100 && (
+                        <p className="text-xs text-muted-foreground">
+                          Restam R$ {(totalExpenseLimit - totalMonthlyExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
         </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
-          <Card>
-              <CardHeader>
-                <CardTitle>Receitas vs. Despesas</CardTitle>
-                 <CardDescription>Comparativo dos seus fluxos financeiros neste mês</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={comparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                    <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickFormatter={(value) => `R$${value/1000}k`} />
-                    <Tooltip
-                      cursor={{ fill: 'hsl(var(--accent))' }}
-                      contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
-                    />
-                    <Legend />
-                    <Bar dataKey="Receitas" fill="hsl(var(--primary))" name="Aportes" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Despesas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-        </motion.div>
-
         {Object.keys(expensesByCategory).some(catId => expensesByCategory[catId] > 0) && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
             <Card>
               <CardHeader>
                 <CardTitle>Gastos por Categoria</CardTitle>
-                <CardDescription>Distribuição dos seus gastos neste mês</CardDescription>
+                <CardDescription>Distribuição dos seus gastos no período</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -252,9 +248,7 @@ export function Dashboard() {
             </Card>
           </motion.div>
         )}
-      </div>
 
-       <div className="grid grid-cols-1 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
             <Card>
               <CardHeader>

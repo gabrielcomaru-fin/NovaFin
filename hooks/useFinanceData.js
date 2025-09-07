@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -20,7 +21,11 @@ export const useFinanceData = () => {
         setLoading(true);
         
         try {
-            const { data: categoriesData, error: categoriesError } = await supabase.from('categorias').select('*').order('created_at', { ascending: true });
+            const { data: categoriesData, error: categoriesError } = await supabase
+                .from('categorias')
+                .select('*')
+                .or(`usuario_id.eq.${user.id},usuario_id.is.null`)
+                .order('created_at', { ascending: true });
             if (categoriesError) throw categoriesError;
             setCategories(categoriesData || []);
 
@@ -36,8 +41,9 @@ export const useFinanceData = () => {
             if (accountsError) throw accountsError;
             setAccounts(accountsData || []);
             
-            const savedGoal = localStorage.getItem(`financeApp_investmentGoal_${user.id}`);
-            if (savedGoal) setInvestmentGoal(JSON.parse(savedGoal));
+            const { data: goalData, error: goalError } = await supabase.from('metas_investimento').select('meta_mensal').maybeSingle();
+            if (goalError) throw goalError;
+            if (goalData) setInvestmentGoal(goalData.meta_mensal);
 
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -49,6 +55,16 @@ export const useFinanceData = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+    
+    const handleSetInvestmentGoal = async (goal) => {
+        if (!user) return;
+        const { error } = await supabase.from('metas_investimento').upsert({ usuario_id: user.id, meta_mensal: goal }, { onConflict: 'usuario_id' });
+        if (error) {
+            console.error("Error setting investment goal:", error);
+        } else {
+            setInvestmentGoal(goal);
+        }
+    }
 
     const addExpense = async (expense) => {
         if (!user) return;
@@ -82,7 +98,7 @@ export const useFinanceData = () => {
     };
 
     const updateInvestment = async (id, updatedFields) => {
-        const { data, error } = await supabase.from('investimentos').update(updatedFields).select();
+        const { data, error } = await supabase.from('investimentos').update(updatedFields).eq('id', id).select();
         if (error) throw error;
         setInvestments(prev => prev.map(i => i.id === id ? data[0] : i).sort((a,b) => new Date(b.data) - new Date(a.data)));
         return data[0];
@@ -101,6 +117,19 @@ export const useFinanceData = () => {
         if (error) throw error;
         setAccounts(prev => [...prev, data[0]]);
         return data[0];
+    };
+
+    const updateAccount = async (id, updatedFields) => {
+        const { data, error } = await supabase.from('contas_bancarias').update(updatedFields).eq('id', id).select();
+        if (error) throw error;
+        setAccounts(prev => prev.map(a => a.id === id ? data[0] : a));
+        return data[0];
+    };
+
+    const deleteAccount = async (id) => {
+        const { error } = await supabase.from('contas_bancarias').delete().eq('id', id);
+        if (error) throw error;
+        setAccounts(prev => prev.filter(a => a.id !== id));
     };
     
     const addCategory = async (category) => {
@@ -126,41 +155,6 @@ export const useFinanceData = () => {
         fetchData();
     };
 
-    const handleSetInvestmentGoal = (goal) => {
-      if (!user) return;
-      localStorage.setItem(`financeApp_investmentGoal_${user.id}`, JSON.stringify(goal));
-      setInvestmentGoal(goal);
-    }
-
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-
-    const monthlyExpenses = expenses.filter(expense => {
-        const expenseDate = new Date(expense.data);
-        return expenseDate.getUTCMonth() === currentMonth && expenseDate.getUTCFullYear() === currentYear;
-    });
-
-    const monthlyInvestments = investments.filter(investment => {
-        const investmentDate = new Date(investment.data);
-        return investmentDate.getUTCMonth() === currentMonth && investmentDate.getUTCFullYear() === currentYear;
-    });
-
-    const totalMonthlyExpenses = monthlyExpenses.reduce((sum, expense) => sum + expense.valor, 0);
-    const totalMonthlyInvestments = monthlyInvestments.reduce((sum, investment) => sum + investment.valor_aporte, 0);
-    const totalAccountBalance = accounts.reduce((sum, account) => sum + account.saldo, 0);
-
-    const totalInvestmentBalance = investments.reduce((sum, investment) => sum + investment.valor_aporte, 0);
-
-    const expensesByCategory = categories
-        .filter(c => c.tipo === 'gasto')
-        .reduce((acc, category) => {
-            acc[category.id] = monthlyExpenses
-                .filter(expense => expense.categoria_id === category.id)
-                .reduce((sum, expense) => sum + expense.valor, 0);
-            return acc;
-    }, {});
-
-
     return {
         expenses,
         investments,
@@ -176,16 +170,11 @@ export const useFinanceData = () => {
         updateInvestment,
         deleteInvestment,
         addAccount,
+        updateAccount,
+        deleteAccount,
         addCategory,
         updateCategory,
         deleteCategory,
-        totalMonthlyExpenses,
-        totalMonthlyInvestments,
-        totalAccountBalance,
-        totalInvestmentBalance,
-        expensesByCategory,
-        monthlyExpenses,
-        monthlyInvestments,
         fetchData,
     };
 }

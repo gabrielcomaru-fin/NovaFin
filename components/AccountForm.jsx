@@ -6,16 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, CreditCard, Building } from 'lucide-react';
+import { Plus, CreditCard, Building, Edit, Trash2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceDataContext';
 
 export function AccountForm() {
-  const { addAccount, accounts } = useFinance();
+  const { addAccount, accounts, updateAccount, deleteAccount } = useFinance();
   const [formData, setFormData] = useState({
     nome_banco: '',
     saldo: '',
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
   const { toast } = useToast();
 
   const handleCurrencyChange = (value) => {
@@ -40,26 +41,83 @@ export function AccountForm() {
 
     const saldoValue = parseCurrency(formData.saldo);
 
-    await addAccount({
-      ...formData,
-      saldo: saldoValue,
-    });
+    try {
+      if (editingAccount) {
+        await updateAccount(editingAccount.id, {
+          ...formData,
+          saldo: saldoValue,
+        });
+        toast({
+          title: "Conta atualizada!",
+          description: `${formData.nome_banco} - R$ ${saldoValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        });
+      } else {
+        await addAccount({
+          ...formData,
+          saldo: saldoValue,
+        });
+        toast({
+          title: "Conta adicionada!",
+          description: `${formData.nome_banco} - R$ ${saldoValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        });
+      }
 
-    toast({
-      title: "Conta adicionada!",
-      description: `${formData.nome_banco} - R$ ${saldoValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-    });
+      setFormData({
+        nome_banco: '',
+        saldo: '',
+      });
+      setEditingAccount(null);
+      setIsOpen(false);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
 
+  const handleEdit = (account) => {
+    setEditingAccount(account);
     setFormData({
-      nome_banco: '',
-      saldo: '',
+      nome_banco: account.nome_banco,
+      saldo: account.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).replace('.', ','),
     });
-    setIsOpen(false);
+    setIsOpen(true);
+  };
+
+  const handleDelete = async (accountId) => {
+    if (window.confirm('Tem certeza que deseja excluir esta conta?')) {
+      try {
+        await deleteAccount(accountId);
+        toast({
+          title: "Conta excluída!",
+          description: "A conta foi removida com sucesso.",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const handleOpenChange = (open) => {
+    setIsOpen(open);
+    if (!open) {
+      setEditingAccount(null);
+      setFormData({
+        nome_banco: '',
+        saldo: '',
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="w-4 h-4 mr-2" />
@@ -70,10 +128,10 @@ export function AccountForm() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building className="w-5 h-5 text-primary" />
-              Adicionar Conta Bancária
+              {editingAccount ? 'Editar Conta Bancária' : 'Adicionar Conta Bancária'}
             </DialogTitle>
             <DialogDescription>
-              Registre uma nova conta para acompanhar seu patrimônio.
+              {editingAccount ? 'Atualize os dados da sua conta.' : 'Registre uma nova conta para acompanhar seu patrimônio.'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -100,7 +158,7 @@ export function AccountForm() {
             </div>
             
             <Button type="submit" className="w-full">
-              Adicionar Conta
+              {editingAccount ? 'Atualizar Conta' : 'Adicionar Conta'}
             </Button>
           </form>
         </DialogContent>
@@ -135,10 +193,30 @@ export function AccountForm() {
                     <p className="font-semibold">{account.nome_banco}</p>
                     <p className="text-sm text-muted-foreground">Conta Bancária</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg text-primary">
-                      R$ {account.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-bold text-lg text-primary">
+                        R$ {account.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(account)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(account.id)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
