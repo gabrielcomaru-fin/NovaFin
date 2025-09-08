@@ -1,0 +1,12 @@
+## Pages
+- [Calculadora de Juros Compostos - FinanceApp](/calculator): Projete o crescimento dos seus investimentos com a calculadora de juros compostos.
+- [Configurações - FinanceApp](/settings): Gerencie suas preferências e configurações de conta.
+- [Controle de Despesas - FinanceApp](/expenses): Adicione e gerencie suas despesas.
+- [Criar Conta - FinanceApp](/register): No description available
+- [Dashboard - FinanceApp](/dashboard): Seu controle financeiro.
+- [FinanceApp - Transforme sua Vida Financeira](/landing): A ferramenta definitiva para controle de gastos, planejamento de investimentos e educação financeira. Comece hoje a construir seu futuro.
+- [Gestão de Investimentos - FinanceApp](/investments): Acompanhe seus aportes e metas de investimento.
+- [Login - FinanceApp](/login): No description available
+- [Minhas Contas - FinanceApp](/accounts): Gerencie suas contas bancárias.
+- [Planos - FinanceApp](/plans): Escolha o plano que melhor se adapta às suas necessidades financeiras.
+- [Projeção de Investimentos - FinanceApp](/investmentprojection): Simule o crescimento do seu patrimônio com base em suas metas e rendimentos.
