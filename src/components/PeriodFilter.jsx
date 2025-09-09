@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { motion } from 'framer-motion';
 
 export function PeriodFilter({
   periodType,
@@ -31,15 +32,19 @@ export function PeriodFilter({
     []
   );
 
-  // SE dateRange ESTIVER DEFINIDO, MOSTRAR sempre 'custom'
   const displayPeriodType = dateRange?.from ? 'custom' : periodType;
 
   const renderYearSelect = () => (
     <Select value={year?.toString()} onValueChange={(v) => setYear(Number(v))}>
-      <SelectTrigger className="w-full md:w-[150px]">
+      <SelectTrigger
+        className={cn(
+          'w-full md:w-[150px] border shadow-sm rounded-lg',
+          year ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+        )}
+      >
         <SelectValue placeholder="Ano" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="shadow-lg border border-gray-200">
         {years.map((y) => (
           <SelectItem key={y} value={y.toString()}>
             {y}
@@ -51,10 +56,15 @@ export function PeriodFilter({
 
   const renderMonthSelect = () => (
     <Select value={month?.toString()} onValueChange={(v) => setMonth(Number(v))}>
-      <SelectTrigger className="w-full md:w-[150px]">
+      <SelectTrigger
+        className={cn(
+          'w-full md:w-[150px] border shadow-sm rounded-lg',
+          month !== undefined ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+        )}
+      >
         <SelectValue placeholder="Mês" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="shadow-lg border border-gray-200">
         {months.map((m) => (
           <SelectItem key={m.value} value={m.value.toString()}>
             {m.label.charAt(0).toUpperCase() + m.label.slice(1)}
@@ -78,13 +88,20 @@ export function PeriodFilter({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-4 p-4 mb-6 bg-card rounded-lg border">
+    <div className="flex flex-wrap items-center gap-4 p-4 mb-6 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 shadow-md">
       {/* Tipo de Período */}
       <Select value={displayPeriodType} onValueChange={setPeriodType}>
-        <SelectTrigger className="w-full md:w-[150px]">
+        <SelectTrigger
+          className={cn(
+            'w-full md:w-[150px] border shadow-sm rounded-lg',
+            displayPeriodType === 'custom' || displayPeriodType === 'monthly' || displayPeriodType === 'yearly'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          )}
+        >
           <SelectValue placeholder="Tipo de Período" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="shadow-lg border border-gray-200">
           <SelectItem value="monthly">Mensal</SelectItem>
           <SelectItem value="yearly">Anual</SelectItem>
           <SelectItem value="custom">Personalizado</SelectItem>
@@ -107,47 +124,59 @@ export function PeriodFilter({
         <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
           <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  'w-full md:w-auto justify-start text-left font-normal',
-                  !dateRange && 'text-muted-foreground'
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange?.from
-                  ? dateRange.to
-                    ? `${format(dateRange.from, 'dd/MM/yy')} - ${format(dateRange.to, 'dd/MM/yy')}`
-                    : format(dateRange.from, 'dd/MM/yy')
-                  : 'Data Personalizada'}
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full md:w-auto justify-start text-left font-medium border rounded-lg shadow-sm',
+                    dateRange?.from ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-5 w-5 text-gray-500" />
+                  {dateRange?.from
+                    ? dateRange.to
+                      ? `${format(dateRange.from, 'dd/MM/yy')} - ${format(dateRange.to, 'dd/MM/yy')}`
+                      : format(dateRange.from, 'dd/MM/yy')
+                    : 'Data Personalizada'}
+                </Button>
+              </motion.div>
             </PopoverTrigger>
 
-            <PopoverContent className="w-auto p-4" align="start">
-              <Calendar
-                mode="range"
-                selected={tempRange}
-                onSelect={setTempRange}
-                numberOfMonths={2}
-              />
-              <div className="mt-2 flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsPopoverOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button variant="default" size="sm" onClick={handleConfirmRange}>
-                  Confirmar
-                </Button>
-              </div>
+            <PopoverContent
+              className="w-auto p-4 shadow-xl border border-gray-200 rounded-lg"
+              align="start"
+              asChild
+            >
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Calendar mode="range" selected={tempRange} onSelect={setTempRange} numberOfMonths={2} />
+                <div className="mt-2 flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsPopoverOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button variant="default" size="sm" onClick={handleConfirmRange}>
+                    Confirmar
+                  </Button>
+                </div>
+              </motion.div>
             </PopoverContent>
           </Popover>
 
+          {/* Limpar */}
           <Button
             variant="ghost"
+            className={cn(
+              'w-full md:w-auto',
+              dateRange?.from ? 'text-blue-500 hover:text-blue-700' : 'text-gray-500 hover:text-gray-700'
+            )}
             onClick={() => {
               setDateRange(undefined);
               setTempRange(undefined);
             }}
-            className="w-full md:w-auto"
           >
             Limpar Data
           </Button>
