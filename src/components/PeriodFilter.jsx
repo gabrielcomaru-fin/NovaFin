@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -18,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-export const PeriodFilter = ({
+export function PeriodFilter({
   periodType,
   setPeriodType,
   dateRange,
@@ -27,7 +26,7 @@ export const PeriodFilter = ({
   setMonth,
   year,
   setYear,
-}) => {
+}) {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
   const months = Array.from({ length: 12 }, (_, i) => ({
@@ -35,34 +34,24 @@ export const PeriodFilter = ({
     label: new Date(0, i).toLocaleString('pt-BR', { month: 'long' }),
   }));
 
-  const handlePeriodTypeChange = (type) => {
-    setPeriodType(type);
-    setDateRange(undefined);
-    if (type === 'monthly') {
-      setMonth(new Date().getMonth());
-      setYear(new Date().getFullYear());
-    } else {
-      setMonth(undefined);
-      setYear(new Date().getFullYear());
-    }
-  };
-
+  // NOTE: este componente é "dumb" — apenas chama os setters passados pelo pai.
   return (
     <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-card rounded-lg border">
       <div className="flex flex-wrap items-center gap-4">
-        <Select value={periodType} onValueChange={handlePeriodTypeChange}>
+        <Select value={periodType} onValueChange={(val) => setPeriodType(val)}>
           <SelectTrigger className="w-full md:w-[150px]">
             <SelectValue placeholder="Tipo de Período" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="monthly">Mensal</SelectItem>
             <SelectItem value="yearly">Anual</SelectItem>
+            <SelectItem value="custom">Personalizado</SelectItem>
           </SelectContent>
         </Select>
 
         {periodType === 'monthly' && (
           <div className="flex gap-2 w-full md:w-auto">
-            <Select value={month?.toString()} onValueChange={(value) => setMonth(parseInt(value))}>
+            <Select value={month?.toString()} onValueChange={(v) => setMonth(Number(v))}>
               <SelectTrigger className="w-full md:w-[150px]">
                 <SelectValue placeholder="Mês" />
               </SelectTrigger>
@@ -74,7 +63,8 @@ export const PeriodFilter = ({
                 ))}
               </SelectContent>
             </Select>
-            <Select value={year?.toString()} onValueChange={(value) => setYear(parseInt(value))}>
+
+            <Select value={year?.toString()} onValueChange={(v) => setYear(Number(v))}>
               <SelectTrigger className="w-full md:w-[100px]">
                 <SelectValue placeholder="Ano" />
               </SelectTrigger>
@@ -91,7 +81,7 @@ export const PeriodFilter = ({
 
         {periodType === 'yearly' && (
           <div className="w-full md:w-auto">
-            <Select value={year?.toString()} onValueChange={(value) => setYear(parseInt(value))}>
+            <Select value={year?.toString()} onValueChange={(v) => setYear(Number(v))}>
               <SelectTrigger className="w-full md:w-[150px]">
                 <SelectValue placeholder="Ano" />
               </SelectTrigger>
@@ -107,47 +97,52 @@ export const PeriodFilter = ({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              id="date"
-              variant={'outline'}
-              className={cn(
-                'w-full md:w-auto justify-start text-left font-normal',
-                !dateRange && 'text-muted-foreground'
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, 'dd/MM/yy')} -{' '}
-                    {format(dateRange.to, 'dd/MM/yy')}
-                  </>
+      {periodType === 'custom' && (
+        <div className="flex flex-wrap items-center gap-4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="date"
+                variant={'outline'}
+                className={cn(
+                  'w-full md:w-auto justify-start text-left font-normal',
+                  !dateRange && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, 'dd/MM/yy')} - {format(dateRange.to, 'dd/MM/yy')}
+                    </>
+                  ) : (
+                    format(dateRange.from, 'dd/MM/yy')
+                  )
                 ) : (
-                  format(dateRange.from, 'dd/MM/yy')
-                )
-              ) : (
-                <span>Data Personalizada</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              initialFocus
-              mode="range"
-              selected={dateRange}
-              onSelect={setDateRange}
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
+                  <span>Data Personalizada</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                selected={dateRange}
+                onSelect={(range) => setDateRange(range)}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
 
-        <Button variant="ghost" onClick={() => setDateRange(undefined)} className="w-full md:w-auto">
-          Limpar Data
-        </Button>
-      </div>
+          <Button
+            variant="ghost"
+            onClick={() => setDateRange(undefined)}
+            className="w-full md:w-auto"
+          >
+            Limpar Data
+          </Button>
+        </div>
+      )}
     </div>
   );
-};
+}
