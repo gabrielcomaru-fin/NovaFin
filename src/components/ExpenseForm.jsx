@@ -4,7 +4,7 @@ import { Input, CurrencyInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Receipt, Repeat } from 'lucide-react';
+import { Plus, Receipt, Repeat, DollarSign } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceDataContext';
 
 export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
@@ -16,6 +16,7 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
     valor: '',
     categoria_id: '',
     recorrente: false,
+    pago: false,
     data: new Date().toISOString().split('T')[0]
   };
 
@@ -37,6 +38,7 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
         valor: formatCurrencyForInput(expenseToEdit.valor),
         categoria_id: expenseToEdit.categoria_id || '',
         recorrente: expenseToEdit.recorrente || false,
+        pago: expenseToEdit.pago || false,
         data: expenseToEdit.data ? new Date(expenseToEdit.data).toISOString().split('T')[0] : defaultFormData.data
       });
     } else {
@@ -160,18 +162,33 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
               <p className="text-sm text-muted-foreground">Nenhuma categoria de gasto disponível.</p>
             )}
           </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="isRecurring"
-              checked={formData.recorrente}
-              onChange={(e) => setFormData({ ...formData, recorrente: e.target.checked })}
-              className="rounded accent-primary"
-            />
-            <Label htmlFor="isRecurring" className="flex items-center gap-2 text-sm">
-              <Repeat className="w-4 h-4" />
-              Despesa recorrente
-            </Label>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isRecurring"
+                checked={formData.recorrente}
+                onChange={(e) => setFormData({ ...formData, recorrente: e.target.checked })}
+                className="rounded accent-primary"
+              />
+              <Label htmlFor="isRecurring" className="flex items-center gap-2 text-sm">
+                <Repeat className="w-4 h-4" />
+                Despesa recorrente
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isPaid"
+                checked={formData.pago}
+                onChange={(e) => setFormData({ ...formData, pago: e.target.checked })}
+                className="rounded accent-primary"
+              />
+              <Label htmlFor="isPaid" className="flex items-center gap-2 text-sm">
+                <DollarSign className="w-4 h-4" />
+                Despesa já paga
+              </Label>
+            </div>
           </div>
           <Button type="submit" className="w-full">
             {expenseToEdit?.id ? 'Salvar Alterações' : 'Adicionar Despesa'}

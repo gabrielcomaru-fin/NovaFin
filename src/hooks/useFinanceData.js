@@ -68,7 +68,7 @@ export const useFinanceData = () => {
 
     const addExpense = async (expense) => {
         if (!user) return;
-        const newExpense = { ...expense, usuario_id: user.id };
+        const newExpense = { ...expense, usuario_id: user.id, pago: expense.pago || false };
         const { data, error } = await supabase.from('gastos').insert(newExpense).select();
         if (error) throw error;
         setExpenses(prev => [...prev, data[0]].sort((a,b) => new Date(b.data) - new Date(a.data)));
@@ -86,6 +86,21 @@ export const useFinanceData = () => {
         const { error } = await supabase.from('gastos').delete().eq('id', id);
         if (error) throw error;
         setExpenses(prev => prev.filter(e => e.id !== id));
+    };
+
+    const toggleExpensePayment = async (id) => {
+        const expense = expenses.find(e => e.id === id);
+        if (!expense) return;
+        
+        const { data, error } = await supabase
+            .from('gastos')
+            .update({ pago: !expense.pago })
+            .eq('id', id)
+            .select();
+        
+        if (error) throw error;
+        setExpenses(prev => prev.map(e => e.id === id ? data[0] : e).sort((a,b) => new Date(b.data) - new Date(a.data)));
+        return data[0];
     };
     
     const addInvestment = async (investment) => {
@@ -166,6 +181,7 @@ export const useFinanceData = () => {
         addExpense,
         updateExpense,
         deleteExpense,
+        toggleExpensePayment,
         addInvestment,
         updateInvestment,
         deleteInvestment,

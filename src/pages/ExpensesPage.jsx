@@ -9,7 +9,7 @@ import { Pagination } from '@/components/Pagination';
 import { PeriodFilter } from '@/components/PeriodFilter';
 import { CategoryChart } from '@/components/CategoryChart';
 import { SearchFilter } from '@/components/SearchFilter';
-import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown } from 'lucide-react';
+import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle, Circle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
 import { Sparklines, SparklinesLine } from 'react-sparklines';
@@ -18,7 +18,7 @@ const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'expensesPage';
 
 export function ExpensesPage() {
-  const { expenses, categories, addExpense, updateExpense, deleteExpense } = useFinance();
+  const { expenses, categories, addExpense, updateExpense, deleteExpense, toggleExpensePayment } = useFinance();
   const { toast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -28,6 +28,7 @@ export function ExpensesPage() {
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [paymentStatus, setPaymentStatus] = useState('all'); // 'all', 'paid', 'pending'
   const [sortBy, setSortBy] = useState('date-desc');
 
   const getInitialFilter = () => {
@@ -73,7 +74,7 @@ export function ExpensesPage() {
 
   const expenseCategories = useMemo(() => categories.filter(c => c.tipo === 'gasto'), [categories]);
 
-  const { filteredExpenses, totalSpent, trendData } = useMemo(() => {
+  const { filteredExpenses, totalSpent, trendData, paidExpenses, pendingExpenses, totalPaid, totalPending } = useMemo(() => {
     let filtered = [];
     let startDate, endDate;
 
@@ -108,6 +109,15 @@ export function ExpensesPage() {
       filtered = filtered.filter(exp => exp.categoria_id === selectedCategory);
     }
 
+    // Aplicar filtro por status de pagamento
+    if (paymentStatus !== 'all') {
+      filtered = filtered.filter(exp => {
+        if (paymentStatus === 'paid') return exp.pago === true;
+        if (paymentStatus === 'pending') return exp.pago === false;
+        return true;
+      });
+    }
+
     // Ordenação
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -136,13 +146,23 @@ export function ExpensesPage() {
     }
 
     const total = filtered.reduce((sum, exp) => sum + exp.valor, 0);
+    
+    // Separar despesas pagas e pendentes
+    const paid = filtered.filter(exp => exp.pago === true);
+    const pending = filtered.filter(exp => exp.pago === false);
+    const totalPaidAmount = paid.reduce((sum, exp) => sum + exp.valor, 0);
+    const totalPendingAmount = pending.reduce((sum, exp) => sum + exp.valor, 0);
 
     return {
       filteredExpenses: filtered,
       totalSpent: total,
-      trendData: trendMap
+      trendData: trendMap,
+      paidExpenses: paid,
+      pendingExpenses: pending,
+      totalPaid: totalPaidAmount,
+      totalPending: totalPendingAmount
     };
-  }, [expenses, filter, searchTerm, selectedCategory, sortBy]);
+  }, [expenses, filter, searchTerm, selectedCategory, paymentStatus, sortBy]);
 
   const expensesByCategoryChartData = useMemo(() => {
     if (filteredExpenses.length === 0) return [];
@@ -191,6 +211,15 @@ export function ExpensesPage() {
       toast({ title: 'Despesa excluída com sucesso!' });
     } catch (error) {
       toast({ title: 'Erro ao excluir despesa', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleTogglePayment = async (id) => {
+    try {
+      await toggleExpensePayment(id);
+      toast({ title: 'Status de pagamento atualizado!' });
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar status', description: error.message, variant: 'destructive' });
     }
   };
 
@@ -249,9 +278,12 @@ export function ExpensesPage() {
               categories={expenseCategories}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
+              paymentStatus={paymentStatus}
+              onPaymentStatusChange={setPaymentStatus}
               sortBy={sortBy}
               onSortChange={setSortBy}
               placeholder="Buscar por descrição..."
+              showPaymentFilter={true}
             />
           </div>
 
@@ -294,6 +326,7 @@ export function ExpensesPage() {
                       type="expense"
                       onEdit={handleEdit}
                       onDelete={handleDelete}
+                      onTogglePayment={handleTogglePayment}
                     />
                     {totalPages > 1 && (
                       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
@@ -306,6 +339,34 @@ export function ExpensesPage() {
 
           <TabsContent value="dashboard" className="mt-6 space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+
+              {/* Despesas Pagas */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Despesas Pagas</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{currencyFormatter.format(totalPaid)}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {paidExpenses.length} despesa{paidExpenses.length !== 1 ? 's' : ''} quitada{paidExpenses.length !== 1 ? 's' : ''}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Despesas Pendentes */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Despesas Pendentes</CardTitle>
+                  <Circle className="h-4 w-4 text-orange-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">{currencyFormatter.format(totalPending)}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {pendingExpenses.length} despesa{pendingExpenses.length !== 1 ? 's' : ''} pendente{pendingExpenses.length !== 1 ? 's' : ''}
+                  </p>
+                </CardContent>
+              </Card>
 
               {/* Gasto Total */}
               <Card className="hover:shadow-lg transition-shadow">
@@ -354,22 +415,29 @@ export function ExpensesPage() {
                 </CardContent>
               </Card>
 
-              {/* Maior Despesa */}
+              {/* Taxa de Quitação */}
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Maior Despesa</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Taxa de Quitação</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {filteredExpenses.length > 0
-                      ? currencyFormatter.format(Math.max(...filteredExpenses.map(e => e.valor)))
-                      : "R$ 0,00"}
+                    {filteredExpenses.length > 0 
+                      ? `${Math.round((paidExpenses.length / filteredExpenses.length) * 100)}%`
+                      : "0%"}
                   </div>
-                  <Sparklines data={trendData.map((t, i) => Math.max(...filteredExpenses.map(e => e.valor)))}>
-                    <SparklinesLine color="#34d399" />
-                  </Sparklines>
-                  <p className="text-xs text-muted-foreground">Maior despesa do período.</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                      style={{ 
+                        width: filteredExpenses.length > 0 
+                          ? `${(paidExpenses.length / filteredExpenses.length) * 100}%` 
+                          : '0%' 
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Percentual de despesas quitadas.</p>
                 </CardContent>
               </Card>
 

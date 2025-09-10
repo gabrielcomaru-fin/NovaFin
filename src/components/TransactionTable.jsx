@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, CheckCircle, Circle, CreditCard } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table.jsx";
 import { Badge } from "@/components/ui/badge";
 
-export const TransactionTable = ({ transactions, categories, type, onEdit, onDelete }) => {
+export const TransactionTable = ({ transactions, categories, type, onEdit, onDelete, onTogglePayment }) => {
   const isExpense = type === 'expense';
 
   return (
@@ -35,6 +35,7 @@ export const TransactionTable = ({ transactions, categories, type, onEdit, onDel
             <TableHead>Categoria</TableHead>
             <TableHead className="text-right">Valor</TableHead>
             <TableHead className="hidden md:table-cell">Data</TableHead>
+            {isExpense && <TableHead className="text-center">Status</TableHead>}
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -65,11 +66,40 @@ export const TransactionTable = ({ transactions, categories, type, onEdit, onDel
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {new Date(transaction.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                   </TableCell>
+                  {isExpense && (
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        {transaction.pago ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Pago
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-orange-600 border-orange-200">
+                            <Circle className="w-3 h-3 mr-1" />
+                            Pendente
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
+                    <div className="flex items-center justify-end gap-1">
+                      {isExpense && onTogglePayment && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => onTogglePayment(transaction.id)}
+                          title={transaction.pago ? "Marcar como não pago" : "Marcar como pago"}
+                        >
+                          <CreditCard className={`h-4 w-4 ${transaction.pago ? 'text-green-600' : 'text-orange-600'}`} />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
@@ -93,6 +123,7 @@ export const TransactionTable = ({ transactions, categories, type, onEdit, onDel
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    </div>
                   </TableCell>
                 </motion.tr>
               );
