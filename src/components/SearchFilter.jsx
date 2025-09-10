@@ -10,10 +10,13 @@ export function SearchFilter({
   categories, 
   selectedCategory, 
   onCategoryChange,
+  paymentStatus,
+  onPaymentStatusChange,
   sortBy,
   onSortChange,
   placeholder = "Buscar...",
   showCategoryFilter = true,
+  showPaymentFilter = false,
   showSortFilter = true
 }) {
   const handleClearSearch = () => {
@@ -22,6 +25,10 @@ export function SearchFilter({
 
   const handleClearCategory = () => {
     onCategoryChange('all');
+  };
+
+  const handleClearPaymentStatus = () => {
+    onPaymentStatusChange('all');
   };
 
   return (
@@ -69,6 +76,33 @@ export function SearchFilter({
               variant="ghost"
               size="sm"
               onClick={handleClearCategory}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Filtro por status de pagamento */}
+      {showPaymentFilter && (
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={paymentStatus} onValueChange={onPaymentStatusChange}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Status de pagamento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="paid">Pagas</SelectItem>
+              <SelectItem value="pending">Pendentes</SelectItem>
+            </SelectContent>
+          </Select>
+          {paymentStatus !== 'all' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearPaymentStatus}
               className="h-6 w-6 p-0"
             >
               <X className="h-3 w-3" />
