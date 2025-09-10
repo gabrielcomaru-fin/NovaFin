@@ -6,11 +6,12 @@ const isDev = process.env.NODE_ENV !== 'production';
 let inlineEditPlugin, editModeDevPlugin;
 
 if (isDev) {
-  inlineEditPlugin = (await import('./plugins/visual-editor/vite-plugin-react-inline-editor.js')).default;
-  editModeDevPlugin = (await import('./plugins/visual-editor/vite-plugin-edit-mode.js')).default;
+	inlineEditPlugin = (await import('./plugins/visual-editor/vite-plugin-react-inline-editor.js')).default;
+	editModeDevPlugin = (await import('./plugins/visual-editor/vite-plugin-edit-mode.js')).default;
 }
 
-// Scripts de tratamento de erros
+// ------------------- Scripts inline completos ------------------- //
+
 const configHorizonsViteErrorHandler = `
 const observer = new MutationObserver((mutations) => {
   for (const mutation of mutations) {
@@ -51,7 +52,7 @@ window.onerror = (message, source, lineno, colno, errorObj) => {
     stack: errorObj.stack,
     source,
     lineno,
-    colno
+    colno,
   }) : null;
 
   window.parent.postMessage({ type: 'horizons-runtime-error', message, error: errorDetails }, '*');
@@ -82,16 +83,18 @@ const originalFetch = window.fetch;
 window.fetch = function(...args) {
   const url = args[0] instanceof Request ? args[0].url : args[0];
   if (url.startsWith('ws:') || url.startsWith('wss:')) return originalFetch.apply(this, args);
+
   return originalFetch.apply(this, args)
     .then(async response => {
       const contentType = response.headers.get('Content-Type') || '';
       const isDocumentResponse = contentType.includes('text/html') || contentType.includes('application/xhtml+xml');
+
       if (!response.ok && !isDocumentResponse) {
         const responseClone = response.clone();
         const errorFromRes = await responseClone.text();
-        const requestUrl = response.url;
-        console.error(\`Fetch error from \${requestUrl}: \${errorFromRes}\`);
+        console.error(\`Fetch error from \${response.url}: \${errorFromRes}\`);
       }
+
       return response;
     })
     .catch(error => {
@@ -101,60 +104,67 @@ window.fetch = function(...args) {
 };
 `;
 
+// ------------------- Plugin para injetar scripts ------------------- //
+
 const addTransformIndexHtml = {
-  name: 'add-transform-index-html',
-  transformIndexHtml(html) {
-    const tags = [
-      { tag: 'script', attrs: { type: 'module' }, children: configHorizonsRuntimeErrorHandler, injectTo: 'head' },
-      { tag: 'script', attrs: { type: 'module' }, children: configHorizonsViteErrorHandler, injectTo: 'head' },
-      { tag: 'script', attrs: { type: 'module' }, children: configHorizonsConsoleErrroHandler, injectTo: 'head' },
-      { tag: 'script', attrs: { type: 'module' }, children: configWindowFetchMonkeyPatch, injectTo: 'head' }
-    ];
+	name: 'add-transform-index-html',
+	transformIndexHtml(html) {
+		const tags = [
+			{ tag: 'script', attrs: { type: 'module' }, children: configHorizonsRuntimeErrorHandler, injectTo: 'head' },
+			{ tag: 'script', attrs: { type: 'module' }, children: configHorizonsViteErrorHandler, injectTo: 'head' },
+			{ tag: 'script', attrs: { type: 'module' }, children: configHorizonsConsoleErrroHandler, injectTo: 'head' },
+			{ tag: 'script', attrs: { type: 'module' }, children: configWindowFetchMonkeyPatch, injectTo: 'head' },
+		];
 
-    if (!isDev && process.env.TEMPLATE_BANNER_SCRIPT_URL && process.env.TEMPLATE_REDIRECT_URL) {
-      tags.push({
-        tag: 'script',
-        attrs: {
-          src: process.env.TEMPLATE_BANNER_SCRIPT_URL,
-          'template-redirect-url': process.env.TEMPLATE_REDIRECT_URL
-        },
-        injectTo: 'head'
-      });
-    }
+		if (!isDev && process.env.TEMPLATE_BANNER_SCRIPT_URL && process.env.TEMPLATE_REDIRECT_URL) {
+			tags.push({
+				tag: 'script',
+				attrs: { 
+					src: process.env.TEMPLATE_BANNER_SCRIPT_URL,
+					'template-redirect-url': process.env.TEMPLATE_REDIRECT_URL,
+				},
+				injectTo: 'head',
+			});
+		}
 
-    return { html, tags };
-  }
+		return { html, tags };
+	},
 };
+
+// ------------------- Logger customizado ------------------- //
 
 console.warn = () => {};
 
 const logger = createLogger();
 const loggerError = logger.error;
+
 logger.error = (msg, options) => {
-  if (options?.error?.toString().includes('CssSyntaxError: [postcss]')) return;
-  loggerError(msg, options);
+	if (options?.error?.toString().includes('CssSyntaxError: [postcss]')) return;
+	loggerError(msg, options);
 };
 
+// ------------------- Configuração Vite ------------------- //
+
 export default defineConfig({
-  base: '/NovaFin/',
-  customLogger: logger,
-  plugins: [
-    ...(isDev ? [inlineEditPlugin(), editModeDevPlugin()] : []),
-    react(),
-    addTransformIndexHtml
-  ],
-  server: {
-    cors: true,
-    headers: { 'Cross-Origin-Embedder-Policy': 'credentialless' },
-    allowedHosts: true
-  },
-  resolve: {
-    extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
-    alias: { '@': path.resolve(__dirname, './src') }
-  },
-  build: {
-    rollupOptions: {
-      external: ['@babel/parser', '@babel/traverse', '@babel/generator', '@babel/types']
-    }
-  }
+	base: '/NovaFin/', // Para GitHub Pages
+	customLogger: logger,
+	plugins: [
+		...(isDev ? [inlineEditPlugin(), editModeDevPlugin()] : []),
+		react(),
+		addTransformIndexHtml
+	],
+	server: {
+		cors: true,
+		headers: { 'Cross-Origin-Embedder-Policy': 'credentialless' },
+		allowedHosts: true,
+	},
+	resolve: {
+		extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
+		alias: { '@': path.resolve(__dirname, './src') },
+	},
+	build: {
+		rollupOptions: {
+			external: ['@babel/parser', '@babel/traverse', '@babel/generator', '@babel/types']
+		}
+	}
 });
