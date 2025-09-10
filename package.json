@@ -6,7 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "node tools/generate-llms.js || true && vite build",
+<<<<<<< HEAD
     "preview": "vite preview"
+=======
+    "preview": "vite preview",
+    "predeploy": "npx vite build",
+  "deploy": "gh-pages -d dist"
+
+>>>>>>> 28e58ee (Atualizações do projeto)
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.2.1",
@@ -51,6 +58,10 @@
     "autoprefixer": "^10.4.16",
     "eslint": "^8.57.1",
     "eslint-config-react-app": "^7.0.1",
+<<<<<<< HEAD
+=======
+    "gh-pages": "^6.3.0",
+>>>>>>> 28e58ee (Atualizações do projeto)
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.3",
     "terser": "^5.39.0",
