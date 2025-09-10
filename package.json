@@ -37,7 +37,8 @@
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
     "react-router-dom": "^6.16.0",
-    "recharts": "^2.10.3",
+    "react-sparklines": "^1.7.0",
+    "recharts": "^2.15.4",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7"
   },

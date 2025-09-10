@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useFinance } from '@/contexts/FinanceDataContext';
@@ -10,9 +9,10 @@ import { Pagination } from '@/components/Pagination';
 import { PeriodFilter } from '@/components/PeriodFilter';
 import { CategoryChart } from '@/components/CategoryChart';
 import { SearchFilter } from '@/components/SearchFilter';
-import { Receipt, DollarSign, BarChart3, ListChecks } from 'lucide-react';
+import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns';
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
+import { Sparklines, SparklinesLine } from 'react-sparklines';
 
 const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'expensesPage';
@@ -24,7 +24,7 @@ export function ExpensesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [expenseToEdit, setExpenseToEdit] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -50,12 +50,6 @@ export function ExpensesPage() {
   };
 
   const [filter, setFilter] = useState(getInitialFilter);
-  
-  useEffect(() => {
-    if(filter.dateRange) {
-       setFilter(f => ({ ...f, periodType: 'monthly', month: undefined, year: undefined }));
-    }
-  }, [filter.dateRange]);
 
   useEffect(() => {
     localStorage.setItem(`filter_${PAGE_ID}`, JSON.stringify(filter));
@@ -64,13 +58,13 @@ export function ExpensesPage() {
   const handleSetDateRange = (range) => {
     setFilter({ ...filter, dateRange: range });
   };
-  
+
   const handleSetMonth = (month) => {
-      setFilter({ dateRange: undefined, periodType: 'monthly', month, year: filter.year || new Date().getFullYear() });
+    setFilter({ dateRange: undefined, periodType: 'monthly', month, year: filter.year || new Date().getFullYear() });
   };
 
   const handleSetYear = (year) => {
-      setFilter(f => ({ ...f, dateRange: undefined, year }));
+    setFilter(f => ({ ...f, dateRange: undefined, year }));
   };
 
   const handleSetPeriodType = (type) => {
@@ -79,7 +73,7 @@ export function ExpensesPage() {
 
   const expenseCategories = useMemo(() => categories.filter(c => c.tipo === 'gasto'), [categories]);
 
-  const { filteredExpenses, totalSpent } = useMemo(() => {
+  const { filteredExpenses, totalSpent, trendData } = useMemo(() => {
     let filtered = [];
     let startDate, endDate;
 
@@ -93,20 +87,18 @@ export function ExpensesPage() {
       startDate = startOfMonth(new Date(filter.year, filter.month, 1));
       endDate = endOfMonth(new Date(filter.year, filter.month, 1));
     }
-    
-    if (startDate && endDate) {
-        endDate.setHours(23, 59, 59, 999);
-        filtered = expenses.filter(expense => {
-            const expenseDate = parseISO(expense.data);
-            return expenseDate >= startDate && expenseDate <= endDate;
-        });
-    }
 
-    const total = filtered.reduce((sum, exp) => sum + exp.valor, 0);
+    if (startDate && endDate) {
+      endDate.setHours(23, 59, 59, 999);
+      filtered = expenses.filter(expense => {
+        const expenseDate = parseISO(expense.data);
+        return expenseDate >= startDate && expenseDate <= endDate;
+      });
+    }
 
     // Aplicar busca por descrição
     if (searchTerm) {
-      filtered = filtered.filter(exp => 
+      filtered = filtered.filter(exp =>
         exp.descricao.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -116,42 +108,54 @@ export function ExpensesPage() {
       filtered = filtered.filter(exp => exp.categoria_id === selectedCategory);
     }
 
-    // Aplicar ordenação
+    // Ordenação
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'date-asc':
-          return new Date(a.data) - new Date(b.data);
-        case 'date-desc':
-          return new Date(b.data) - new Date(a.data);
-        case 'value-asc':
-          return a.valor - b.valor;
-        case 'value-desc':
-          return b.valor - a.valor;
-        case 'description':
-          return a.descricao.localeCompare(b.descricao);
-        default:
-          return new Date(b.data) - new Date(a.data);
+        case 'date-asc': return new Date(a.data) - new Date(b.data);
+        case 'date-desc': return new Date(b.data) - new Date(a.data);
+        case 'value-asc': return a.valor - b.valor;
+        case 'value-desc': return b.valor - a.valor;
+        case 'description': return a.descricao.localeCompare(b.descricao);
+        default: return new Date(b.data) - new Date(a.data);
       }
     });
 
-    return { 
+    // Trend data (últimos 7 períodos)
+    const trendMap = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = filter.periodType === 'monthly'
+        ? new Date(filter.year, filter.month - i, 1)
+        : subMonths(new Date(), i);
+      const monthStart = startOfMonth(date);
+      const monthEnd = endOfMonth(date);
+      const monthExpenses = filtered.filter(exp => {
+        const expDate = parseISO(exp.data);
+        return expDate >= monthStart && expDate <= monthEnd;
+      });
+      trendMap.push(monthExpenses.reduce((sum, exp) => sum + exp.valor, 0));
+    }
+
+    const total = filtered.reduce((sum, exp) => sum + exp.valor, 0);
+
+    return {
       filteredExpenses: filtered,
-      totalSpent: total 
+      totalSpent: total,
+      trendData: trendMap
     };
   }, [expenses, filter, searchTerm, selectedCategory, sortBy]);
-  
+
   const expensesByCategoryChartData = useMemo(() => {
     if (filteredExpenses.length === 0) return [];
 
     const categoryMap = expenseCategories.reduce((acc, cat) => {
-        acc[cat.id] = { categoryName: cat.nome, total: 0 };
-        return acc;
+      acc[cat.id] = { categoryName: cat.nome, total: 0 };
+      return acc;
     }, {});
-    
+
     filteredExpenses.forEach(exp => {
-        if (categoryMap[exp.categoria_id]) {
-            categoryMap[exp.categoria_id].total += exp.valor;
-        }
+      if (categoryMap[exp.categoria_id]) {
+        categoryMap[exp.categoria_id].total += exp.valor;
+      }
     });
 
     return Object.values(categoryMap).filter(cat => cat.total > 0).sort((a, b) => b.total - a.total);
@@ -191,17 +195,15 @@ export function ExpensesPage() {
   };
 
   const handlePageChange = (page) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page > 0 && page <= totalPages) setCurrentPage(page);
   };
-  
+
   const handleFormOpenChange = (open) => {
-    if (!open) {
-      setExpenseToEdit(null);
-    }
+    if (!open) setExpenseToEdit(null);
     setIsFormOpen(open);
-  }
+  };
+
+  const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <>
@@ -211,25 +213,25 @@ export function ExpensesPage() {
       </Helmet>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Controle de Despesas</h1>
-            <ExpenseForm
-              onSubmit={handleFormSubmit}
-              expenseToEdit={expenseToEdit}
-              isOpen={isFormOpen}
-              onOpenChange={handleFormOpenChange}
-            />
-        </div>
-        
-        <PeriodFilter 
-            periodType={filter.periodType}
-            setPeriodType={handleSetPeriodType}
-            dateRange={filter.dateRange}
-            setDateRange={handleSetDateRange}
-            month={filter.month}
-            setMonth={handleSetMonth}
-            year={filter.year}
-            setYear={handleSetYear}
+          <h1 className="text-2xl font-bold tracking-tight">Controle de Despesas</h1>
+          <ExpenseForm
+            onSubmit={handleFormSubmit}
+            expenseToEdit={expenseToEdit}
+            isOpen={isFormOpen}
+            onOpenChange={handleFormOpenChange}
           />
+        </div>
+
+        <PeriodFilter
+          periodType={filter.periodType}
+          setPeriodType={handleSetPeriodType}
+          dateRange={filter.dateRange}
+          setDateRange={handleSetDateRange}
+          month={filter.month}
+          setMonth={handleSetMonth}
+          year={filter.year}
+          setYear={handleSetYear}
+        />
 
         <Tabs defaultValue="relatorio" className="w-full">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -253,17 +255,11 @@ export function ExpensesPage() {
             />
           </div>
 
-        
-
-
-
-            <TabsContent value="relatorio" className="mt-6 space-y-6">
+          <TabsContent value="relatorio" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Suas Despesas</CardTitle>
-                <CardDescription>
-                    Lista de todas as despesas no período selecionado.
-                </CardDescription>
+                <CardDescription>Lista de todas as despesas no período selecionado.</CardDescription>
               </CardHeader>
               <CardContent>
                 {paginatedExpenses.length === 0 ? (
@@ -275,10 +271,9 @@ export function ExpensesPage() {
                       <div className="space-y-2">
                         <p className="font-semibold text-lg">Nenhuma despesa encontrada</p>
                         <p className="text-sm max-w-md">
-                          {filteredExpenses.length === 0 
-                            ? "Você ainda não registrou nenhuma despesa. Comece adicionando sua primeira despesa para ter controle total dos seus gastos!"
-                            : "Não há despesas no período selecionado. Tente ajustar o filtro de período."
-                          }
+                          {filteredExpenses.length === 0
+                            ? 'Você ainda não registrou nenhuma despesa. Comece adicionando sua primeira despesa!'
+                            : 'Não há despesas no período selecionado. Ajuste o filtro de período.'}
                         </p>
                       </div>
                       {filteredExpenses.length === 0 && (
@@ -286,13 +281,13 @@ export function ExpensesPage() {
                           onClick={() => setIsFormOpen(true)}
                           className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                         >
-                          <Receipt className="w-4 h-4 mr-2" />
-                          Adicionar Primeira Despesa
+                          <Receipt className="w-4 h-4 mr-2" /> Adicionar Primeira Despesa
                         </button>
                       )}
                     </div>
                   </div>
                 ) : (
+                  <>
                     <TransactionTable
                       transactions={paginatedExpenses}
                       categories={expenseCategories}
@@ -300,66 +295,89 @@ export function ExpensesPage() {
                       onEdit={handleEdit}
                       onDelete={handleDelete}
                     />
+                    {totalPages > 1 && (
+                      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+                    )}
+                  </>
                 )}
-                {totalPages > 1 && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />}
               </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="dashboard" className="mt-6 space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
+
+              {/* Gasto Total */}
+              <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Gasto Total</CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{totalSpent.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</div>
+                  <div className="text-2xl font-bold text-red-600">{currencyFormatter.format(totalSpent)}</div>
+                  <Sparklines data={trendData}>
+                    <SparklinesLine color="#f87171" />
+                  </Sparklines>
                   <p className="text-xs text-muted-foreground">Total de despesas no período selecionado.</p>
                 </CardContent>
               </Card>
-              <Card>
+
+              {/* Número de Despesas */}
+              <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Número de Despesas</CardTitle>
                   <Receipt className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{filteredExpenses.length}</div>
+                  <Sparklines data={trendData.map((t, i) => filteredExpenses.length > 0 ? filteredExpenses.length / trendData.length : 0)}>
+                    <SparklinesLine color="#3b82f6" />
+                  </Sparklines>
                   <p className="text-xs text-muted-foreground">Quantidade de despesas registradas.</p>
                 </CardContent>
               </Card>
-              <Card>
+
+              {/* Despesa Média */}
+              <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Despesa Média</CardTitle>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {filteredExpenses.length > 0 
-                      ? (totalSpent / filteredExpenses.length).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-                      : "R$ 0,00"
-                    }
+                    {filteredExpenses.length > 0 ? currencyFormatter.format(totalSpent / filteredExpenses.length) : "R$ 0,00"}
                   </div>
+                  <Sparklines data={trendData.map(t => t / (filteredExpenses.length || 1))}>
+                    <SparklinesLine color="#fbbf24" />
+                  </Sparklines>
                   <p className="text-xs text-muted-foreground">Valor médio por despesa.</p>
                 </CardContent>
               </Card>
-              <Card>
+
+              {/* Maior Despesa */}
+              <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Maior Despesa</CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {filteredExpenses.length > 0 
-                      ? Math.max(...filteredExpenses.map(e => e.valor)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-                      : "R$ 0,00"
-                    }
+                    {filteredExpenses.length > 0
+                      ? currencyFormatter.format(Math.max(...filteredExpenses.map(e => e.valor)))
+                      : "R$ 0,00"}
                   </div>
+                  <Sparklines data={trendData.map((t, i) => Math.max(...filteredExpenses.map(e => e.valor)))}>
+                    <SparklinesLine color="#34d399" />
+                  </Sparklines>
                   <p className="text-xs text-muted-foreground">Maior despesa do período.</p>
                 </CardContent>
               </Card>
+
             </div>
+
+            {/* Gráfico por categoria */}
             {expensesByCategoryChartData.length > 0 ? (
-              <CategoryChart 
+              <CategoryChart
                 data={expensesByCategoryChartData}
                 title="Divisão de Despesas por Categoria"
                 description="Análise percentual dos seus gastos no período."

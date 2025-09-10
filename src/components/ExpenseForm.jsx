@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input, CurrencyInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,60 +9,75 @@ import { useFinance } from '@/contexts/FinanceDataContext';
 
 export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
   const { categories } = useFinance();
-  const [formData, setFormData] = useState({
+  const expenseCategories = categories.filter(c => c.tipo === 'gasto');
+
+  const defaultFormData = {
     descricao: '',
     valor: '',
     categoria_id: '',
     recorrente: false,
     data: new Date().toISOString().split('T')[0]
-  });
+  };
 
-  const expenseCategories = categories.filter(c => c.tipo === 'gasto');
+  const [formData, setFormData] = useState(defaultFormData);
+  const currencyRef = useRef(null);
+
+  // Formata valor para exibição correta no CurrencyInput
+  const formatCurrencyForInput = (value) => {
+    if (value == null || value === '') return '';
+    const numberValue = Number(value);
+    if (isNaN(numberValue)) return '';
+    return numberValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   useEffect(() => {
-    if (expenseToEdit && expenseToEdit.id) {
+    if (expenseToEdit?.id) {
       setFormData({
         descricao: expenseToEdit.descricao || '',
-        valor: expenseToEdit.valor?.toString() || '',
+        valor: formatCurrencyForInput(expenseToEdit.valor),
         categoria_id: expenseToEdit.categoria_id || '',
         recorrente: expenseToEdit.recorrente || false,
-        data: new Date(expenseToEdit.data).toISOString().split('T')[0]
+        data: expenseToEdit.data ? new Date(expenseToEdit.data).toISOString().split('T')[0] : defaultFormData.data
       });
     } else {
-      setFormData({
-        descricao: '',
-        valor: '',
-        categoria_id: '',
-        recorrente: false,
-        data: new Date().toISOString().split('T')[0]
-      });
+      setFormData(defaultFormData);
     }
   }, [expenseToEdit, isOpen]);
 
+  // Mantém o cursor no final do input ao alterar o valor
+  useEffect(() => {
+    const input = currencyRef.current?.input;
+    if (input) {
+      const length = input.value.length;
+      input.setSelectionRange(length, length);
+    }
+  }, [formData.valor]);
+
   const parseCurrency = (value) => {
     if (!value) return 0;
-    return parseFloat(String(value).replace(/\./g, '').replace(',', '.'));
-  }
+    const normalized = String(value).replace(/\./g, '').replace(',', '.');
+    const number = parseFloat(normalized);
+    return isNaN(number) ? 0 : number;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      valor: parseCurrency(formData.valor)
-    }, expenseToEdit?.id);
+    const parsedValor = parseCurrency(formData.valor);
+    if (parsedValor <= 0) {
+      alert('Informe um valor válido maior que zero.');
+      return;
+    }
+    onSubmit({ ...formData, valor: parsedValor }, expenseToEdit?.id);
+    handleReset();
   };
-  
+
+  const handleReset = () => {
+    setFormData(defaultFormData);
+  };
+
   const handleOpenChange = (open) => {
     onOpenChange(open);
-    if (!open) {
-      setFormData({
-        descricao: '',
-        valor: '',
-        categoria_id: '',
-        recorrente: false,
-        data: new Date().toISOString().split('T')[0]
-      });
-    }
+    if (!open) handleReset();
   };
 
   const handleCurrencyChange = (value) => {
@@ -109,6 +123,7 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
                 placeholder="0,00"
                 value={formData.valor}
                 onChange={handleCurrencyChange}
+                ref={currencyRef}
                 required
               />
             </div>
@@ -125,18 +140,25 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
-            <Select value={formData.categoria_id} onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                {expenseCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {expenseCategories.length > 0 ? (
+              <Select
+                value={formData.categoria_id}
+                onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {expenseCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhuma categoria de gasto disponível.</p>
+            )}
           </div>
           <div className="flex items-center space-x-2">
             <input
