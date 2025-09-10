@@ -9,7 +9,7 @@ import { Pagination } from '@/components/Pagination';
 import { PeriodFilter } from '@/components/PeriodFilter';
 import { CategoryChart } from '@/components/CategoryChart';
 import { SearchFilter } from '@/components/SearchFilter';
-import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle, Circle } from 'lucide-react';
+import { Receipt, DollarSign, BarChart3, ListChecks, CheckCircle, Circle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
 import { Sparklines, SparklinesLine } from 'react-sparklines';
@@ -25,7 +25,6 @@ export function ExpensesPage() {
   const [expenseToEdit, setExpenseToEdit] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [paymentStatus, setPaymentStatus] = useState('all'); // 'all', 'paid', 'pending'
@@ -97,28 +96,24 @@ export function ExpensesPage() {
       });
     }
 
-    // Aplicar busca por descrição
     if (searchTerm) {
       filtered = filtered.filter(exp =>
         exp.descricao.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Aplicar filtro por categoria
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(exp => exp.categoria_id === selectedCategory);
     }
 
-    // Aplicar filtro por status de pagamento
     if (paymentStatus !== 'all') {
       filtered = filtered.filter(exp => {
-        if (paymentStatus === 'paid') return exp.pago === true;
-        if (paymentStatus === 'pending') return exp.pago === false;
+        if (paymentStatus === 'paid') return exp.is_paid === true;
+        if (paymentStatus === 'pending') return exp.is_paid === false;
         return true;
       });
     }
 
-    // Ordenação
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'date-asc': return new Date(a.data) - new Date(b.data);
@@ -130,7 +125,6 @@ export function ExpensesPage() {
       }
     });
 
-    // Trend data (últimos 7 períodos)
     const trendMap = [];
     for (let i = 6; i >= 0; i--) {
       const date = filter.periodType === 'monthly'
@@ -146,10 +140,9 @@ export function ExpensesPage() {
     }
 
     const total = filtered.reduce((sum, exp) => sum + exp.valor, 0);
-    
-    // Separar despesas pagas e pendentes
-    const paid = filtered.filter(exp => exp.pago === true);
-    const pending = filtered.filter(exp => exp.pago === false);
+
+    const paid = filtered.filter(exp => exp.is_paid === true);
+    const pending = filtered.filter(exp => exp.is_paid === false);
     const totalPaidAmount = paid.reduce((sum, exp) => sum + exp.valor, 0);
     const totalPendingAmount = pending.reduce((sum, exp) => sum + exp.valor, 0);
 
@@ -391,80 +384,17 @@ export function ExpensesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{filteredExpenses.length}</div>
-                  <Sparklines data={trendData.map((t, i) => filteredExpenses.length > 0 ? filteredExpenses.length / trendData.length : 0)}>
-                    <SparklinesLine color="#3b82f6" />
+                  <Sparklines data={trendData.map((t, i) => filteredExpenses.length > 0 ? filteredExpenses.length / 7 : 0)}>
+                    <SparklinesLine color="#60a5fa" />
                   </Sparklines>
-                  <p className="text-xs text-muted-foreground">Quantidade de despesas registradas.</p>
-                </CardContent>
-              </Card>
-
-              {/* Despesa Média */}
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Despesa Média</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {filteredExpenses.length > 0 ? currencyFormatter.format(totalSpent / filteredExpenses.length) : "R$ 0,00"}
-                  </div>
-                  <Sparklines data={trendData.map(t => t / (filteredExpenses.length || 1))}>
-                    <SparklinesLine color="#fbbf24" />
-                  </Sparklines>
-                  <p className="text-xs text-muted-foreground">Valor médio por despesa.</p>
-                </CardContent>
-              </Card>
-
-              {/* Taxa de Quitação */}
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Taxa de Quitação</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {filteredExpenses.length > 0 
-                      ? `${Math.round((paidExpenses.length / filteredExpenses.length) * 100)}%`
-                      : "0%"}
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div 
-                      className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ 
-                        width: filteredExpenses.length > 0 
-                          ? `${(paidExpenses.length / filteredExpenses.length) * 100}%` 
-                          : '0%' 
-                      }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Percentual de despesas quitadas.</p>
+                  <p className="text-xs text-muted-foreground">Número de despesas registradas no período.</p>
                 </CardContent>
               </Card>
 
             </div>
 
-            {/* Gráfico por categoria */}
-            {expensesByCategoryChartData.length > 0 ? (
-              <CategoryChart
-                data={expensesByCategoryChartData}
-                title="Divisão de Despesas por Categoria"
-                description="Análise percentual dos seus gastos no período."
-              />
-            ) : (
-              <div className="text-center text-muted-foreground py-12">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                    <BarChart3 className="w-10 h-10 opacity-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="font-semibold text-lg">Nenhum dado de despesa para o dashboard.</p>
-                    <p className="text-sm max-w-md">
-                      Registre suas despesas para visualizar gráficos e insights detalhados aqui.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <CategoryChart title="Gastos por Categoria" data={expensesByCategoryChartData} />
+
           </TabsContent>
         </Tabs>
       </div>

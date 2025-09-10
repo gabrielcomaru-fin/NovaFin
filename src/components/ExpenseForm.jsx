@@ -16,14 +16,13 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
     valor: '',
     categoria_id: '',
     recorrente: false,
-    pago: false,
+    is_paid: false,
     data: new Date().toISOString().split('T')[0]
   };
 
   const [formData, setFormData] = useState(defaultFormData);
   const currencyRef = useRef(null);
 
-  // Formata valor para exibição correta no CurrencyInput
   const formatCurrencyForInput = (value) => {
     if (value == null || value === '') return '';
     const numberValue = Number(value);
@@ -38,7 +37,7 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
         valor: formatCurrencyForInput(expenseToEdit.valor),
         categoria_id: expenseToEdit.categoria_id || '',
         recorrente: expenseToEdit.recorrente || false,
-        pago: expenseToEdit.pago || false,
+        is_paid: expenseToEdit.is_paid || false,
         data: expenseToEdit.data ? new Date(expenseToEdit.data).toISOString().split('T')[0] : defaultFormData.data
       });
     } else {
@@ -46,7 +45,6 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
     }
   }, [expenseToEdit, isOpen]);
 
-  // Mantém o cursor no final do input ao alterar o valor
   useEffect(() => {
     const input = currencyRef.current?.input;
     if (input) {
@@ -180,8 +178,8 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
               <input
                 type="checkbox"
                 id="isPaid"
-                checked={formData.pago}
-                onChange={(e) => setFormData({ ...formData, pago: e.target.checked })}
+                checked={formData.is_paid}
+                onChange={(e) => setFormData({ ...formData, is_paid: e.target.checked })}
                 className="rounded accent-primary"
               />
               <Label htmlFor="isPaid" className="flex items-center gap-2 text-sm">
