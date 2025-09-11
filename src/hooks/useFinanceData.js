@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -18,9 +19,8 @@ export const useFinanceData = () => {
         }
 
         setLoading(true);
-
+        
         try {
-            // Categorias
             const { data: categoriesData, error: categoriesError } = await supabase
                 .from('categorias')
                 .select('*')
@@ -29,28 +29,19 @@ export const useFinanceData = () => {
             if (categoriesError) throw categoriesError;
             setCategories(categoriesData || []);
 
-            // Gastos
             const { data: expensesData, error: expensesError } = await supabase.from('gastos').select('*');
             if (expensesError) throw expensesError;
             setExpenses(expensesData || []);
 
-            // Investimentos
-            const { data: investmentsData, error: investmentsError } = await supabase
-                .from('investimentos')
-                .select('id, usuario_id, valor_aporte, saldo_total, data, created_at, categoria_id, descricao');
+            const { data: investmentsData, error: investmentsError } = await supabase.from('investimentos').select('id, usuario_id, valor_aporte, saldo_total, data, created_at, categoria_id, descricao');
             if (investmentsError) throw investmentsError;
             setInvestments(investmentsData || []);
 
-            // Contas
             const { data: accountsData, error: accountsError } = await supabase.from('contas_bancarias').select('*');
             if (accountsError) throw accountsError;
             setAccounts(accountsData || []);
-
-            // Meta de investimento
-            const { data: goalData, error: goalError } = await supabase
-                .from('metas_investimento')
-                .select('meta_mensal')
-                .maybeSingle();
+            
+            const { data: goalData, error: goalError } = await supabase.from('metas_investimento').select('meta_mensal').maybeSingle();
             if (goalError) throw goalError;
             if (goalData) setInvestmentGoal(goalData.meta_mensal);
 
@@ -64,24 +55,20 @@ export const useFinanceData = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
-
-    // Meta de investimento
+    
     const handleSetInvestmentGoal = async (goal) => {
         if (!user) return;
-        const { error } = await supabase
-            .from('metas_investimento')
-            .upsert({ usuario_id: user.id, meta_mensal: goal }, { onConflict: 'usuario_id' });
+        const { error } = await supabase.from('metas_investimento').upsert({ usuario_id: user.id, meta_mensal: goal }, { onConflict: 'usuario_id' });
         if (error) {
             console.error("Error setting investment goal:", error);
         } else {
             setInvestmentGoal(goal);
         }
-    };
+    }
 
-    // --- GASTOS ---
     const addExpense = async (expense) => {
         if (!user) return;
-        const newExpense = { ...expense, usuario_id: user.id, is_paid: expense.is_paid || false };
+        const newExpense = { ...expense, usuario_id: user.id, pago: expense.pago || false };
         const { data, error } = await supabase.from('gastos').insert(newExpense).select();
         if (error) throw error;
         setExpenses(prev => [...prev, data[0]].sort((a,b) => new Date(b.data) - new Date(a.data)));
@@ -104,25 +91,18 @@ export const useFinanceData = () => {
     const toggleExpensePayment = async (id) => {
         const expense = expenses.find(e => e.id === id);
         if (!expense) return;
-
+        
         const { data, error } = await supabase
             .from('gastos')
-            .update({ is_paid: !expense.is_paid })
+            .update({ pago: !expense.pago })
             .eq('id', id)
             .select();
         
         if (error) throw error;
-
-        // Atualiza localmente garantindo consistência
-        setExpenses(prev =>
-            prev.map(e => e.id === id ? { ...e, is_paid: !e.is_paid } : e)
-                .sort((a,b) => new Date(b.data) - new Date(a.data))
-        );
-
-        return data ? data[0] : { ...expense, is_paid: !expense.is_paid };
+        setExpenses(prev => prev.map(e => e.id === id ? data[0] : e).sort((a,b) => new Date(b.data) - new Date(a.data)));
+        return data[0];
     };
-
-    // --- INVESTIMENTOS ---
+    
     const addInvestment = async (investment) => {
         if (!user) return;
         const newInvestment = { ...investment, usuario_id: user.id };
@@ -144,8 +124,7 @@ export const useFinanceData = () => {
         if (error) throw error;
         setInvestments(prev => prev.filter(i => i.id !== id));
     };
-
-    // --- CONTAS ---
+    
     const addAccount = async (account) => {
         if (!user) return;
         const newAccount = { ...account, usuario_id: user.id };
@@ -167,8 +146,7 @@ export const useFinanceData = () => {
         if (error) throw error;
         setAccounts(prev => prev.filter(a => a.id !== id));
     };
-
-    // --- CATEGORIAS ---
+    
     const addCategory = async (category) => {
         if (!user) return;
         const newCategory = { ...category, usuario_id: user.id };
@@ -177,7 +155,7 @@ export const useFinanceData = () => {
         setCategories(prev => [...prev, data[0]]);
         return data[0];
     };
-
+    
     const updateCategory = async (id, updatedFields) => {
         const { data, error } = await supabase.from('categorias').update(updatedFields).eq('id', id).select();
         if (error) throw error;
@@ -215,4 +193,4 @@ export const useFinanceData = () => {
         deleteCategory,
         fetchData,
     };
-};
+}
