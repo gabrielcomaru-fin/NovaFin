@@ -52,6 +52,8 @@ export function DashboardPage() {
     });
 
     const totalMonthlyExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.valor, 0);
+    const totalPaidExpenses = filteredExpenses.filter(e => e.pago).reduce((s, e) => s + e.valor, 0);
+    const totalPendingExpenses = filteredExpenses.filter(e => !e.pago).reduce((s, e) => s + e.valor, 0);
     const totalMonthlyInvestments = filteredInvestments.reduce((sum, investment) => sum + investment.valor_aporte, 0);
 
     const expensesByCategory = categories
@@ -63,10 +65,22 @@ export function DashboardPage() {
         return acc;
       }, {});
 
-    // Calculando metas e teto de gastos
-    const totalInvestmentGoal = investmentGoal?.valor_meta || 0;
-    const investmentProgress = totalInvestmentGoal > 0 
-      ? Math.min((totalMonthlyInvestments / totalInvestmentGoal) * 100, 100)
+    // Meta de aportes mensal acumulada coerente ao período
+    let periodMonths = 1;
+    if (dateRange && dateRange.from) {
+      const monthsRange = eachMonthOfInterval({ start: startOfMonth(dateRange.from), end: endOfMonth(dateRange.to || dateRange.from) });
+      periodMonths = monthsRange.length;
+    } else if (periodType === 'yearly' && year) {
+      const now = new Date();
+      if (year < now.getFullYear()) periodMonths = 12; else if (year > now.getFullYear()) periodMonths = 0; else periodMonths = now.getMonth() + 1;
+    } else if (periodType === 'monthly' && month !== undefined && year) {
+      periodMonths = 1;
+    }
+
+    const monthlyGoal = Number(investmentGoal) || 0;
+    const periodInvestmentGoal = monthlyGoal * periodMonths;
+    const investmentProgress = periodInvestmentGoal > 0 
+      ? Math.min((totalMonthlyInvestments / periodInvestmentGoal) * 100, 100)
       : 0;
 
     const expenseCeiling = accounts.reduce((sum, acc) => sum + (acc.teto_gasto || Infinity), Infinity); // teto de gastos definido por conta
@@ -74,14 +88,33 @@ export function DashboardPage() {
       ? Math.min((totalMonthlyExpenses / expenseCeiling) * 100, 100)
       : 0;
 
+    // Taxa de poupança (aproximação): aportes / (aportes + gastos pagos)
+    const savingsRate = (totalMonthlyInvestments + totalPaidExpenses) > 0 
+      ? (totalMonthlyInvestments / (totalMonthlyInvestments + totalPaidExpenses)) * 100
+      : 0;
+
+    // Projeção simples 12m mantendo aporte médio dos últimos 3 meses
+    const last3Months = eachMonthOfInterval({ start: subMonths(new Date(), 2), end: new Date() });
+    const avgLast3 = last3Months.reduce((acc, m) => {
+      const ms = startOfMonth(m); const me = endOfMonth(m);
+      const invested = investments.filter(i => { const d = parseISO(i.data); return d >= ms && d <= me; }).reduce((s, i) => s + i.valor_aporte, 0);
+      return acc + invested;
+    }, 0) / (last3Months.length || 1);
+    const projection12m = avgLast3 * 12;
+
     return {
       filteredExpenses,
       filteredInvestments,
       totalMonthlyExpenses,
+      totalPaidExpenses,
+      totalPendingExpenses,
       totalMonthlyInvestments,
       expensesByCategory,
       investmentProgress,
       expenseProgress,
+      periodInvestmentGoal,
+      savingsRate,
+      projection12m,
     };
   }, [expenses, investments, categories, periodType, dateRange, month, year, accounts, investmentGoal]);
 
@@ -168,10 +201,15 @@ export function DashboardPage() {
         <Dashboard
           totalMonthlyExpenses={filteredData.totalMonthlyExpenses}
           totalMonthlyInvestments={filteredData.totalMonthlyInvestments}
+          totalPaidExpenses={filteredData.totalPaidExpenses}
+          totalPendingExpenses={filteredData.totalPendingExpenses}
           expensesByCategory={filteredData.expensesByCategory}
           totalAccountBalance={totalAccountBalance}
           totalInvestmentBalance={totalInvestmentBalance}
-          investmentGoal={investmentGoal}
+          investmentGoal={Number(investmentGoal) || 0}
+          periodInvestmentGoal={filteredData.periodInvestmentGoal}
+          savingsRate={filteredData.savingsRate}
+          projection12m={filteredData.projection12m}
           categories={categories}
           expenseProgress={filteredData.expenseProgress}
           investmentProgress={filteredData.investmentProgress}

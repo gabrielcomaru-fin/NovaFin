@@ -7,6 +7,7 @@ import { LandingPage } from '@/pages/LandingPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { HomeSummaryPage } from '@/pages/HomeSummaryPage';
 import { ExpensesPage } from '@/pages/ExpensesPage';
 import { InvestmentsPage } from '@/pages/InvestmentsPage';
 import { AccountsPage } from '@/pages/AccountsPage';
@@ -51,7 +52,8 @@ function AppContent() {
             <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
             
             <Route element={<MainLayout user={user} onLogout={signOut} />}>
-              <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/login" />} />
+              <Route path="/dashboard" element={user ? <HomeSummaryPage /> : <Navigate to="/login" />} />
+              <Route path="/resumo" element={user ? <HomeSummaryPage /> : <Navigate to="/login" />} />
               <Route path="/gastos" element={user ? <ExpensesPage /> : <Navigate to="/login" />} />
               <Route path="/investimentos" element={user ? <InvestmentsPage /> : <Navigate to="/login" />} />
               <Route path="/projecao-investimentos" element={user ? <InvestmentProjectionPage /> : <Navigate to="/login" />} />

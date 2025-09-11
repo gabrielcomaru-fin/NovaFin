@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/dashboard', label: 'Resumo Geral', icon: LayoutDashboard },
   { to: '/gastos', label: 'Despesas', icon: Receipt },
   { to: '/investimentos', label: 'Investimentos', icon: TrendingUp },
   { to: '/projecao-investimentos', label: 'Projeção', icon: LineChart },

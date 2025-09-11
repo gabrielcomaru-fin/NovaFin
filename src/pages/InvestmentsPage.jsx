@@ -9,15 +9,15 @@ import { TransactionTable } from '@/components/TransactionTable';
 import { Pagination } from '@/components/Pagination';
 import { PeriodFilter } from '@/components/PeriodFilter';
 import { CategoryChart } from '@/components/CategoryChart';
-import { TrendingUp, DollarSign, BarChart3, ListChecks } from 'lucide-react';
+import { TrendingUp, DollarSign, BarChart3, ListChecks, AlertCircle, Flame, Target } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns';
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, eachMonthOfInterval, subMonths, format } from 'date-fns';
 
 const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'investmentsPage';
 
 export function InvestmentsPage() {
-  const { investments, categories, addInvestment, updateInvestment, deleteInvestment } = useFinance();
+  const { investments, categories, addInvestment, updateInvestment, deleteInvestment, investmentGoal } = useFinance();
   const { toast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -104,6 +104,40 @@ export function InvestmentsPage() {
     };
   }, [investments, filter]);
 
+  // Alerta no começo do mês quando há meta definida e ainda não houve aportes
+  const showStartOfMonthAlert = useMemo(() => {
+    const goal = Number(investmentGoal) || 0;
+    if (!goal) return false;
+    if (filter.periodType !== 'monthly') return false;
+    const now = new Date();
+    const isCurrentMonth = filter.year === now.getFullYear() && filter.month === now.getMonth();
+    if (!isCurrentMonth) return false;
+    return totalInvested === 0;
+  }, [investmentGoal, filter, totalInvested]);
+
+  // Streak de meses consecutivos batendo a meta (últimos 12 meses)
+  const monthlyGoalStreak = useMemo(() => {
+    const goal = Number(investmentGoal) || 0;
+    if (!goal) return { streak: 0, series: [] };
+    const last12 = eachMonthOfInterval({ start: subMonths(new Date(), 11), end: new Date() });
+    const series = last12.map((monthDate) => {
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+      const invested = investments
+        .filter((i) => {
+          const d = parseISO(i.data);
+          return d >= monthStart && d <= monthEnd;
+        })
+        .reduce((sum, i) => sum + i.valor_aporte, 0);
+      return { label: format(monthDate, 'MMM/yy'), invested, achieved: invested >= goal };
+    });
+    let streak = 0;
+    for (let i = series.length - 1; i >= 0; i--) {
+      if (series[i].achieved) streak++; else break;
+    }
+    return { streak, series };
+  }, [investments, investmentGoal]);
+
   const investmentsByCategoryChartData = useMemo(() => {
     if (filteredInvestments.length === 0) return [];
 
@@ -123,6 +157,66 @@ export function InvestmentsPage() {
 
   const totalPages = Math.ceil(filteredInvestments.length / ITEMS_PER_PAGE);
   const paginatedInvestments = filteredInvestments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+ 
+  // Séries coerentes e KPIs simplificados
+  const monthlySeries = useMemo(() => {
+    const goal = Number(investmentGoal) || 0;
+    const last6 = eachMonthOfInterval({ start: subMonths(new Date(), 5), end: new Date() });
+    return last6.map((monthDate) => {
+      const mStart = startOfMonth(monthDate);
+      const mEnd = endOfMonth(monthDate);
+      const invested = investments
+        .filter((i) => {
+          const d = parseISO(i.data);
+          return d >= mStart && d <= mEnd;
+        })
+        .reduce((sum, i) => sum + i.valor_aporte, 0);
+      return { label: format(monthDate, 'MMM/yy'), invested, achieved: goal > 0 ? invested >= goal : false };
+    });
+  }, [investments, investmentGoal]);
+
+  const momDelta = useMemo(() => {
+    if (filter.periodType !== 'monthly' || filter.month === undefined || !filter.year) return null;
+    const currentStart = startOfMonth(new Date(filter.year, filter.month, 1));
+    const currentEnd = endOfMonth(new Date(filter.year, filter.month, 1));
+    const prevDate = subMonths(currentStart, 1);
+    const prevStart = startOfMonth(prevDate);
+    const prevEnd = endOfMonth(prevDate);
+    const current = investments.filter(i => {
+      const d = parseISO(i.data);
+      return d >= currentStart && d <= currentEnd;
+    }).reduce((s, i) => s + i.valor_aporte, 0);
+    const prev = investments.filter(i => {
+      const d = parseISO(i.data);
+      return d >= prevStart && d <= prevEnd;
+    }).reduce((s, i) => s + i.valor_aporte, 0);
+    if (prev === 0) return current > 0 ? 100 : 0;
+    return ((current - prev) / prev) * 100;
+  }, [investments, filter]);
+
+  // Quantidade de meses no período selecionado (para meta acumulada e médias coerentes)
+  const periodMonths = useMemo(() => {
+    if (filter.dateRange && filter.dateRange.from) {
+      const rangeMonths = eachMonthOfInterval({ start: startOfMonth(filter.dateRange.from), end: endOfMonth(filter.dateRange.to || filter.dateRange.from) });
+      return rangeMonths.length;
+    }
+    if (filter.periodType === 'yearly' && filter.year) {
+      const now = new Date();
+      if (filter.year < now.getFullYear()) return 12;
+      if (filter.year > now.getFullYear()) return 0;
+      return now.getMonth() + 1; // meses já passados no ano corrente (jan=0)
+    }
+    if (filter.periodType === 'monthly' && filter.month !== undefined && filter.year) {
+      return 1;
+    }
+    return 1;
+  }, [filter]);
+
+  // Meta acumulada no período
+  const periodGoal = useMemo(() => {
+    const monthlyGoal = Number(investmentGoal) || 0;
+    return monthlyGoal > 0 ? monthlyGoal * periodMonths : 0;
+  }, [investmentGoal, periodMonths]);
   
   const handleFormSubmit = async (formData, id) => {
     try {
@@ -259,6 +353,29 @@ export function InvestmentsPage() {
             </Card>
           </TabsContent>
           <TabsContent value="dashboard" className="mt-6 space-y-6">
+            {showStartOfMonthAlert && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    Começo de mês: ainda sem aportes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      Faça um pequeno aporte agora para manter o ritmo e alcançar sua meta.
+                    </p>
+                    <button
+                      onClick={() => setIsFormOpen(true)}
+                      className="inline-flex items-center px-3 py-1.5 bg-primary text-white rounded-md hover:opacity-90"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" /> Registrar Aporte
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -310,7 +427,57 @@ export function InvestmentsPage() {
                   <p className="text-xs text-muted-foreground">Maior aporte do período.</p>
                 </CardContent>
               </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Target className="h-4 w-4 text-primary" /> Progresso da Meta (período)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {periodGoal > 0 ? (
+                    <>
+                      <div className="text-2xl font-bold">{Math.min(100, Math.round((totalInvested / periodGoal) * 100))}%</div>
+                      <p className="text-xs text-muted-foreground">R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ {periodGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Defina uma meta mensal para acompanhar o progresso.</p>
+                  )}
+                </CardContent>
+              </Card>
+              {momDelta !== null && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Variação m/m</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-2xl font-bold ${momDelta >= 0 ? 'text-green-600' : 'text-red-600'}`}>{momDelta.toFixed(1)}%</div>
+                    <p className="text-xs text-muted-foreground">Comparado ao mês anterior.</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Evolução de Aportes (12 meses)</CardTitle>
+                <CardDescription>Meses com meta batida ficam destacados.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {monthlySeries.map((m, idx) => (
+                    <div key={idx} className={`p-3 rounded-md border ${m.achieved ? 'bg-green-50 border-green-200' : 'bg-muted'}`}>
+                      <div className="text-xs text-muted-foreground">{m.label}</div>
+                      <div className="text-sm font-semibold mt-1">R$ {m.invested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                      {Number(investmentGoal) > 0 && (
+                        <div className={`text-xs mt-1 ${m.achieved ? 'text-green-600' : 'text-muted-foreground'}`}>
+                          {m.achieved ? 'Meta batida' : 'Abaixo da meta'}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {investmentsByCategoryChartData.length > 0 ? (
               <CategoryChart 

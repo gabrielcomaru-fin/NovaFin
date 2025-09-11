@@ -7,14 +7,16 @@ import { TrendingUp, TrendingDown, DollarSign, Target, AlertTriangle, Lightbulb 
 export function Dashboard({
   totalMonthlyExpenses,
   totalMonthlyInvestments,
-  totalAccountBalance,
-  totalInvestmentBalance,
+  totalPaidExpenses,
+  totalPendingExpenses,
   expensesByCategory,
   investmentGoal,
+  periodInvestmentGoal,
+  savingsRate,
+  projection12m,
   categories,
 }) {
-  const netWorth = totalAccountBalance + totalInvestmentBalance;
-  const investmentProgress = investmentGoal > 0 ? (totalMonthlyInvestments / investmentGoal) * 100 : 0;
+  const investmentProgress = periodInvestmentGoal > 0 ? (totalMonthlyInvestments / periodInvestmentGoal) * 100 : 0;
   
   const expenseCategories = categories.filter(c => c.tipo === 'gasto');
   const totalExpenseLimit = expenseCategories.reduce((acc, cat) => acc + (cat.limite || 0), 0);
@@ -62,10 +64,10 @@ export function Dashboard({
 
   return (
     <div className="space-y-6">
-      {/* KPIs principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* KPIs principais (foco em fluxo e metas) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card>
+          <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Gastos no Período</CardTitle>
               <TrendingDown className="h-4 w-4 text-destructive" />
@@ -74,12 +76,13 @@ export function Dashboard({
               <div className="text-2xl font-bold">
                 R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
+              <p className="text-xs text-muted-foreground">Pago: R$ {totalPaidExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • Pendente: R$ {totalPendingExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card>
+          <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Aportes no Período</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-500" />
@@ -93,29 +96,35 @@ export function Dashboard({
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card>
+          <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Saldo em Contas</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Taxa de Poupança</CardTitle>
               <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                R$ {totalAccountBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {Math.round(savingsRate)}%
               </div>
+              <p className="text-xs text-muted-foreground">Aportes / (Aportes + Gastos pagos)</p>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <Card>
+          <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Patrimônio Líquido</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Progresso da Meta</CardTitle>
               <Target className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                R$ {netWorth.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {periodInvestmentGoal > 0 ? `${Math.min(100, Math.round(investmentProgress))}%` : '-'}
               </div>
+              <p className="text-xs text-muted-foreground">
+                {periodInvestmentGoal > 0
+                  ? `R$ ${totalMonthlyInvestments.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ ${periodInvestmentGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  : 'Defina uma meta mensal para acompanhar o progresso.'}
+              </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -128,11 +137,11 @@ export function Dashboard({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                Meta de Aportes Mensais
+                Meta de Aportes (período)
               </CardTitle>
               <CardDescription>
-                {investmentGoal > 0
-                  ? `Progresso: R$ ${totalMonthlyInvestments.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ ${investmentGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                {periodInvestmentGoal > 0
+                  ? `Progresso: R$ ${totalMonthlyInvestments.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ ${periodInvestmentGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                   : 'Defina uma meta de aportes nos investimentos.'}
               </CardDescription>
             </CardHeader>
@@ -142,7 +151,7 @@ export function Dashboard({
                   value={Math.min(investmentProgress, 100)} 
                   className="h-4 [&>*]:bg-gradient-to-r [&>*]:from-green-500 [&>*]:to-green-600 [&>*]:transition-all [&>*]:duration-500" 
                 />
-                {investmentGoal > 0 && (
+                {periodInvestmentGoal > 0 && (
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">
                       {investmentProgress >= 100 
@@ -151,7 +160,7 @@ export function Dashboard({
                     </p>
                     {investmentProgress < 100 && (
                       <p className="text-xs text-muted-foreground">
-                        Faltam R$ {(investmentGoal - totalMonthlyInvestments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        Faltam R$ {(periodInvestmentGoal - totalMonthlyInvestments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     )}
                   </div>
@@ -205,6 +214,24 @@ export function Dashboard({
           </Card>
         </motion.div>
       </div>
+
+      {/* Projeção curta */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-500" /> Projeção de 12 meses (aporte médio 3m)
+            </CardTitle>
+            <CardDescription>
+              Estimativa simples baseada no aporte médio recente. Use a página Projeção para um modelo detalhado.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ {projection12m.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <p className="text-xs text-muted-foreground">Não considera rendimentos; apenas constância de aportes.</p>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Gastos por categoria */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
