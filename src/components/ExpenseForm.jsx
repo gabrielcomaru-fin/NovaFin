@@ -21,9 +21,9 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
   };
 
   const [formData, setFormData] = useState(defaultFormData);
+  const [errorMessage, setErrorMessage] = useState(''); // Estado para mensagem de erro
   const currencyRef = useRef(null);
 
-  // Formata valor para exibição correta no CurrencyInput
   const formatCurrencyForInput = (value) => {
     if (value == null || value === '') return '';
     const numberValue = Number(value);
@@ -44,9 +44,9 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
     } else {
       setFormData(defaultFormData);
     }
+    setErrorMessage(''); // Limpa mensagem de erro ao abrir
   }, [expenseToEdit, isOpen]);
 
-  // Mantém o cursor no final do input ao alterar o valor
   useEffect(() => {
     const input = currencyRef.current?.input;
     if (input) {
@@ -64,17 +64,27 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     const parsedValor = parseCurrency(formData.valor);
+
     if (parsedValor <= 0) {
-      alert('Informe um valor válido maior que zero.');
+      setErrorMessage('Informe um valor válido maior que zero.');
       return;
     }
+
+    if (!formData.categoria_id) {
+      setErrorMessage('Por favor, selecione uma categoria para a despesa.');
+      return;
+    }
+
+    // Se chegou aqui, todos os campos estão corretos
     onSubmit({ ...formData, valor: parsedValor }, expenseToEdit?.id);
     handleReset();
   };
 
   const handleReset = () => {
     setFormData(defaultFormData);
+    setErrorMessage('');
   };
 
   const handleOpenChange = (open) => {
@@ -143,21 +153,29 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
             {expenseCategories.length > 0 ? (
-              <Select
-                value={formData.categoria_id}
-                onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {expenseCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select
+                  value={formData.categoria_id}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, categoria_id: value });
+                    setErrorMessage(''); // limpa erro quando seleciona
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {expenseCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errorMessage && (
+                  <p className="text-sm text-red-600 mt-1">{errorMessage}</p>
+                )}
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">Nenhuma categoria de gasto disponível.</p>
             )}
