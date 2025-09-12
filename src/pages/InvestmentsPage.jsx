@@ -9,6 +9,7 @@ import { InvestmentForm } from '@/components/InvestmentForm';
 import { TransactionTable } from '@/components/TransactionTable';
 import { Pagination } from '@/components/Pagination';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
+import { CompactSearchFilter } from '@/components/CompactSearchFilter';
 import { CompactHeader } from '@/components/CompactHeader';
  
 import { TrendingUp, DollarSign, BarChart3, ListChecks, AlertCircle, Flame, Target } from 'lucide-react';
@@ -26,6 +27,11 @@ export function InvestmentsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [investmentToEdit, setInvestmentToEdit] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Estados para busca e filtro
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('date-desc');
   
   const getInitialFilter = () => {
     const savedFilter = localStorage.getItem(`filter_${PAGE_ID}`);
@@ -99,13 +105,37 @@ export function InvestmentsPage() {
         });
     }
 
+    // Aplicar busca por descrição
+    if (searchTerm) {
+      filtered = filtered.filter(inv =>
+        inv.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Aplicar filtro por categoria
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(inv => inv.categoria_id === selectedCategory);
+    }
+
+    // Ordenação
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'date-asc': return new Date(a.data) - new Date(b.data);
+        case 'date-desc': return new Date(b.data) - new Date(a.data);
+        case 'value-asc': return a.valor_aporte - b.valor_aporte;
+        case 'value-desc': return b.valor_aporte - a.valor_aporte;
+        case 'description': return a.descricao.localeCompare(b.descricao);
+        default: return new Date(b.data) - new Date(a.data);
+      }
+    });
+
     const total = filtered.reduce((sum, inv) => sum + inv.valor_aporte, 0);
 
     return { 
-      filteredInvestments: filtered.sort((a, b) => new Date(b.data) - new Date(a.data)),
+      filteredInvestments: filtered,
       totalInvested: total 
     };
-  }, [investments, filter]);
+  }, [investments, filter, searchTerm, selectedCategory, sortBy]);
 
   // Alerta no começo do mês quando há meta definida e ainda não houve aportes
   const showStartOfMonthAlert = useMemo(() => {
@@ -302,14 +332,27 @@ export function InvestmentsPage() {
         </CompactHeader>
         
         <Tabs defaultValue="relatorio" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="relatorio" className="flex items-center gap-2">
-              <ListChecks className="h-4 w-4" /> Relatório
-            </TabsTrigger>
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" /> Dashboard
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <TabsList className="grid w-full md:w-auto grid-cols-2">
+              <TabsTrigger value="relatorio" className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4" /> Relatório
+              </TabsTrigger>
+              <TabsTrigger value="dashboard" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" /> Dashboard
+              </TabsTrigger>
+            </TabsList>
+            <CompactSearchFilter
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              categories={investmentCategories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              placeholder="Buscar por descrição..."
+              showPaymentFilter={false}
+            />
+          </div>
           <TabsContent value="relatorio" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
