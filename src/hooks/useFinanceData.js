@@ -386,8 +386,8 @@ export const useFinanceData = () => {
         }
     }, []);
 
-    // Calcular patrimônio total
-    const totalPatrimony = investments.reduce((total, investment) => {
+    // Calcular patrimônio total (investimentos + saldos das contas bancárias)
+    const totalInvestmentBalance = investments.reduce((total, investment) => {
         // Tentar diferentes campos possíveis para o saldo
         const saldo = investment.saldo_total || 
                      investment.valor_atual || 
@@ -400,6 +400,12 @@ export const useFinanceData = () => {
         
         return total + saldo;
     }, 0);
+
+    const totalAccountBalance = accounts.reduce((total, account) => {
+        return total + (account.saldo || 0);
+    }, 0);
+
+    const totalPatrimony = totalInvestmentBalance + totalAccountBalance;
     
 
     return {
@@ -409,6 +415,8 @@ export const useFinanceData = () => {
         categories,
         investmentGoal,
         totalPatrimony,
+        totalInvestmentBalance,
+        totalAccountBalance,
         isLoading,
         fetchData,
         addExpense,

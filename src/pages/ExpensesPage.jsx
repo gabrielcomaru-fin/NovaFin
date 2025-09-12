@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ExpenseForm } from '@/components/ExpenseForm';
 import { TransactionTable } from '@/components/TransactionTable';
 import { Pagination } from '@/components/Pagination';
-import { PeriodFilter } from '@/components/PeriodFilter';
+import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CategoryChart } from '@/components/CategoryChart';
-import { SearchFilter } from '@/components/SearchFilter';
+import { CompactSearchFilter } from '@/components/CompactSearchFilter';
+import { CompactHeader } from '@/components/CompactHeader';
 import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle2, Clock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
@@ -240,27 +241,30 @@ export function ExpensesPage() {
         <title>Controle de Despesas - FinanceApp</title>
         <meta name="description" content="Adicione e gerencie suas despesas." />
       </Helmet>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Controle de Despesas</h1>
-          <ExpenseForm
-            onSubmit={handleFormSubmit}
-            expenseToEdit={expenseToEdit}
-            isOpen={isFormOpen}
-            onOpenChange={handleFormOpenChange}
+      <div className="space-y-4">
+        <CompactHeader 
+          title="Controle de Despesas"
+          subtitle="Gerencie suas despesas e acompanhe seus gastos"
+          actionButton={
+            <ExpenseForm
+              onSubmit={handleFormSubmit}
+              expenseToEdit={expenseToEdit}
+              isOpen={isFormOpen}
+              onOpenChange={handleFormOpenChange}
+            />
+          }
+        >
+          <CompactPeriodFilter
+            periodType={filter.periodType}
+            setPeriodType={handleSetPeriodType}
+            dateRange={filter.dateRange}
+            setDateRange={handleSetDateRange}
+            month={filter.month}
+            setMonth={handleSetMonth}
+            year={filter.year}
+            setYear={handleSetYear}
           />
-        </div>
-
-        <PeriodFilter
-          periodType={filter.periodType}
-          setPeriodType={handleSetPeriodType}
-          dateRange={filter.dateRange}
-          setDateRange={handleSetDateRange}
-          month={filter.month}
-          setMonth={handleSetMonth}
-          year={filter.year}
-          setYear={handleSetYear}
-        />
+        </CompactHeader>
 
         <Tabs defaultValue="relatorio" className="w-full">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -272,7 +276,7 @@ export function ExpensesPage() {
                 <BarChart3 className="h-4 w-4" /> Dashboard
               </TabsTrigger>
             </TabsList>
-            <SearchFilter
+            <CompactSearchFilter
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               categories={expenseCategories}

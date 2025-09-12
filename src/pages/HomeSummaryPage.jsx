@@ -4,13 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link } from 'react-router-dom';
 import { Progress } from '@/components/ui/progress';
 import { useFinance } from '@/contexts/FinanceDataContext';
-import { PeriodFilter } from '@/components/PeriodFilter';
+import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
+import { CompactHeader } from '@/components/CompactHeader';
 import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb } from 'lucide-react';
 // import { InfoTooltip } from '@/components/ui/tooltip';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, subMonths, parseISO, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const HomeSummaryPage = memo(function HomeSummaryPage() {
-  const { expenses, investments, categories, accounts, investmentGoal, totalPatrimony } = useFinance();
+  const { expenses, investments, categories, accounts, investmentGoal, totalPatrimony, totalInvestmentBalance } = useFinance();
 
   const [periodType, setPeriodType] = React.useState('monthly');
   const [dateRange, setDateRange] = React.useState(undefined);
@@ -78,7 +80,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
     return last6.map(m => {
       const s = startOfMonth(m), e = endOfMonth(m);
       const inv = investments.filter(i => { const d = parseISO(i.data); return d >= s && d <= e; }).reduce((sum, i) => sum + i.valor_aporte, 0);
-      return { label: format(m, 'MMM/yy'), invested: inv, achieved: goal > 0 ? inv >= goal : false };
+      return { label: format(m, 'MMM/yy', { locale: ptBR }), invested: inv, achieved: goal > 0 ? inv >= goal : false };
     });
   }, [investments, investmentGoal]);
 
@@ -140,31 +142,28 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
       <Helmet>
         <title>Resumo Geral - FinanceApp</title>
       </Helmet>
-      <div className="space-y-8">
-        {/* Header com saudação e filtro */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Olá! 👋</h1>
-              <p className="text-muted-foreground mt-1">Aqui está seu resumo financeiro</p>
-            </div>
+      <div className="space-y-6">
+        <CompactHeader 
+          title="Olá! 👋"
+          subtitle="Aqui está seu resumo financeiro"
+        >
+          <div className="flex items-center justify-between w-full">
+            <CompactPeriodFilter 
+              periodType={periodType}
+              setPeriodType={handlePeriodTypeChange}
+              dateRange={dateRange}
+              setDateRange={handleDateRangeChange}
+              month={month}
+              setMonth={handleMonthChange}
+              year={year}
+              setYear={handleYearChange}
+            />
             <div className="text-right">
               <div className="text-2xl font-bold text-primary">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               <p className="text-sm text-muted-foreground">Patrimônio Total</p>
             </div>
           </div>
-
-          <PeriodFilter 
-            periodType={periodType}
-            setPeriodType={handlePeriodTypeChange}
-            dateRange={dateRange}
-            setDateRange={handleDateRangeChange}
-            month={month}
-            setMonth={handleMonthChange}
-            year={year}
-            setYear={handleYearChange}
-          />
-        </div>
+        </CompactHeader>
 
         {/* KPIs principais - apenas os mais importantes */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

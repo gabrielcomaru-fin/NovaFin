@@ -81,7 +81,7 @@ export function AccountForm() {
     setEditingAccount(account);
     setFormData({
       nome_banco: account.nome_banco,
-      saldo: account.saldo.toString(),
+      saldo: account.saldo,
     });
     setIsOpen(true);
   };
@@ -150,11 +150,14 @@ export function AccountForm() {
               <Label htmlFor="balance">Saldo Atual (R$)</Label>
               <CurrencyInput
                 id="balance"
-                placeholder="0,00"
+                placeholder="0,00 (use - para valores negativos)"
                 value={formData.saldo}
                 onChange={handleCurrencyChange}
                 required
               />
+              <p className="text-xs text-muted-foreground">
+                Use o sinal negativo (-) para representar dívidas ou saldos negativos
+              </p>
             </div>
             
             <Button type="submit" className="w-full">
@@ -195,7 +198,7 @@ export function AccountForm() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="font-bold text-lg text-primary">
+                      <p className={`font-bold text-lg ${account.saldo < 0 ? 'text-red-600' : 'text-primary'}`}>
                         R$ {account.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>

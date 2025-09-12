@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useFinance } from '@/contexts/FinanceDataContext';
 // import { useExport } from '@/hooks/useExport';
 // import { formatExpensesForExport, formatInvestmentsForExport } from '@/lib/exportUtils';
-import { PeriodFilter } from '@/components/PeriodFilter';
+import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
+import { CompactHeader } from '@/components/CompactHeader';
 import { ExpenseTrendChart } from '@/components/charts/ExpenseTrendChart';
 import { InvestmentGrowthChart } from '@/components/charts/InvestmentGrowthChart';
 import { CategoryBreakdownChart } from '@/components/charts/CategoryBreakdownChart';
@@ -90,60 +91,33 @@ const ReportsPage = memo(function ReportsPage() {
         <title>Relatórios - FinanceApp</title>
       </Helmet>
       
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Relatórios</h1>
-            <p className="text-muted-foreground mt-1">
-              Análises detalhadas dos seus dados financeiros
-            </p>
+      <div className="space-y-4">
+        <CompactHeader 
+          title="Relatórios"
+          subtitle="Análises detalhadas dos seus dados financeiros"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <CompactPeriodFilter 
+              periodType={periodType}
+              setPeriodType={setPeriodType}
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+              month={month}
+              setMonth={setMonth}
+              year={year}
+              setYear={setYear}
+            />
+            <Button 
+              onClick={handleExportReport} 
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Exportar Relatório
+            </Button>
           </div>
-          <Button 
-            onClick={handleExportReport} 
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Exportar Relatório
-          </Button>
-        </div>
-
-        {/* Filtros */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Filtros do Relatório
-            </CardTitle>
-            <CardDescription>
-              Selecione o período para análise
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <PeriodFilter 
-                periodType={periodType}
-                setPeriodType={setPeriodType}
-                dateRange={dateRange}
-                setDateRange={setDateRange}
-                month={month}
-                setMonth={setMonth}
-                year={year}
-                setYear={setYear}
-              />
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleExportFilteredData} 
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <FileText className="h-4 w-4" />
-                  Exportar Dados Filtrados
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        </CompactHeader>
 
         {/* Resumo do Período */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -8,11 +8,13 @@ import { CategoryChart } from '@/components/CategoryChart';
 import { InvestmentForm } from '@/components/InvestmentForm';
 import { TransactionTable } from '@/components/TransactionTable';
 import { Pagination } from '@/components/Pagination';
-import { PeriodFilter } from '@/components/PeriodFilter';
+import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
+import { CompactHeader } from '@/components/CompactHeader';
  
 import { TrendingUp, DollarSign, BarChart3, ListChecks, AlertCircle, Flame, Target } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, eachMonthOfInterval, subMonths, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'investmentsPage';
@@ -172,7 +174,7 @@ export function InvestmentsPage() {
           return d >= mStart && d <= mEnd;
         })
         .reduce((sum, i) => sum + i.valor_aporte, 0);
-      return { label: format(monthDate, 'MMM/yy'), invested, achieved: goal > 0 ? invested >= goal : false };
+      return { label: format(monthDate, 'MMM/yy', { locale: ptBR }), invested, achieved: goal > 0 ? invested >= goal : false };
     });
   }, [investments, investmentGoal]);
 
@@ -274,20 +276,20 @@ export function InvestmentsPage() {
         <title>Gestão de Investimentos - FinanceApp</title>
         <meta name="description" content="Acompanhe seus aportes e metas de investimento." />
       </Helmet>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Gestão de Investimentos</h1>
+      <div className="space-y-4">
+        <CompactHeader 
+          title="Gestão de Investimentos"
+          subtitle="Acompanhe seus aportes e metas de investimento"
+          actionButton={
             <InvestmentForm
-                onSubmit={handleFormSubmit}
-                investmentToEdit={investmentToEdit}
-                isOpen={isFormOpen}
-                onOpenChange={handleFormOpenChange}
+              onSubmit={handleFormSubmit}
+              investmentToEdit={investmentToEdit}
+              isOpen={isFormOpen}
+              onOpenChange={handleFormOpenChange}
             />
-        </div>
-
-        
-
-        <PeriodFilter 
+          }
+        >
+          <CompactPeriodFilter 
             periodType={filter.periodType}
             setPeriodType={handleSetPeriodType}
             dateRange={filter.dateRange}
@@ -297,6 +299,7 @@ export function InvestmentsPage() {
             year={filter.year}
             setYear={handleSetYear}
           />
+        </CompactHeader>
         
         <Tabs defaultValue="relatorio" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -504,13 +507,14 @@ export function InvestmentsPage() {
                 </div>
               )}
 
-              {accounts.filter(a => (Number(a.saldo) || 0) > 0).length > 0 ? (
+              {accounts.length > 0 ? (
                 <CategoryChart
-                  data={accounts
-                    .filter(acc => (Number(acc.saldo) || 0) > 0)
-                    .map(acc => ({ categoryName: acc.nome_banco, total: Number(acc.saldo) || 0 }))}
+                  data={accounts.map(acc => ({ 
+                    categoryName: acc.nome_banco, 
+                    total: Number(acc.saldo) || 0 
+                  }))}
                   title="Patrimônio por Instituição"
-                  description="Distribuição dos saldos nas suas instituições financeiras"
+                  description="Distribuição dos saldos nas suas instituições financeiras (incluindo dívidas)"
                 />
               ) : (
                 <div className="text-center text-muted-foreground py-12 bg-card border rounded-lg">
@@ -519,8 +523,8 @@ export function InvestmentsPage() {
                       <BarChart3 className="w-10 h-10 opacity-50" />
                     </div>
                     <div className="space-y-2">
-                      <p className="font-semibold text-lg">Nenhuma instituição com saldo positivo.</p>
-                      <p className="text-sm max-w-md">Ajuste os saldos ou registre aportes para visualizar a distribuição do patrimônio.</p>
+                      <p className="font-semibold text-lg">Nenhuma instituição registrada.</p>
+                      <p className="text-sm max-w-md">Adicione suas instituições financeiras para visualizar a distribuição do patrimônio.</p>
                     </div>
                   </div>
                 </div>

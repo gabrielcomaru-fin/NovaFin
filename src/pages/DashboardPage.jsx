@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { PeriodFilter } from '@/components/PeriodFilter';
+import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { Dashboard } from '@/components/Dashboard';
 import { MonthlyComparisonChart } from '@/components/MonthlyComparisonChart';
+import { CompactHeader } from '@/components/CompactHeader';
 import { startOfYear, endOfYear, startOfMonth, endOfMonth, parseISO, subMonths, eachMonthOfInterval, format } from 'date-fns';
 import { useFinance } from '@/contexts/FinanceDataContext';
 
 export function DashboardPage() {
-  const { expenses, investments, accounts, categories, investmentGoal, totalPatrimony } = useFinance();
+  const { expenses, investments, accounts, categories, investmentGoal, totalPatrimony, totalInvestmentBalance } = useFinance();
 
   const [periodType, setPeriodType] = useState('monthly');
   const [dateRange, setDateRange] = useState(undefined);
@@ -151,7 +152,6 @@ export function DashboardPage() {
     });
   }, [expenses, investments]);
 
-  const totalInvestmentBalance = investments.reduce((sum, investment) => sum + investment.valor_aporte, 0);
 
   // Dicas educacionais
   const educationTips = useMemo(() => {
@@ -183,19 +183,22 @@ export function DashboardPage() {
         <meta name="description" content="Seu controle financeiro." />
       </Helmet>
 
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard Financeiro</h1>
-
-        <PeriodFilter 
-          periodType={periodType}
-          setPeriodType={setPeriodType}
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          month={month}
-          setMonth={setMonth}
-          year={year}
-          setYear={setYear}
-        />
+      <div className="space-y-4">
+        <CompactHeader 
+          title="Dashboard Financeiro"
+          subtitle="Visão geral das suas finanças"
+        >
+          <CompactPeriodFilter 
+            periodType={periodType}
+            setPeriodType={setPeriodType}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            month={month}
+            setMonth={setMonth}
+            year={year}
+            setYear={setYear}
+          />
+        </CompactHeader>
 
         <Dashboard
           totalMonthlyExpenses={filteredData.totalMonthlyExpenses}

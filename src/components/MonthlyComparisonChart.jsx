@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export const MonthlyComparisonChart = ({ expenses, investments }) => {
   const data = useMemo(() => {
@@ -42,10 +43,10 @@ export const MonthlyComparisonChart = ({ expenses, investments }) => {
       const totalInvestments = monthInvestments.reduce((sum, inv) => sum + (inv.valor_aporte || 0), 0);
 
       return {
-        name: format(month, 'MMM/yy'),
+        name: format(month, 'MMM/yy', { locale: ptBR }),
         Gastos: totalExpenses,
         Aportes: totalInvestments,
-        fullMonth: format(month, 'MMMM yyyy')
+        fullMonth: format(month, 'MMMM yyyy', { locale: ptBR })
       };
     });
   }, [expenses, investments]);

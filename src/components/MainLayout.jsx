@@ -56,7 +56,7 @@ export function MainLayout({ user, onLogout }) {
           ? 'pt-16' // Add top padding for mobile header
           : 'lg:ml-64' // Desktop sidebar margin
       }`}>
-        <div className={`px-4 py-8 ${isMobile ? 'px-3 py-4' : ''}`}>
+        <div className={`px-4 py-4 ${isMobile ? 'px-3 py-3' : ''}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

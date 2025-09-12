@@ -94,7 +94,7 @@ export function PeriodFilter({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-4 p-4 mb-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-600 shadow-md">
+    <div className="flex flex-wrap items-center gap-3 p-3 mb-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
       {/* Tipo de Período */}
       <Select value={displayPeriodType} onValueChange={setPeriodType}>
         <SelectTrigger
