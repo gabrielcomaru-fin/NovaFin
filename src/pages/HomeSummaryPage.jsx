@@ -10,7 +10,7 @@ import { InfoTooltip } from '@/components/ui/tooltip';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, subMonths, parseISO, format } from 'date-fns';
 
 export function HomeSummaryPage() {
-  const { expenses, investments, categories, accounts, investmentGoal } = useFinance();
+  const { expenses, investments, categories, accounts, investmentGoal, totalPatrimony } = useFinance();
 
   const [periodType, setPeriodType] = React.useState('monthly');
   const [dateRange, setDateRange] = React.useState(undefined);
@@ -134,162 +134,201 @@ export function HomeSummaryPage() {
       <Helmet>
         <title>Resumo Geral - FinanceApp</title>
       </Helmet>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Olá! Aqui está seu resumo geral</h1>
+      <div className="space-y-8">
+        {/* Header com saudação e filtro */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Olá! 👋</h1>
+              <p className="text-muted-foreground mt-1">Aqui está seu resumo financeiro</p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-primary">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <p className="text-sm text-muted-foreground">Patrimônio Total</p>
+            </div>
+          </div>
+
+          <PeriodFilter 
+            periodType={periodType}
+            setPeriodType={setPeriodType}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            month={month}
+            setMonth={setMonth}
+            year={year}
+            setYear={setYear}
+          />
         </div>
 
-        <PeriodFilter 
-          periodType={periodType}
-          setPeriodType={setPeriodType}
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          month={month}
-          setMonth={setMonth}
-          year={year}
-          setYear={setYear}
-        />
-
-        {/* KPIs do período */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
-          <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        {/* KPIs principais - apenas os mais importantes */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-l-4 border-l-destructive">
+            <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                Gastos (Período)
-                <InfoTooltip content="Somatório de todas as despesas dentro do período do filtro. A linha Pago x Pendente ajuda a priorizar quitação." />
+                Gastos no Período
+                <InfoTooltip content="Total de despesas no período selecionado" />
               </CardTitle>
-              <TrendingDown className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <p className="text-xs text-muted-foreground">Pago: R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • Pendente: R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="text-3xl font-bold">R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                <span>✅ R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span>⏳ R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                Aportes (Período)
-                <InfoTooltip content="Total investido no período selecionado. A taxa de poupança indica a parcela de renda direcionada a investimentos." />
+                Aportes no Período
+                <InfoTooltip content="Total investido no período selecionado" />
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <p className="text-xs text-muted-foreground">Taxa de poupança: {Math.round(savingsRate)}%</p>
+              <div className="text-3xl font-bold">R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                <span>Taxa de poupança: {Math.round(savingsRate)}%</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="border-l-4 border-l-primary">
+            <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Progresso da Meta
-                <InfoTooltip content="Compara seus aportes com a meta mensal acumulada no período (ex.: ano corrente = metas dos meses passados)." />
+                <InfoTooltip content="Compara seus aportes com a meta mensal acumulada no período" />
               </CardTitle>
-              <Target className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               {periodGoal > 0 ? (
                 <>
-                  <div className="text-2xl font-bold">{Math.round(goalProgress)}%</div>
-                  <Progress value={goalProgress} className="h-2 mt-2" />
-                  <p className="text-xs text-muted-foreground mt-2">R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ {periodGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <div className="text-3xl font-bold">{Math.round(goalProgress)}%</div>
+                  <Progress value={goalProgress} className="h-3 mt-3" />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ {periodGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
                 </>
               ) : (
-                <p className="text-xs text-muted-foreground">Defina uma meta mensal para acompanhar seu progresso.</p>
+                <div className="text-center py-4">
+                  <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Defina uma meta mensal</p>
+                </div>
               )}
             </CardContent>
           </Card>
+        </div>
 
-          <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                Pendências
-                <InfoTooltip content="Total de despesas ainda não pagas no período. Priorize para liberar fluxo para investir." />
+        {/* Seção de insights e ações contextuais */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Dicas educativas */}
+          {educationTips.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5 text-yellow-400"/>
+                  Insights para você
+                </CardTitle>
+                <CardDescription>Dicas personalizadas baseadas no seu momento atual</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {educationTips.map((tip, i) => (
+                  <div key={i} className="p-4 rounded-lg bg-secondary/50 text-sm flex items-start gap-3">
+                    {tip.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0"/>}
+                    {tip.type === 'success' && <TrendingUp className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0"/>}
+                    {tip.type === 'tip' && <Lightbulb className="h-5 w-5 text-primary mt-0.5 flex-shrink-0"/>}
+                    <span className="text-foreground">{tip.message}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Ações rápidas contextuais */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PiggyBank className="h-5 w-5 text-green-600"/>
+                Próximos passos
               </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <CardDescription>Ações sugeridas baseadas no seu progresso</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <p className="text-xs text-muted-foreground">Priorize quitar pendências para liberar aportes.</p>
+            <CardContent className="space-y-3">
+              {totalPending > 0 && (
+                <Link to="/gastos" className="block p-3 rounded-lg border border-yellow-200 bg-yellow-50 hover:bg-yellow-100 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-yellow-800">Quitar pendências</p>
+                      <p className="text-sm text-yellow-600">R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em aberto</p>
+                    </div>
+                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  </div>
+                </Link>
+              )}
+              
+              {goalProgress < 100 && periodGoal > 0 && (
+                <Link to="/investimentos" className="block p-3 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Fazer aporte</p>
+                      <p className="text-sm text-muted-foreground">
+                        Faltam R$ {(periodGoal - totalInvested).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} para a meta
+                      </p>
+                    </div>
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                  </div>
+                </Link>
+              )}
+
+              {goalProgress >= 100 && (
+                <Link to="/projecao-investimentos" className="block p-3 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-green-800">Meta atingida! 🎉</p>
+                      <p className="text-sm text-green-600">Veja projeções para o futuro</p>
+                    </div>
+                    <Target className="h-5 w-5 text-green-600" />
+                  </div>
+                </Link>
+              )}
+
+              <Link to="/investimentos" className="block p-3 rounded-lg border border-muted hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Gerenciar metas</p>
+                    <p className="text-sm text-muted-foreground">Ajustar objetivos de investimento</p>
+                  </div>
+                  <Target className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </Link>
             </CardContent>
           </Card>
         </div>
 
-        {/* Evolução 6 meses com destaque de meta batida */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Evolução de Aportes (6 meses)
-              <InfoTooltip content="Mostra seus aportes dos últimos 6 meses e destaca quando a meta mensal foi atingida." />
-            </CardTitle>
-            <CardDescription>Meses com meta batida ficam destacados.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {series6.map((m, idx) => (
-                <div key={idx} className={`p-3 rounded-md border ${m.achieved ? 'bg-green-50 border-green-200' : 'bg-muted'}`}>
-                  <div className="text-xs text-muted-foreground">{m.label}</div>
-                  <div className="text-sm font-semibold mt-1">R$ {m.invested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                  <div className={`text-xs mt-1 ${m.achieved ? 'text-green-600' : 'text-muted-foreground'}`}>
-                    {m.achieved ? 'Meta batida' : 'Abaixo da meta'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Dicas educativas dinâmicas */}
-        {educationTips.length > 0 && (
-          <Card>
+        {/* Histórico de metas - movido para uma seção mais discreta */}
+        {series6.some(m => m.invested > 0) && (
+          <Card className="bg-muted/30">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Lightbulb className="h-4 w-4 text-yellow-400"/>Dicas para o seu momento</CardTitle>
-              <CardDescription>Mensagens personalizadas com base no seu período atual.</CardDescription>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-muted-foreground"/>
+                Evolução dos Aportes
+                <InfoTooltip content="Histórico dos últimos 6 meses com destaque para metas atingidas" />
+              </CardTitle>
+              <CardDescription>Últimos 6 meses de atividade</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {educationTips.map((tip, i) => (
-                <div key={i} className="p-3 rounded-md bg-secondary text-sm text-muted-foreground flex items-start gap-2">
-                  {tip.type === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5"/>}
-                  {tip.type === 'success' && <TrendingUp className="h-4 w-4 text-green-500 mt-0.5"/>}
-                  {tip.type === 'tip' && <Lightbulb className="h-4 w-4 text-primary mt-0.5"/>}
-                  <span>{tip.message}</span>
-                </div>
-              ))}
+            <CardContent>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                {series6.map((m, idx) => (
+                  <div key={idx} className={`p-3 rounded-lg text-center ${m.achieved ? 'bg-green-100 border border-green-200' : 'bg-background border border-border'}`}>
+                    <div className="text-xs text-muted-foreground mb-1">{m.label}</div>
+                    <div className="text-sm font-semibold">R$ {m.invested.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</div>
+                    {m.achieved && <div className="text-xs text-green-600 mt-1">✓ Meta</div>}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
-
-        {/* Ações rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><PiggyBank className="h-4 w-4 text-green-600"/>Aumente sua constância</CardTitle>
-              <CardDescription>Comece o mês com um aporte pequeno e regular.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link to="/investimentos" className="inline-flex items-center px-3 py-1.5 bg-primary text-white rounded-md hover:opacity-90">Registrar aporte</Link>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Definir/editar meta</CardTitle>
-              <CardDescription>Alinhe a meta mensal ao seu momento.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link to="/investimentos" className="inline-flex items-center px-3 py-1.5 bg-secondary rounded-md hover:opacity-90">Abrir metas</Link>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Ver projeção</CardTitle>
-              <CardDescription>Explore cenários e probabilidade de bater sua meta.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link to="/projecao-investimentos" className="inline-flex items-center px-3 py-1.5 bg-secondary rounded-md hover:opacity-90">Abrir projeção</Link>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </>
   );

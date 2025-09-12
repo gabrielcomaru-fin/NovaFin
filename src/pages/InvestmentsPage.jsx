@@ -4,11 +4,12 @@ import { Helmet } from 'react-helmet';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CategoryChart } from '@/components/CategoryChart';
 import { InvestmentForm } from '@/components/InvestmentForm';
 import { TransactionTable } from '@/components/TransactionTable';
 import { Pagination } from '@/components/Pagination';
 import { PeriodFilter } from '@/components/PeriodFilter';
-import { CategoryChart } from '@/components/CategoryChart';
+ 
 import { TrendingUp, DollarSign, BarChart3, ListChecks, AlertCircle, Flame, Target } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, eachMonthOfInterval, subMonths, format } from 'date-fns';
@@ -17,7 +18,7 @@ const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'investmentsPage';
 
 export function InvestmentsPage() {
-  const { investments, categories, addInvestment, updateInvestment, deleteInvestment, investmentGoal } = useFinance();
+  const { investments, categories, accounts, addInvestment, updateInvestment, deleteInvestment, investmentGoal } = useFinance();
   const { toast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -284,6 +285,8 @@ export function InvestmentsPage() {
             />
         </div>
 
+        
+
         <PeriodFilter 
             periodType={filter.periodType}
             setPeriodType={handleSetPeriodType}
@@ -343,6 +346,7 @@ export function InvestmentsPage() {
                     <TransactionTable
                       transactions={paginatedInvestments}
                       categories={investmentCategories}
+                      accounts={accounts}
                       type="investment"
                       onEdit={handleEdit}
                       onDelete={handleDelete}
@@ -479,27 +483,49 @@ export function InvestmentsPage() {
               </CardContent>
             </Card>
 
-            {investmentsByCategoryChartData.length > 0 ? (
-              <CategoryChart 
-                data={investmentsByCategoryChartData}
-                title="Divisão de Aportes por Categoria"
-                description="Análise percentual dos seus investimentos no período."
-              />
-            ) : (
-              <div className="text-center text-muted-foreground py-12">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                    <BarChart3 className="w-10 h-10 opacity-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="font-semibold text-lg">Nenhum dado de investimento para o dashboard.</p>
-                    <p className="text-sm max-w-md">
-                      Registre seus aportes para visualizar gráficos e insights detalhados aqui.
-                    </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {investmentsByCategoryChartData.length > 0 ? (
+                <CategoryChart 
+                  data={investmentsByCategoryChartData}
+                  title="Divisão de Aportes por Categoria"
+                  description="Análise percentual dos seus investimentos no período."
+                />
+              ) : (
+                <div className="text-center text-muted-foreground py-12 bg-card border rounded-lg">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
+                      <BarChart3 className="w-10 h-10 opacity-50" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-semibold text-lg">Nenhum dado de investimento por categoria.</p>
+                      <p className="text-sm max-w-md">Registre seus aportes para ver a divisão por categoria.</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {accounts.filter(a => (Number(a.saldo) || 0) > 0).length > 0 ? (
+                <CategoryChart
+                  data={accounts
+                    .filter(acc => (Number(acc.saldo) || 0) > 0)
+                    .map(acc => ({ categoryName: acc.nome_banco, total: Number(acc.saldo) || 0 }))}
+                  title="Patrimônio por Instituição"
+                  description="Distribuição dos saldos nas suas instituições financeiras"
+                />
+              ) : (
+                <div className="text-center text-muted-foreground py-12 bg-card border rounded-lg">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
+                      <BarChart3 className="w-10 h-10 opacity-50" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-semibold text-lg">Nenhuma instituição com saldo positivo.</p>
+                      <p className="text-sm max-w-md">Ajuste os saldos ou registre aportes para visualizar a distribuição do patrimônio.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

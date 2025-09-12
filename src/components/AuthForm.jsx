@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/use-toast';
 import { LogIn, UserPlus, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 export function AuthForm({ onLogin, onRegister }) {
   const [isLogin, setIsLogin] = useState(!!onLogin);
@@ -16,6 +17,7 @@ export function AuthForm({ onLogin, onRegister }) {
     name: ''
   });
   const { toast } = useToast();
+  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -132,11 +134,30 @@ export function AuthForm({ onLogin, onRegister }) {
             
             <div className="mt-6 text-center">
               {isLogin ? (
-                <Link to="/register" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Não tem uma conta? Criar conta
-                </Link>
+                <div className="flex flex-col gap-2 items-center">
+                  <button
+                    type="button"
+                    className="text-sm text-primary hover:underline"
+                    onClick={async () => {
+                      const email = formData.email?.trim();
+                      if (!email) {
+                        toast({
+                          title: 'Informe seu e-mail',
+                          description: 'Digite seu e-mail no campo acima para enviar o link.',
+                        });
+                        return;
+                      }
+                      await resetPassword(email);
+                    }}
+                  >
+                    Esqueceu sua senha?
+                  </button>
+                  <Link to="/register" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Não tem uma conta? Criar conta
+                  </Link>
+                </div>
               ) : (
-                 <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Já tem uma conta? Fazer login
                 </Link>
               )}

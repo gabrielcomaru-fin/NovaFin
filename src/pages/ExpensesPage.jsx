@@ -9,7 +9,7 @@ import { Pagination } from '@/components/Pagination';
 import { PeriodFilter } from '@/components/PeriodFilter';
 import { CategoryChart } from '@/components/CategoryChart';
 import { SearchFilter } from '@/components/SearchFilter';
-import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle, Circle } from 'lucide-react';
+import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle2, Clock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
 import { Sparklines, SparklinesLine } from 'react-sparklines';
@@ -344,7 +344,7 @@ export function ExpensesPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Despesas Pagas</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">{currencyFormatter.format(totalPaid)}</div>
@@ -358,7 +358,7 @@ export function ExpensesPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Despesas Pendentes</CardTitle>
-                  <Circle className="h-4 w-4 text-orange-600" />
+                  <Clock className="h-4 w-4 text-orange-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-orange-600">{currencyFormatter.format(totalPending)}</div>

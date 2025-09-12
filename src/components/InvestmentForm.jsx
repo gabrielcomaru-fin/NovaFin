@@ -9,7 +9,7 @@ import { useFinance } from '@/contexts/FinanceDataContext';
 import { useToast } from '@/components/ui/use-toast';
 
 export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpen }) {
-  const { investmentGoal, setInvestmentGoal, categories } = useFinance();
+  const { investmentGoal, setInvestmentGoal, categories, accounts } = useFinance();
   const { toast } = useToast();
 
   const investmentCategories = categories.filter(c => c.tipo === 'investimento');
@@ -18,6 +18,7 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
     descricao: '',
     valor_aporte: '',
     categoria_id: '',
+    instituicao_id: '',
     data: new Date().toISOString().split('T')[0]
   };
 
@@ -44,6 +45,7 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
         descricao: investmentToEdit.descricao || '',
         valor_aporte: formatCurrencyForInput(investmentToEdit.valor_aporte),
         categoria_id: investmentToEdit.categoria_id?.toString() || '',
+        instituicao_id: investmentToEdit.instituicao_id?.toString() || '',
         data: investmentToEdit.data ? new Date(investmentToEdit.data).toISOString().split('T')[0] : defaultFormData.data
       });
     } else {
@@ -181,28 +183,54 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              {investmentCategories.length > 0 ? (
-                <Select
-                  value={formData.categoria_id}
-                  onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {investmentCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id.toString()}>
-                        {category.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="text-sm text-muted-foreground">Nenhuma categoria de investimento disponível.</p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria</Label>
+                {investmentCategories.length > 0 ? (
+                  <Select
+                    value={formData.categoria_id}
+                    onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {investmentCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhuma categoria de investimento disponível.</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="institution">Instituição Financeira</Label>
+                {accounts.length > 0 ? (
+                  <Select
+                    value={formData.instituicao_id}
+                    onValueChange={(value) => setFormData({ ...formData, instituicao_id: value })}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma instituição" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id.toString()}>
+                          {account.nome_banco}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhuma instituição financeira disponível.</p>
+                )}
+              </div>
             </div>
             <Button type="submit" className="w-full">
               {investmentToEdit?.id ? 'Salvar Alterações' : 'Registrar Aporte'}

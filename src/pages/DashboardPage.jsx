@@ -7,7 +7,7 @@ import { startOfYear, endOfYear, startOfMonth, endOfMonth, parseISO, subMonths, 
 import { useFinance } from '@/contexts/FinanceDataContext';
 
 export function DashboardPage() {
-  const { expenses, investments, accounts, categories, investmentGoal } = useFinance();
+  const { expenses, investments, accounts, categories, investmentGoal, totalPatrimony } = useFinance();
 
   const [periodType, setPeriodType] = useState('monthly');
   const [dateRange, setDateRange] = useState(undefined);
@@ -151,7 +151,6 @@ export function DashboardPage() {
     });
   }, [expenses, investments]);
 
-  const totalAccountBalance = accounts.reduce((sum, account) => sum + account.saldo, 0);
   const totalInvestmentBalance = investments.reduce((sum, investment) => sum + investment.valor_aporte, 0);
 
   // Dicas educacionais
@@ -204,7 +203,7 @@ export function DashboardPage() {
           totalPaidExpenses={filteredData.totalPaidExpenses}
           totalPendingExpenses={filteredData.totalPendingExpenses}
           expensesByCategory={filteredData.expensesByCategory}
-          totalAccountBalance={totalAccountBalance}
+          totalAccountBalance={totalPatrimony}
           totalInvestmentBalance={totalInvestmentBalance}
           investmentGoal={Number(investmentGoal) || 0}
           periodInvestmentGoal={filteredData.periodInvestmentGoal}

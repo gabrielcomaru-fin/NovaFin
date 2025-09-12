@@ -143,7 +143,7 @@ export function LandingPage() {
   
   const handleRegister = async (e) => {
     e.preventDefault();
-    const { error } = await signUp({ email, password });
+    const { error } = await signUp(email, password, { data: {} });
     if (error) {
       toast({
         title: "Erro no Cadastro",
@@ -173,9 +173,14 @@ export function LandingPage() {
                 </div>
                 <span className="text-xl font-bold">FinanceApp</span>
              </div>
-             <Button asChild variant="ghost">
-                <Link to="/login">Fazer Login</Link>
-             </Button>
+             <div className="flex items-center gap-2">
+               <Button asChild variant="ghost">
+                  <Link to="/login">Entrar</Link>
+               </Button>
+               <Button asChild>
+                  <Link to="/register">Criar conta</Link>
+               </Button>
+             </div>
           </div>
         </header>
 
@@ -190,13 +195,18 @@ export function LandingPage() {
               >
                 <TitleAnimator text="Transforme sua Vida Financeira" />
 
-                <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-8">
-                  A ferramenta definitiva para controle de gastos, planejamento de investimentos e educação financeira. Comece a construir seu futuro hoje.
+                <p className="max-w-3xl mx-auto text-lg md:text-2xl text-muted-foreground mb-8">
+                  Organização inteligente de gastos, previsibilidade no fim do mês e projeções de investimentos – tudo em um só lugar.
                 </p>
-                <div className="flex justify-center gap-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button size="lg" className="gradient-bg-vibrant text-primary-foreground shadow-lg" asChild>
                       <Link to="/register">Comece Agora (É Grátis!)</Link>
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button size="lg" variant="outline" asChild>
+                      <Link to="#features">Ver funcionalidades</Link>
                     </Button>
                   </motion.div>
                 </div>
@@ -208,7 +218,7 @@ export function LandingPage() {
             <div className="max-w-7xl mx-auto px-4">
               <div className="text-center mb-16">
                 <h2 className="text-3xl md:text-4xl font-bold">Tudo que você precisa para dominar suas finanças</h2>
-                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Simples, intuitivo e poderoso. Ferramentas que realmente fazem a diferença no seu dia a dia.</p>
+                <p className="text-muted-foreground mt-2 max-w-3xl mx-auto">Simples, moderno e poderoso. Ferramentas que elevam sua educação financeira e trazem previsibilidade aos seus gastos.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {features.map((feature, index) => (
@@ -233,11 +243,57 @@ export function LandingPage() {
               </div>
             </div>
           </section>
+
+          <section id="how-it-works" className="py-20 md:py-32 bg-background">
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold">Como funciona</h2>
+                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Em poucos passos você cria clareza, constrói hábitos e projeta seu futuro.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-card border rounded-lg p-6">
+                  <h3 className="font-semibold mb-2">1. Conecte e organize</h3>
+                  <p className="text-muted-foreground">Registre contas, categorias e metas. Veja tudo em um só painel.</p>
+                </div>
+                <div className="bg-card border rounded-lg p-6">
+                  <h3 className="font-semibold mb-2">2. Entenda e aprenda</h3>
+                  <p className="text-muted-foreground">Insights e conteúdos de educação financeira para decisões melhores.</p>
+                </div>
+                <div className="bg-card border rounded-lg p-6">
+                  <h3 className="font-semibold mb-2">3. Projete e conquiste</h3>
+                  <p className="text-muted-foreground">Projeções de investimentos e previsões de gastos para o mês e o ano.</p>
+                </div>
+              </div>
+              <div className="text-center mt-10">
+                <Button size="lg" asChild>
+                  <Link to="/register">Criar minha conta gratuita</Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          <section id="education" className="py-20 md:py-32 bg-secondary">
+            <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">Cultura de educação financeira</h2>
+                <p className="text-muted-foreground mb-4">Mais do que um app, um aliado para construir hábitos saudáveis de consumo, poupança e investimento.</p>
+                <ul className="space-y-3 text-left">
+                  <li className="flex gap-2"><Star className="w-5 h-5 text-[hsl(var(--vibrant-accent))]" /> Conteúdos práticos direto no painel</li>
+                  <li className="flex gap-2"><Star className="w-5 h-5 text-[hsl(var(--vibrant-accent))]" /> Dicas acionáveis para reduzir gastos</li>
+                  <li className="flex gap-2"><Star className="w-5 h-5 text-[hsl(var(--vibrant-accent))]" /> Ferramentas para planejar e investir melhor</li>
+                </ul>
+              </div>
+              <div className="bg-card border rounded-lg p-6">
+                <h3 className="font-semibold mb-2">Previsibilidade e projeções</h3>
+                <p className="text-muted-foreground">Antecipe seu fluxo de caixa, identifique sazonalidades e simule cenários de investimentos com poucos cliques.</p>
+              </div>
+            </div>
+          </section>
           
            <section className="py-20 md:py-32 bg-background">
               <div className="max-w-4xl mx-auto text-center px-4">
                  <h2 className="text-3xl md:text-4xl font-bold mb-4">Liberdade Financeira ao Seu Alcance</h2>
-                 <p className="text-muted-foreground mb-8">Crie sua conta gratuita em segundos e dê o primeiro passo em direção aos seus objetivos.</p>
+                 <p className="text-muted-foreground mb-8">Crie sua conta gratuita em segundos e dê o primeiro passo rumo à previsibilidade e investimentos mais inteligentes.</p>
                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}

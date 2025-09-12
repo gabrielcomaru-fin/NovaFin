@@ -33,7 +33,7 @@ export const useFinanceData = () => {
             if (expensesError) throw expensesError;
             setExpenses(expensesData || []);
 
-            const { data: investmentsData, error: investmentsError } = await supabase.from('investimentos').select('id, usuario_id, valor_aporte, saldo_total, data, created_at, categoria_id, descricao');
+            const { data: investmentsData, error: investmentsError } = await supabase.from('investimentos').select('id, usuario_id, valor_aporte, saldo_total, data, created_at, categoria_id, instituicao_id, descricao');
             if (investmentsError) throw investmentsError;
             setInvestments(investmentsData || []);
 
@@ -108,21 +108,152 @@ export const useFinanceData = () => {
         const newInvestment = { ...investment, usuario_id: user.id };
         const { data, error } = await supabase.from('investimentos').insert(newInvestment).select();
         if (error) throw error;
-        setInvestments(prev => [...prev, data[0]].sort((a,b) => new Date(b.data) - new Date(a.data)));
+        const saved = data[0];
+        setInvestments(prev => [...prev, saved].sort((a,b) => new Date(b.data) - new Date(a.data)));
+
+        // Atualiza saldo da instituição vinculada (somar aporte)
+        try {
+            if (saved.instituicao_id) {
+                const account = accounts.find(a => a.id === saved.instituicao_id);
+                if (account) {
+                    const newBalance = (account.saldo || 0) + (saved.valor_aporte || 0);
+                    const { data: accData, error: accErr } = await supabase
+                        .from('contas_bancarias')
+                        .update({ saldo: newBalance })
+                        .eq('id', account.id)
+                        .select();
+                    if (!accErr && accData?.[0]) {
+                        setAccounts(prev => prev.map(a => a.id === account.id ? accData[0] : a));
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Erro ao atualizar saldo da instituição após novo aporte:', e);
+        }
         return data[0];
     };
 
     const updateInvestment = async (id, updatedFields) => {
+        // Encontrar investimento anterior para calcular diferenças de saldo
+        const previous = investments.find(i => i.id === id);
         const { data, error } = await supabase.from('investimentos').update(updatedFields).eq('id', id).select();
         if (error) throw error;
-        setInvestments(prev => prev.map(i => i.id === id ? data[0] : i).sort((a,b) => new Date(b.data) - new Date(a.data)));
+        const updated = data[0];
+        setInvestments(prev => prev.map(i => i.id === id ? updated : i).sort((a,b) => new Date(b.data) - new Date(a.data)));
+
+        // Ajustar saldos das instituições considerando inclusão/remoção/troca e/ou diferença de aporte
+        try {
+            if (previous) {
+                const prevInstId = previous.instituicao_id;
+                const newInstId = updated.instituicao_id;
+                const prevValor = Number(previous.valor_aporte) || 0;
+                const newValor = Number(updated.valor_aporte) || 0;
+
+                if (prevInstId && newInstId && prevInstId !== newInstId) {
+                    // Troca de instituição: subtrai tudo da anterior e soma tudo na nova
+                    const prevAccount = accounts.find(a => a.id === prevInstId);
+                    if (prevAccount) {
+                        const newBalancePrev = (prevAccount.saldo || 0) - prevValor;
+                        const { data: accDataPrev, error: accErrPrev } = await supabase
+                            .from('contas_bancarias')
+                            .update({ saldo: newBalancePrev })
+                            .eq('id', prevAccount.id)
+                            .select();
+                        if (!accErrPrev && accDataPrev?.[0]) {
+                            setAccounts(prev => prev.map(a => a.id === prevAccount.id ? accDataPrev[0] : a));
+                        }
+                    }
+                    const newAccount = accounts.find(a => a.id === newInstId);
+                    if (newAccount) {
+                        const newBalanceNew = (newAccount.saldo || 0) + newValor;
+                        const { data: accDataNew, error: accErrNew } = await supabase
+                            .from('contas_bancarias')
+                            .update({ saldo: newBalanceNew })
+                            .eq('id', newAccount.id)
+                            .select();
+                        if (!accErrNew && accDataNew?.[0]) {
+                            setAccounts(prev => prev.map(a => a.id === newAccount.id ? accDataNew[0] : a));
+                        }
+                    }
+                } else if (!prevInstId && newInstId) {
+                    // Antes sem instituição, agora com: soma valor completo
+                    const newAccount = accounts.find(a => a.id === newInstId);
+                    if (newAccount) {
+                        const newBalance = (newAccount.saldo || 0) + newValor;
+                        const { data: accData, error: accErr } = await supabase
+                            .from('contas_bancarias')
+                            .update({ saldo: newBalance })
+                            .eq('id', newAccount.id)
+                            .select();
+                        if (!accErr && accData?.[0]) {
+                            setAccounts(prev => prev.map(a => a.id === newAccount.id ? accData[0] : a));
+                        }
+                    }
+                } else if (prevInstId && !newInstId) {
+                    // Antes com instituição, agora sem: subtrai valor completo
+                    const prevAccount = accounts.find(a => a.id === prevInstId);
+                    if (prevAccount) {
+                        const newBalance = (prevAccount.saldo || 0) - prevValor;
+                        const { data: accData, error: accErr } = await supabase
+                            .from('contas_bancarias')
+                            .update({ saldo: newBalance })
+                            .eq('id', prevAccount.id)
+                            .select();
+                        if (!accErr && accData?.[0]) {
+                            setAccounts(prev => prev.map(a => a.id === prevAccount.id ? accData[0] : a));
+                        }
+                    }
+                } else if (newInstId && prevInstId === newInstId) {
+                    // Mesma instituição: ajusta somente pela diferença do aporte
+                    const diff = newValor - prevValor;
+                    if (diff !== 0) {
+                        const account = accounts.find(a => a.id === newInstId);
+                        if (account) {
+                            const newBalance = (account.saldo || 0) + diff;
+                            const { data: accData, error: accErr } = await supabase
+                                .from('contas_bancarias')
+                                .update({ saldo: newBalance })
+                                .eq('id', account.id)
+                                .select();
+                            if (!accErr && accData?.[0]) {
+                                setAccounts(prev => prev.map(a => a.id === account.id ? accData[0] : a));
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Erro ao ajustar saldos de instituições ao editar aporte:', e);
+        }
         return data[0];
     };
 
     const deleteInvestment = async (id) => {
+        // Encontrar investimento para descontar do saldo da instituição
+        const toDelete = investments.find(i => i.id === id);
         const { error } = await supabase.from('investimentos').delete().eq('id', id);
         if (error) throw error;
         setInvestments(prev => prev.filter(i => i.id !== id));
+
+        // Desconta do saldo da instituição
+        try {
+            if (toDelete?.instituicao_id) {
+                const account = accounts.find(a => a.id === toDelete.instituicao_id);
+                if (account) {
+                    const newBalance = (account.saldo || 0) - (toDelete.valor_aporte || 0);
+                    const { data: accData, error: accErr } = await supabase
+                        .from('contas_bancarias')
+                        .update({ saldo: newBalance })
+                        .eq('id', account.id)
+                        .select();
+                    if (!accErr && accData?.[0]) {
+                        setAccounts(prev => prev.map(a => a.id === account.id ? accData[0] : a));
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Erro ao atualizar saldo da instituição após excluir aporte:', e);
+        }
     };
     
     const addAccount = async (account) => {
@@ -170,12 +301,16 @@ export const useFinanceData = () => {
         fetchData();
     };
 
+    // Calcular patrimônio total (soma de todas as instituições)
+    const totalPatrimony = accounts.reduce((total, account) => total + (account.saldo || 0), 0);
+
     return {
         expenses,
         investments,
         accounts,
         categories,
         investmentGoal,
+        totalPatrimony,
         setInvestmentGoal: handleSetInvestmentGoal,
         loading,
         addExpense,

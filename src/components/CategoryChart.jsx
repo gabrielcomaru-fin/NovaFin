@@ -56,6 +56,7 @@ export const CategoryChart = ({ data, title, description }) => {
                   dataKey="value"
                   stroke="hsl(var(--background))"
                   strokeWidth={2}
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

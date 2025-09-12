@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Toaster } from '@/components/ui/toaster';
 import { LandingPage } from '@/pages/LandingPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { HomeSummaryPage } from '@/pages/HomeSummaryPage';
@@ -50,6 +51,7 @@ function AppContent() {
             <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
             <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             
             <Route element={<MainLayout user={user} onLogout={signOut} />}>
               <Route path="/dashboard" element={user ? <HomeSummaryPage /> : <Navigate to="/login" />} />

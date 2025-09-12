@@ -48,7 +48,7 @@ export function AccountForm() {
           saldo: saldoValue,
         });
         toast({
-          title: "Conta atualizada!",
+          title: "Instituição atualizada!",
           description: `${formData.nome_banco} - R$ ${saldoValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         });
       } else {
@@ -57,7 +57,7 @@ export function AccountForm() {
           saldo: saldoValue,
         });
         toast({
-          title: "Conta adicionada!",
+          title: "Instituição adicionada!",
           description: `${formData.nome_banco} - R$ ${saldoValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         });
       }
@@ -87,12 +87,12 @@ export function AccountForm() {
   };
 
   const handleDelete = async (accountId) => {
-    if (window.confirm('Tem certeza que deseja excluir esta conta?')) {
+    if (window.confirm('Tem certeza que deseja excluir esta instituição?')) {
       try {
         await deleteAccount(accountId);
         toast({
-          title: "Conta excluída!",
-          description: "A conta foi removida com sucesso.",
+          title: "Instituição excluída!",
+          description: "A instituição foi removida com sucesso.",
         });
       } catch (error) {
         toast({
@@ -121,25 +121,25 @@ export function AccountForm() {
         <DialogTrigger asChild>
           <Button>
             <Plus className="w-4 h-4 mr-2" />
-            Nova Conta
+            Nova Instituição
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building className="w-5 h-5 text-primary" />
-              {editingAccount ? 'Editar Conta Bancária' : 'Adicionar Conta Bancária'}
+              {editingAccount ? 'Editar Instituição Financeira' : 'Adicionar Instituição Financeira'}
             </DialogTitle>
             <DialogDescription>
-              {editingAccount ? 'Atualize os dados da sua conta.' : 'Registre uma nova conta para acompanhar seu patrimônio.'}
+              {editingAccount ? 'Atualize os dados da sua instituição.' : 'Registre uma nova instituição financeira para acompanhar seu patrimônio.'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome da Conta</Label>
+              <Label htmlFor="name">Nome da Instituição</Label>
               <Input
                 id="name"
-                placeholder="Ex: Conta Corrente Banco X"
+                placeholder="Ex: Banco do Brasil, XP Investimentos, Nubank"
                 value={formData.nome_banco}
                 onChange={(e) => setFormData({ ...formData, nome_banco: e.target.value })}
                 required
@@ -158,7 +158,7 @@ export function AccountForm() {
             </div>
             
             <Button type="submit" className="w-full">
-              {editingAccount ? 'Atualizar Conta' : 'Adicionar Conta'}
+              {editingAccount ? 'Atualizar Instituição' : 'Adicionar Instituição'}
             </Button>
           </form>
         </DialogContent>
@@ -168,16 +168,16 @@ export function AccountForm() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="w-5 h-5" />
-            Suas Contas
+            Suas Instituições
           </CardTitle>
-          <CardDescription>Saldos das suas contas bancárias</CardDescription>
+          <CardDescription>Patrimônio por instituição financeira</CardDescription>
         </CardHeader>
         <CardContent>
           {accounts.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <Building className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="font-semibold">Nenhuma conta registrada ainda.</p>
-              <p className="text-sm">Adicione suas contas para acompanhar seu patrimônio!</p>
+              <p className="font-semibold">Nenhuma instituição registrada ainda.</p>
+              <p className="text-sm">Adicione suas instituições financeiras para acompanhar seu patrimônio!</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -191,7 +191,7 @@ export function AccountForm() {
                 >
                   <div>
                     <p className="font-semibold">{account.nome_banco}</p>
-                    <p className="text-sm text-muted-foreground">Conta Bancária</p>
+                    <p className="text-sm text-muted-foreground">Instituição Financeira</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">

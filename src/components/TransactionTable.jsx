@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, CheckCircle, Circle, CreditCard } from 'lucide-react';
+import { Edit, Trash2, CheckCircle, Clock, CreditCard, CheckCircle2, XCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table.jsx";
 import { Badge } from "@/components/ui/badge";
 
-export const TransactionTable = ({ transactions, categories, type, onEdit, onDelete, onTogglePayment }) => {
+export const TransactionTable = ({ transactions, categories, accounts, type, onEdit, onDelete, onTogglePayment }) => {
   const isExpense = type === 'expense';
 
   return (
@@ -33,6 +33,7 @@ export const TransactionTable = ({ transactions, categories, type, onEdit, onDel
           <TableRow>
             <TableHead>Descrição</TableHead>
             <TableHead>Categoria</TableHead>
+            {!isExpense && <TableHead>Instituição</TableHead>}
             <TableHead className="text-right">Valor</TableHead>
             <TableHead className="hidden md:table-cell">Data</TableHead>
             {isExpense && <TableHead className="text-center">Status</TableHead>}
@@ -43,6 +44,7 @@ export const TransactionTable = ({ transactions, categories, type, onEdit, onDel
           <AnimatePresence>
             {transactions.map((transaction) => {
               const category = categories.find(c => c.id === transaction.categoria_id);
+              const institution = accounts?.find(a => a.id === transaction.instituicao_id);
               const amount = isExpense ? transaction.valor : transaction.valor_aporte;
               const description = transaction.descricao;
 
@@ -60,6 +62,11 @@ export const TransactionTable = ({ transactions, categories, type, onEdit, onDel
                   <TableCell>
                     <Badge variant="outline">{category?.nome || 'Sem categoria'}</Badge>
                   </TableCell>
+                  {!isExpense && (
+                    <TableCell>
+                      <Badge variant="secondary">{institution?.nome_banco || 'Sem instituição'}</Badge>
+                    </TableCell>
+                  )}
                   <TableCell className={`text-right font-semibold ${isExpense ? 'text-destructive' : 'text-green-500'}`}>
                     {isExpense ? '- R$ ' : '+ R$ '} {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </TableCell>
@@ -71,12 +78,12 @@ export const TransactionTable = ({ transactions, categories, type, onEdit, onDel
                       <div className="flex items-center justify-center">
                         {transaction.pago ? (
                           <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                            <CheckCircle className="w-3 h-3 mr-1" />
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
                             Pago
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-orange-600 border-orange-200">
-                            <Circle className="w-3 h-3 mr-1" />
+                            <Clock className="w-3 h-3 mr-1" />
                             Pendente
                           </Badge>
                         )}
@@ -93,7 +100,11 @@ export const TransactionTable = ({ transactions, categories, type, onEdit, onDel
                           onClick={() => onTogglePayment(transaction.id)}
                           title={transaction.pago ? "Marcar como não pago" : "Marcar como pago"}
                         >
-                          <CreditCard className={`h-4 w-4 ${transaction.pago ? 'text-green-600' : 'text-orange-600'}`} />
+                          {transaction.pago ? (
+                            <XCircle className="h-4 w-4 text-orange-600 hover:text-orange-700" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4 text-green-600 hover:text-green-700" />
+                          )}
                         </Button>
                       )}
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)}>
