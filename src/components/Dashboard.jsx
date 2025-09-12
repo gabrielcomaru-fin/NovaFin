@@ -98,7 +98,7 @@ const Dashboard = memo(function Dashboard({
           <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Aportes no Período</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <TrendingUp className="h-4 w-4 text-income" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -162,7 +162,7 @@ const Dashboard = memo(function Dashboard({
               <div className="space-y-3">
                 <Progress 
                   value={Math.min(investmentProgress, 100)} 
-                  className="h-4 [&>*]:bg-gradient-to-r [&>*]:from-green-500 [&>*]:to-green-600 [&>*]:transition-all [&>*]:duration-500" 
+                  className="h-4 [&>*]:bg-gradient-to-r [&>*]:from-income [&>*]:to-income [&>*]:transition-all [&>*]:duration-500" 
                 />
                 {periodInvestmentGoal > 0 && (
                   <div className="flex items-center justify-between">
@@ -187,7 +187,7 @@ const Dashboard = memo(function Dashboard({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                <AlertTriangle className="h-5 w-5 text-warning" />
                 Teto de Gastos Mensal
               </CardTitle>
               <CardDescription>
@@ -202,10 +202,10 @@ const Dashboard = memo(function Dashboard({
                   value={Math.min(expenseLimitProgress, 100)} 
                   className={`h-4 transition-all duration-500 ${
                     expenseLimitProgress > 90 
-                      ? '[&>*]:bg-gradient-to-r [&>*]:from-red-500 [&>*]:to-red-600' 
+                      ? '[&>*]:bg-gradient-to-r [&>*]:from-error [&>*]:to-error' 
                       : expenseLimitProgress > 70 
-                      ? '[&>*]:bg-gradient-to-r [&>*]:from-yellow-500 [&>*]:to-orange-500' 
-                      : '[&>*]:bg-gradient-to-r [&>*]:from-blue-500 [&>*]:to-blue-600'
+                      ? '[&>*]:bg-gradient-to-r [&>*]:from-warning [&>*]:to-warning' 
+                      : '[&>*]:bg-gradient-to-r [&>*]:from-info [&>*]:to-info'
                   }`} 
                 />
                 {totalExpenseLimit > 0 && (
@@ -233,7 +233,7 @@ const Dashboard = memo(function Dashboard({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-500" /> Projeção de 12 meses (aporte médio 3m)
+              <TrendingUp className="h-5 w-5 text-income" /> Projeção de 12 meses (aporte médio 3m)
             </CardTitle>
             <CardDescription>
               Estimativa simples baseada no aporte médio recente. Use a página Projeção para um modelo detalhado.
@@ -295,7 +295,7 @@ const Dashboard = memo(function Dashboard({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-yellow-400" />
+                <Lightbulb className="h-5 w-5 text-warning" />
                 Dicas Financeiras
               </CardTitle>
             </CardHeader>
@@ -308,8 +308,8 @@ const Dashboard = memo(function Dashboard({
                   transition={{ delay: 0.2 + index * 0.1 }}
                   className="p-3 rounded-lg flex items-start gap-3 bg-secondary"
                 >
-                  {tip.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5 flex-shrink-0" />}
-                  {tip.type === 'success' && <TrendingUp className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />}
+                  {tip.type === 'warning' && <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />}
+                  {tip.type === 'success' && <TrendingUp className="h-5 w-5 text-success mt-0.5 flex-shrink-0" />}
                   {tip.type === 'tip' && <Lightbulb className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />}
                   <p className="text-sm text-muted-foreground">{tip.message}</p>
                 </motion.div>

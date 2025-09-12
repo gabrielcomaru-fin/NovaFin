@@ -182,7 +182,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500">
+          <Card className="border-l-4 border-l-income">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Aportes no Período
@@ -228,7 +228,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-yellow-400"/>
+                  <Lightbulb className="h-5 w-5 text-warning"/>
                   Insights para você
                 </CardTitle>
                 <CardDescription>Dicas personalizadas baseadas no seu momento atual</CardDescription>
@@ -236,8 +236,8 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               <CardContent className="space-y-3">
                 {educationTips.map((tip, i) => (
                   <div key={i} className="p-4 rounded-lg bg-secondary/50 text-sm flex items-start gap-3">
-                    {tip.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0"/>}
-                    {tip.type === 'success' && <TrendingUp className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0"/>}
+                    {tip.type === 'warning' && <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0"/>}
+                    {tip.type === 'success' && <TrendingUp className="h-5 w-5 text-success mt-0.5 flex-shrink-0"/>}
                     {tip.type === 'tip' && <Lightbulb className="h-5 w-5 text-primary mt-0.5 flex-shrink-0"/>}
                     <span className="text-foreground">{tip.message}</span>
                   </div>
@@ -250,20 +250,20 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PiggyBank className="h-5 w-5 text-green-600"/>
+                <PiggyBank className="h-5 w-5 text-income"/>
                 Próximos passos
               </CardTitle>
               <CardDescription>Ações sugeridas baseadas no seu progresso</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {totalPending > 0 && (
-                <Link to="/gastos" className="block p-3 rounded-lg border border-yellow-200 bg-yellow-50 hover:bg-yellow-100 transition-colors">
+                <Link to="/gastos" className="block p-3 rounded-lg border border-warning bg-warning-muted hover:bg-warning-muted/80 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-yellow-800">Quitar pendências</p>
-                      <p className="text-sm text-yellow-600">R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em aberto</p>
+                      <p className="font-medium text-foreground">Quitar pendências</p>
+                      <p className="text-sm text-warning">R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em aberto</p>
                     </div>
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                    <AlertTriangle className="h-5 w-5 text-warning" />
                   </div>
                 </Link>
               )}
@@ -283,13 +283,13 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               )}
 
               {goalProgress >= 100 && (
-                <Link to="/projecao-investimentos" className="block p-3 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition-colors">
+                <Link to="/projecao-investimentos" className="block p-3 rounded-lg border border-success bg-success-muted hover:bg-success-muted/80 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-green-800">Meta atingida! 🎉</p>
-                      <p className="text-sm text-green-600">Veja projeções para o futuro</p>
+                      <p className="font-medium text-foreground">Meta atingida! 🎉</p>
+                      <p className="text-sm text-success">Veja projeções para o futuro</p>
                     </div>
-                    <Target className="h-5 w-5 text-green-600" />
+                    <Target className="h-5 w-5 text-success" />
                   </div>
                 </Link>
               )}
@@ -320,10 +320,10 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
             <CardContent>
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                 {series6.map((m, idx) => (
-                  <div key={idx} className={`p-3 rounded-lg text-center ${m.achieved ? 'bg-green-100 border border-green-200' : 'bg-background border border-border'}`}>
+                  <div key={idx} className={`p-3 rounded-lg text-center ${m.achieved ? 'bg-success-muted border border-success' : 'bg-background border border-border'}`}>
                     <div className="text-xs text-muted-foreground mb-1">{m.label}</div>
                     <div className="text-sm font-semibold">R$ {m.invested.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</div>
-                    {m.achieved && <div className="text-xs text-green-600 mt-1">✓ Meta</div>}
+                    {m.achieved && <div className="text-xs text-success mt-1">✓ Meta</div>}
                   </div>
                 ))}
               </div>

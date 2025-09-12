@@ -24,7 +24,50 @@
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
     --radius: 0.5rem;
-    --vibrant-accent: 340 82% 52%; /* A vibrant pink/magenta for highlights */ --chart-1: 12 76% 61%; --chart-2: 173 58% 39%; --chart-3: 197 37% 24%; --chart-4: 43 74% 66%; --chart-5: 27 87% 67%;
+    --vibrant-accent: 340 82% 52%; /* A vibrant pink/magenta for highlights */ 
+    
+    /* Semantic Colors - Light Theme */
+    --success: 142 76% 36%; /* Green for success states */
+    --success-foreground: 0 0% 98%;
+    --success-muted: 142 76% 95%;
+    --success-border: 142 76% 85%;
+    
+    --warning: 38 92% 50%; /* Yellow/Orange for warnings */
+    --warning-foreground: 0 0% 98%;
+    --warning-muted: 38 92% 95%;
+    --warning-border: 38 92% 85%;
+    
+    --error: 0 84% 60%; /* Red for errors */
+    --error-foreground: 0 0% 98%;
+    --error-muted: 0 84% 95%;
+    --error-border: 0 84% 85%;
+    
+    --info: 217 91% 60%; /* Blue for information */
+    --info-foreground: 0 0% 98%;
+    --info-muted: 217 91% 95%;
+    --info-border: 217 91% 85%;
+    
+    /* Financial specific colors */
+    --income: 142 76% 36%; /* Green for income/investments */
+    --income-foreground: 0 0% 98%;
+    --income-muted: 142 76% 95%;
+    --income-border: 142 76% 85%;
+    
+    --expense: 0 84% 60%; /* Red for expenses */
+    --expense-foreground: 0 0% 98%;
+    --expense-muted: 0 84% 95%;
+    --expense-border: 0 84% 85%;
+    
+    --pending: 38 92% 50%; /* Yellow for pending states */
+    --pending-foreground: 0 0% 98%;
+    --pending-muted: 38 92% 95%;
+    --pending-border: 38 92% 85%;
+    
+    --chart-1: 12 76% 61%; 
+    --chart-2: 173 58% 39%; 
+    --chart-3: 197 37% 24%; 
+    --chart-4: 43 74% 66%; 
+    --chart-5: 27 87% 67%;
   }
 
   .dark {
@@ -48,6 +91,44 @@
     --input: 0 0% 12%;
     --ring: 217 91% 60%;
     --vibrant-accent: 340 82% 52%;
+    
+    /* Semantic Colors - Dark Theme */
+    --success: 142 76% 50%; /* Brighter green for dark mode */
+    --success-foreground: 0 0% 98%;
+    --success-muted: 142 76% 15%;
+    --success-border: 142 76% 25%;
+    
+    --warning: 38 92% 60%; /* Brighter yellow for dark mode */
+    --warning-foreground: 0 0% 98%;
+    --warning-muted: 38 92% 15%;
+    --warning-border: 38 92% 25%;
+    
+    --error: 0 84% 70%; /* Brighter red for dark mode */
+    --error-foreground: 0 0% 98%;
+    --error-muted: 0 84% 15%;
+    --error-border: 0 84% 25%;
+    
+    --info: 217 91% 70%; /* Brighter blue for dark mode */
+    --info-foreground: 0 0% 98%;
+    --info-muted: 217 91% 15%;
+    --info-border: 217 91% 25%;
+    
+    /* Financial specific colors - Dark Theme */
+    --income: 142 76% 50%; /* Brighter green for dark mode */
+    --income-foreground: 0 0% 98%;
+    --income-muted: 142 76% 15%;
+    --income-border: 142 76% 25%;
+    
+    --expense: 0 84% 70%; /* Brighter red for dark mode */
+    --expense-foreground: 0 0% 98%;
+    --expense-muted: 0 84% 15%;
+    --expense-border: 0 84% 25%;
+    
+    --pending: 38 92% 60%; /* Brighter yellow for dark mode */
+    --pending-foreground: 0 0% 98%;
+    --pending-muted: 38 92% 15%;
+    --pending-border: 38 92% 25%;
+    
     --chart-1: 220 70% 60%;
     --chart-2: 160 60% 55%;
     --chart-3: 30 80% 65%;
@@ -83,6 +164,47 @@
                       linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
     background-size: 3rem 3rem;
   }
+
+  /* Semantic Color Utilities */
+  .text-success { color: hsl(var(--success)); }
+  .text-warning { color: hsl(var(--warning)); }
+  .text-error { color: hsl(var(--error)); }
+  .text-info { color: hsl(var(--info)); }
+  .text-income { color: hsl(var(--income)); }
+  .text-expense { color: hsl(var(--expense)); }
+  .text-pending { color: hsl(var(--pending)); }
+
+  .bg-success { background-color: hsl(var(--success)); }
+  .bg-warning { background-color: hsl(var(--warning)); }
+  .bg-error { background-color: hsl(var(--error)); }
+  .bg-info { background-color: hsl(var(--info)); }
+  .bg-income { background-color: hsl(var(--income)); }
+  .bg-expense { background-color: hsl(var(--expense)); }
+  .bg-pending { background-color: hsl(var(--pending)); }
+
+  .bg-success-muted { background-color: hsl(var(--success-muted)); }
+  .bg-warning-muted { background-color: hsl(var(--warning-muted)); }
+  .bg-error-muted { background-color: hsl(var(--error-muted)); }
+  .bg-info-muted { background-color: hsl(var(--info-muted)); }
+  .bg-income-muted { background-color: hsl(var(--income-muted)); }
+  .bg-expense-muted { background-color: hsl(var(--expense-muted)); }
+  .bg-pending-muted { background-color: hsl(var(--pending-muted)); }
+
+  .border-success { border-color: hsl(var(--success-border)); }
+  .border-warning { border-color: hsl(var(--warning-border)); }
+  .border-error { border-color: hsl(var(--error-border)); }
+  .border-info { border-color: hsl(var(--info-border)); }
+  .border-income { border-color: hsl(var(--income-border)); }
+  .border-expense { border-color: hsl(var(--expense-border)); }
+  .border-pending { border-color: hsl(var(--pending-border)); }
+
+  .text-success-foreground { color: hsl(var(--success-foreground)); }
+  .text-warning-foreground { color: hsl(var(--warning-foreground)); }
+  .text-error-foreground { color: hsl(var(--error-foreground)); }
+  .text-info-foreground { color: hsl(var(--info-foreground)); }
+  .text-income-foreground { color: hsl(var(--income-foreground)); }
+  .text-expense-foreground { color: hsl(var(--expense-foreground)); }
+  .text-pending-foreground { color: hsl(var(--pending-foreground)); }
 }
 
 .title-char {

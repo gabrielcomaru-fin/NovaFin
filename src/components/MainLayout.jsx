@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sidebar } from '@/components/Sidebar';
+import { UnifiedNavigation } from '@/components/UnifiedNavigation';
 import { useResponsive } from '@/hooks/useResponsive';
-import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
 
 export function MainLayout({ user, onLogout }) {
   const location = useLocation();
@@ -23,31 +21,20 @@ export function MainLayout({ user, onLogout }) {
     setSidebarOpen(false);
   };
 
+  const openSidebar = () => {
+    setSidebarOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      {/* Mobile Header */}
-      {isMobile && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b px-4 py-3 flex items-center justify-between lg:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleSidebar}
-            className="h-8 w-8 p-0"
-          >
-            {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </Button>
-          <h1 className="text-lg font-semibold">FinanceApp</h1>
-          <div className="w-8" /> {/* Spacer */}
-        </div>
-      )}
-
-      {/* Sidebar */}
-      <Sidebar 
+      {/* Unified Navigation */}
+      <UnifiedNavigation 
         user={user} 
         onLogout={onLogout} 
         isMobile={isMobile}
         isOpen={sidebarOpen}
         onClose={closeSidebar}
+        onOpen={openSidebar}
       />
 
       {/* Main Content */}
@@ -70,14 +57,6 @@ export function MainLayout({ user, onLogout }) {
           </AnimatePresence>
         </div>
       </main>
-
-      {/* Mobile Overlay */}
-      {isMobile && sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={closeSidebar}
-        />
-      )}
     </div>
   );
 }

@@ -380,7 +380,7 @@ export function InvestmentsPage() {
                       {filteredInvestments.length === 0 && (
                         <button
                           onClick={() => setIsFormOpen(true)}
-                          className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                          className="inline-flex items-center px-4 py-2 bg-income text-income-foreground rounded-md hover:bg-income/90 transition-colors"
                         >
                           <TrendingUp className="w-4 h-4 mr-2" />
                           Fazer Primeiro Aporte
@@ -407,7 +407,7 @@ export function InvestmentsPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    <AlertCircle className="h-4 w-4 text-warning" />
                     Começo de mês: ainda sem aportes
                   </CardTitle>
                 </CardHeader>
@@ -433,7 +433,7 @@ export function InvestmentsPage() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{totalInvested.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</div>
+                  <div className="text-2xl font-bold text-income">{totalInvested.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</div>
                   <p className="text-xs text-muted-foreground">Total de aportes no período selecionado.</p>
                 </CardContent>
               </Card>
@@ -500,7 +500,7 @@ export function InvestmentsPage() {
                     <CardTitle className="text-sm font-medium">Variação m/m</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className={`text-2xl font-bold ${momDelta >= 0 ? 'text-green-600' : 'text-red-600'}`}>{momDelta.toFixed(1)}%</div>
+                    <div className={`text-2xl font-bold ${momDelta >= 0 ? 'text-income' : 'text-expense'}`}>{momDelta.toFixed(1)}%</div>
                     <p className="text-xs text-muted-foreground">Comparado ao mês anterior.</p>
                   </CardContent>
                 </Card>
@@ -515,11 +515,11 @@ export function InvestmentsPage() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                   {monthlySeries.map((m, idx) => (
-                    <div key={idx} className={`p-3 rounded-md border ${m.achieved ? 'bg-green-50 border-green-200' : 'bg-muted'}`}>
+                    <div key={idx} className={`p-3 rounded-md border ${m.achieved ? 'bg-success-muted border-success' : 'bg-muted'}`}>
                       <div className="text-xs text-muted-foreground">{m.label}</div>
                       <div className="text-sm font-semibold mt-1">R$ {m.invested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                       {Number(investmentGoal) > 0 && (
-                        <div className={`text-xs mt-1 ${m.achieved ? 'text-green-600' : 'text-muted-foreground'}`}>
+                        <div className={`text-xs mt-1 ${m.achieved ? 'text-success' : 'text-muted-foreground'}`}>
                           {m.achieved ? 'Meta batida' : 'Abaixo da meta'}
                         </div>
                       )}
