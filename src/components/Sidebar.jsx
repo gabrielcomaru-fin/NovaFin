@@ -30,35 +30,51 @@ const navItems = [
   { to: '/planos', label: 'Planos', icon: Star },
 ];
 
-export function Sidebar({ onLogout }) {
+export function Sidebar({ onLogout, isMobile, isOpen, onClose }) {
     const { user } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
+
+    // Auto-close sidebar on mobile when route changes
+    React.useEffect(() => {
+        if (isMobile && isOpen) {
+            onClose();
+        }
+    }, [isMobile, isOpen, onClose]);
 
     return (
         <div className={cn(
             "fixed left-0 top-0 z-50 h-full bg-card border-r transition-all duration-300 ease-in-out",
-            isCollapsed ? "w-16" : "w-64"
+            isMobile 
+                ? cn(
+                    "w-64",
+                    isOpen ? "translate-x-0" : "-translate-x-full"
+                )
+                : cn(
+                    isCollapsed ? "w-16" : "w-64"
+                )
         )}>
             <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b">
                     <Link to="/dashboard" className="flex items-center space-x-2">
                         <DollarSign className="h-8 w-8 text-primary" />
-                        {!isCollapsed && (
+                        {(!isCollapsed || isMobile) && (
                             <span className="text-xl font-bold">FinanceApp</span>
                         )}
                     </Link>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="h-8 w-8 p-0"
-                    >
-                        <ChevronLeft className={cn(
-                            "h-4 w-4 transition-transform",
-                            isCollapsed && "rotate-180"
-                        )} />
-                    </Button>
+                    {!isMobile && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsCollapsed(!isCollapsed)}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronLeft className={cn(
+                                "h-4 w-4 transition-transform",
+                                isCollapsed && "rotate-180"
+                            )} />
+                        </Button>
+                    )}
                 </div>
 
                 {/* Navigation */}
@@ -77,7 +93,7 @@ export function Sidebar({ onLogout }) {
                             }
                         >
                             <item.icon className="h-4 w-4 flex-shrink-0" />
-                            {!isCollapsed && <span>{item.label}</span>}
+                            {(!isCollapsed || isMobile) && <span>{item.label}</span>}
                         </NavLink>
                     ))}
                 </nav>
@@ -90,11 +106,11 @@ export function Sidebar({ onLogout }) {
                                 variant="ghost"
                                 className={cn(
                                     "w-full justify-start",
-                                    isCollapsed && "justify-center"
+                                    isCollapsed && !isMobile && "justify-center"
                                 )}
                             >
                                 <User className="h-4 w-4" />
-                                {!isCollapsed && (
+                                {(!isCollapsed || isMobile) && (
                                     <span className="ml-2 truncate">
                                         {user?.email || 'Usuário'}
                                     </span>

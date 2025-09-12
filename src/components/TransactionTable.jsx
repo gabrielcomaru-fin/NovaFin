@@ -28,18 +28,19 @@ export const TransactionTable = ({ transactions, categories, accounts, type, onE
 
   return (
     <div className="rounded-lg border overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Descrição</TableHead>
-            <TableHead>Categoria</TableHead>
-            {!isExpense && <TableHead>Instituição</TableHead>}
-            <TableHead className="text-right">Valor</TableHead>
-            <TableHead className="hidden md:table-cell">Data</TableHead>
-            {isExpense && <TableHead className="text-center">Status</TableHead>}
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Descrição</TableHead>
+              <TableHead className="hidden sm:table-cell">Categoria</TableHead>
+              {!isExpense && <TableHead className="hidden md:table-cell">Instituição</TableHead>}
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="hidden md:table-cell">Data</TableHead>
+              {isExpense && <TableHead className="text-center hidden sm:table-cell">Status</TableHead>}
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
         <TableBody>
           <AnimatePresence>
             {transactions.map((transaction) => {
@@ -58,12 +59,34 @@ export const TransactionTable = ({ transactions, categories, accounts, type, onE
                   transition={{ duration: 0.3 }}
                   className="hover:bg-muted/50"
                 >
-                  <TableCell className="font-medium">{description}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-medium">
+                    <div className="space-y-1">
+                      <div>{description}</div>
+                      <div className="sm:hidden">
+                        <Badge variant="outline" className="text-xs">{category?.nome || 'Sem categoria'}</Badge>
+                      </div>
+                      {isExpense && (
+                        <div className="sm:hidden">
+                          {transaction.pago ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Pago
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-orange-600 border-orange-200 text-xs">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Pendente
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant="outline">{category?.nome || 'Sem categoria'}</Badge>
                   </TableCell>
                   {!isExpense && (
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <Badge variant="secondary">{institution?.nome_banco || 'Sem instituição'}</Badge>
                     </TableCell>
                   )}
@@ -74,7 +97,7 @@ export const TransactionTable = ({ transactions, categories, accounts, type, onE
                     {new Date(transaction.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                   </TableCell>
                   {isExpense && (
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden sm:table-cell">
                       <div className="flex items-center justify-center">
                         {transaction.pago ? (
                           <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
@@ -141,7 +164,8 @@ export const TransactionTable = ({ transactions, categories, accounts, type, onE
             })}
           </AnimatePresence>
         </TableBody>
-      </Table>
+        </Table>
+      </div>
     </div>
   );
 };

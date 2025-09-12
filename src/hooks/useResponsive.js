@@ -18,16 +18,26 @@ export const useResponsive = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const isMobile = screenSize.width < 768;
-  const isTablet = screenSize.width >= 768 && screenSize.width < 1024;
-  const isDesktop = screenSize.width >= 1024;
-  const isLargeScreen = screenSize.width >= 1280;
+  const breakpoints = {
+    xs: 480,
+    sm: 640,
+    md: 768,
+    lg: 1024,
+    xl: 1280,
+    '2xl': 1536,
+  };
+
+  const isMobile = screenSize.width < breakpoints.md;
+  const isTablet = screenSize.width >= breakpoints.md && screenSize.width < breakpoints.lg;
+  const isDesktop = screenSize.width >= breakpoints.lg;
+  const isSmallMobile = screenSize.width < breakpoints.sm;
 
   return {
     screenSize,
     isMobile,
     isTablet,
     isDesktop,
-    isLargeScreen,
+    isSmallMobile,
+    breakpoints,
   };
 };

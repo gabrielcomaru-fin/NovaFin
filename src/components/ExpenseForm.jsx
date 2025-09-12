@@ -106,7 +106,7 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="w-5 h-5" />
@@ -127,7 +127,7 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="amount">Valor (R$)</Label>
               <CurrencyInput
