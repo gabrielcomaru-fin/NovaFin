@@ -106,7 +106,7 @@ export function UnifiedNavigation({
           variant="ghost"
           size="sm"
           onClick={toggleCollapse}
-          className="absolute -right-1 top-2 h-6 w-6 p-0 bg-card hover:bg-secondary border rounded-full z-10 shadow-sm"
+          className="absolute -right-1 top-8 h-6 w-6 p-0 bg-card hover:bg-secondary border rounded-full z-10 shadow-sm"
         >
           <ChevronLeft className={cn(
             "h-3 w-3 transition-transform",
@@ -116,14 +116,14 @@ export function UnifiedNavigation({
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-1.5 space-y-1">
+      <nav className="flex-1 px-1.5 py-1 space-y-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                "flex items-center space-x-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                "flex items-center space-x-3 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -137,13 +137,13 @@ export function UnifiedNavigation({
       </nav>
 
       {/* User Menu */}
-      <div className="p-1.5 border-t border-border">
+      <div className="px-1.5 py-1 border-t border-border">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               className={cn(
-                "w-full justify-start px-2.5 py-2",
+                "w-full justify-start px-6 py-2.5",
                 isCollapsed && !isMobile && "justify-center px-2"
               )}
             >
