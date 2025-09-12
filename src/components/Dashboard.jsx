@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, DollarSign, Target, AlertTriangle, Lightbulb } from 'lucide-react';
 
-export function Dashboard({
+const Dashboard = memo(function Dashboard({
   totalMonthlyExpenses,
   totalMonthlyInvestments,
   totalPaidExpenses,
@@ -16,20 +16,35 @@ export function Dashboard({
   projection12m,
   categories,
 }) {
-  const investmentProgress = periodInvestmentGoal > 0 ? (totalMonthlyInvestments / periodInvestmentGoal) * 100 : 0;
+  // Memoizar cálculos pesados
+  const investmentProgress = useMemo(() => 
+    periodInvestmentGoal > 0 ? (totalMonthlyInvestments / periodInvestmentGoal) * 100 : 0,
+    [totalMonthlyInvestments, periodInvestmentGoal]
+  );
   
-  const expenseCategories = categories.filter(c => c.tipo === 'gasto');
-  const totalExpenseLimit = expenseCategories.reduce((acc, cat) => acc + (cat.limite || 0), 0);
-  const expenseLimitProgress = totalExpenseLimit > 0 ? (totalMonthlyExpenses / totalExpenseLimit) * 100 : 0;
+  const expenseCategories = useMemo(() => 
+    categories.filter(c => c.tipo === 'gasto'),
+    [categories]
+  );
+  
+  const totalExpenseLimit = useMemo(() => 
+    expenseCategories.reduce((acc, cat) => acc + (cat.limite || 0), 0),
+    [expenseCategories]
+  );
+  
+  const expenseLimitProgress = useMemo(() => 
+    totalExpenseLimit > 0 ? (totalMonthlyExpenses / totalExpenseLimit) * 100 : 0,
+    [totalMonthlyExpenses, totalExpenseLimit]
+  );
 
-  const getFinancialTips = () => {
-    const tips = [];
+  const tips = useMemo(() => {
+    const tipsArray = [];
     
     expenseCategories.forEach(category => {
       const amount = expensesByCategory[category.id] || 0;
       if (category.limite && amount > category.limite * 0.8) {
         const percentage = Math.round((amount / category.limite) * 100);
-        tips.push({
+        tipsArray.push({
           type: 'warning',
           message: `Seu gasto em ${category.nome} já chegou a ${percentage}% do limite. Considere ajustar para sobrar mais para investimentos!`
         });
@@ -37,30 +52,28 @@ export function Dashboard({
     });
 
     if (totalMonthlyInvestments < investmentGoal * 0.5 && investmentGoal > 0) {
-      tips.push({
+      tipsArray.push({
         type: 'tip',
         message: 'Que tal aumentar seus aportes? Mesmo pequenos valores fazem diferença no longo prazo!'
       });
     }
 
     if (totalMonthlyExpenses > 0 && totalMonthlyInvestments === 0) {
-      tips.push({
+      tipsArray.push({
         type: 'tip',
         message: 'Tente aplicar a regra 50/30/20: 50% para necessidades, 30% para desejos e 20% para poupança e investimentos.'
       });
     }
 
-    if (tips.length === 0) {
-      tips.push({
+    if (tipsArray.length === 0) {
+      tipsArray.push({
         type: 'success',
         message: 'Parabéns! Você está no caminho certo para uma vida financeira saudável! 🎉'
       });
     }
 
-    return tips;
-  };
-
-  const tips = getFinancialTips();
+    return tipsArray;
+  }, [expenseCategories, expensesByCategory, totalMonthlyInvestments, investmentGoal, totalMonthlyExpenses]);
 
   return (
     <div className="space-y-6">
@@ -307,4 +320,6 @@ export function Dashboard({
       </div>
     </div>
   );
-}
+});
+
+export { Dashboard };

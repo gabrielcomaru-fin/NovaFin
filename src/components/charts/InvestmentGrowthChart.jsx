@@ -1,0 +1,134 @@
+import React, { memo, useMemo } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TrendingUp, Target } from 'lucide-react';
+import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
+
+const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments, investmentGoal }) {
+  const chartData = useMemo(() => {
+    const last12Months = eachMonthOfInterval({
+      start: subMonths(new Date(), 11),
+      end: new Date()
+    });
+
+    let cumulativeInvestment = 0;
+
+    return last12Months.map(month => {
+      const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
+      const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+      
+      const monthInvestments = investments.filter(investment => {
+        const investmentDate = parseISO(investment.data);
+        return investmentDate >= monthStart && investmentDate <= monthEnd;
+      });
+
+      const monthAmount = monthInvestments.reduce((sum, inv) => sum + inv.valor_aporte, 0);
+      cumulativeInvestment += monthAmount;
+
+      return {
+        month: format(month, 'MMM/yy'),
+        monthly: monthAmount,
+        cumulative: cumulativeInvestment,
+        goal: investmentGoal || 0,
+        fullMonth: format(month, 'MMMM yyyy')
+      };
+    });
+  }, [investments, investmentGoal]);
+
+  const growthRate = useMemo(() => {
+    if (chartData.length < 2) return 0;
+    const current = chartData[chartData.length - 1].cumulative;
+    const previous = chartData[chartData.length - 2].cumulative;
+    return previous > 0 ? ((current - previous) / previous) * 100 : 0;
+  }, [chartData]);
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+          <p className="font-medium text-foreground">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name}: R$ {entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-green-500" />
+          Crescimento dos Investimentos
+        </CardTitle>
+        <CardDescription>
+          Evolução acumulada dos aportes nos últimos 12 meses
+          {growthRate > 0 && (
+            <span className="ml-2 flex items-center gap-1 text-green-600">
+              <TrendingUp className="h-3 w-3" />
+              +{growthRate.toFixed(1)}% vs mês anterior
+            </span>
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <defs>
+                <linearGradient id="colorInvestment" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--green-500))" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="hsl(var(--green-500))" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorGoal" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+              <XAxis 
+                dataKey="month" 
+                tick={{ fontSize: 12 }}
+                tickLine={{ stroke: 'hsl(var(--muted-foreground))' }}
+              />
+              <YAxis 
+                tick={{ fontSize: 12 }}
+                tickLine={{ stroke: 'hsl(var(--muted-foreground))' }}
+                tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey="cumulative"
+                stroke="hsl(var(--green-500))"
+                fillOpacity={1}
+                fill="url(#colorInvestment)"
+                name="Total Investido"
+                strokeWidth={2}
+              />
+              {investmentGoal > 0 && (
+                <Area
+                  type="monotone"
+                  dataKey="goal"
+                  stroke="hsl(var(--primary))"
+                  fillOpacity={0.3}
+                  fill="url(#colorGoal)"
+                  name="Meta Mensal"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                />
+              )}
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
+
+export { InvestmentGrowthChart };

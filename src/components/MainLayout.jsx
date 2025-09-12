@@ -13,8 +13,8 @@ export function MainLayout({ user, onLogout }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       <Sidebar user={user} onLogout={onLogout} />
-      <main className="flex-1 lg:ml-64 transition-all duration-300 ease-in-out">
-        <div className="px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 transition-all duration-300 ease-in-out lg:ml-64">
+        <div className="px-4 py-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}

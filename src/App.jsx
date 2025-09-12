@@ -16,6 +16,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { PlansPage } from '@/pages/PlansPage';
 import { CalculatorPage } from '@/pages/CalculatorPage';
 import { InvestmentProjectionPage } from '@/pages/InvestmentProjectionPage';
+import { ReportsPage } from '@/pages/ReportsPage';
 import { MainLayout } from '@/components/MainLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { FinanceDataProvider } from '@/contexts/FinanceDataContext';
@@ -61,6 +62,7 @@ function AppContent() {
               <Route path="/projecao-investimentos" element={user ? <InvestmentProjectionPage /> : <Navigate to="/login" />} />
               <Route path="/contas" element={user ? <AccountsPage /> : <Navigate to="/login" />} />
               <Route path="/calculadora" element={user ? <CalculatorPage /> : <Navigate to="/login" />} />
+              <Route path="/relatorios" element={user ? <ReportsPage /> : <Navigate to="/login" />} />
               <Route path="/configuracoes" element={user ? <SettingsPage /> : <Navigate to="/login" />} />
               <Route path="/planos" element={user ? <PlansPage /> : <Navigate to="/login" />} />
             </Route>

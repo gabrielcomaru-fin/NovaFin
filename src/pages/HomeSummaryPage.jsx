@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
@@ -6,16 +6,22 @@ import { Progress } from '@/components/ui/progress';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { PeriodFilter } from '@/components/PeriodFilter';
 import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb } from 'lucide-react';
-import { InfoTooltip } from '@/components/ui/tooltip';
+// import { InfoTooltip } from '@/components/ui/tooltip';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, subMonths, parseISO, format } from 'date-fns';
 
-export function HomeSummaryPage() {
+const HomeSummaryPage = memo(function HomeSummaryPage() {
   const { expenses, investments, categories, accounts, investmentGoal, totalPatrimony } = useFinance();
 
   const [periodType, setPeriodType] = React.useState('monthly');
   const [dateRange, setDateRange] = React.useState(undefined);
   const [month, setMonth] = React.useState(new Date().getMonth());
   const [year, setYear] = React.useState(new Date().getFullYear());
+
+  // Memoizar callbacks para evitar re-renders desnecessários
+  const handlePeriodTypeChange = useCallback((type) => setPeriodType(type), []);
+  const handleDateRangeChange = useCallback((range) => setDateRange(range), []);
+  const handleMonthChange = useCallback((m) => setMonth(m), []);
+  const handleYearChange = useCallback((y) => setYear(y), []);
 
   const { startDate, endDate } = useMemo(() => {
     let s, e;
@@ -150,13 +156,13 @@ export function HomeSummaryPage() {
 
           <PeriodFilter 
             periodType={periodType}
-            setPeriodType={setPeriodType}
+            setPeriodType={handlePeriodTypeChange}
             dateRange={dateRange}
-            setDateRange={setDateRange}
+            setDateRange={handleDateRangeChange}
             month={month}
-            setMonth={setMonth}
+            setMonth={handleMonthChange}
             year={year}
-            setYear={setYear}
+            setYear={handleYearChange}
           />
         </div>
 
@@ -166,7 +172,6 @@ export function HomeSummaryPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Gastos no Período
-                <InfoTooltip content="Total de despesas no período selecionado" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -182,7 +187,6 @@ export function HomeSummaryPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Aportes no Período
-                <InfoTooltip content="Total investido no período selecionado" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -197,7 +201,6 @@ export function HomeSummaryPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Progresso da Meta
-                <InfoTooltip content="Compara seus aportes com a meta mensal acumulada no período" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -312,7 +315,6 @@ export function HomeSummaryPage() {
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-muted-foreground"/>
                 Evolução dos Aportes
-                <InfoTooltip content="Histórico dos últimos 6 meses com destaque para metas atingidas" />
               </CardTitle>
               <CardDescription>Últimos 6 meses de atividade</CardDescription>
             </CardHeader>
@@ -332,6 +334,8 @@ export function HomeSummaryPage() {
       </div>
     </>
   );
-}
+});
+
+export { HomeSummaryPage };
 
 
