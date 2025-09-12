@@ -48,7 +48,8 @@ export function UnifiedNavigation({
   isMobile, 
   isOpen, 
   onClose,
-  onOpen
+  onOpen,
+  onCollapseChange
 }) {
   const location = useLocation();
   const { user: authUser } = useAuth();
@@ -62,22 +63,27 @@ export function UnifiedNavigation({
   }, [isMobile, isOpen, onClose, location.pathname]);
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    const newCollapsedState = !isCollapsed;
+    setIsCollapsed(newCollapsedState);
+    // Notificar o MainLayout sobre a mudança
+    if (onCollapseChange) {
+      onCollapseChange(newCollapsedState);
+    }
   };
 
   const currentUser = user || authUser;
 
   // Conteúdo do sidebar (reutilizado para desktop e mobile)
   const SidebarContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-border">
+      <div className="flex items-center justify-between p-2 border-b border-border">
         <Link to="/dashboard" className="flex items-center space-x-2">
-          <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-            <DollarSign className="h-5 w-5 text-primary-foreground" />
+          <div className="h-7 w-7 bg-primary rounded-lg flex items-center justify-center">
+            <DollarSign className="h-4 w-4 text-primary-foreground" />
           </div>
           {(!isCollapsed || isMobile) && (
-            <span className="text-lg font-semibold text-foreground">FinanceApp</span>
+            <span className="text-base font-semibold text-foreground">FinanceApp</span>
           )}
         </Link>
         
@@ -87,37 +93,37 @@ export function UnifiedNavigation({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0"
+            className="h-7 w-7 p-0"
           >
             <X className="h-4 w-4" />
           </Button>
         )}
-        
-        {/* Botão de colapsar no desktop */}
-        {!isMobile && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleCollapse}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronLeft className={cn(
-              "h-4 w-4 transition-transform",
-              isCollapsed && "rotate-180"
-            )} />
-          </Button>
-        )}
       </div>
+      
+      {/* Botão de colapsar no desktop - posicionado absolutamente */}
+      {!isMobile && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleCollapse}
+          className="absolute -right-1 top-2 h-6 w-6 p-0 bg-card hover:bg-secondary border rounded-full z-10 shadow-sm"
+        >
+          <ChevronLeft className={cn(
+            "h-3 w-3 transition-transform",
+            isCollapsed && "rotate-180"
+          )} />
+        </Button>
+      )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-1.5 space-y-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "flex items-center space-x-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -131,19 +137,19 @@ export function UnifiedNavigation({
       </nav>
 
       {/* User Menu */}
-      <div className="p-3 border-t border-border">
+      <div className="p-1.5 border-t border-border">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               className={cn(
-                "w-full justify-start",
-                isCollapsed && !isMobile && "justify-center"
+                "w-full justify-start px-2.5 py-2",
+                isCollapsed && !isMobile && "justify-center px-2"
               )}
             >
               <User className="h-4 w-4" />
               {(!isCollapsed || isMobile) && (
-                <span className="ml-2 truncate">
+                <span className="ml-2 truncate text-sm">
                   {currentUser?.user_metadata?.nome || currentUser?.email || 'Usuário'}
                 </span>
               )}

@@ -1,8 +1,9 @@
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/enhanced-card';
 import { Progress } from '@/components/ui/progress';
 import { Target, AlertTriangle } from 'lucide-react';
+import { useMicroInteractions } from '@/hooks/useMicroInteractions';
 
 const ProgressCards = memo(function ProgressCards({
   totalMonthlyInvestments,
@@ -12,15 +13,14 @@ const ProgressCards = memo(function ProgressCards({
   totalExpenseLimit,
   expenseLimitProgress,
 }) {
+  const { createStaggerAnimation } = useMicroInteractions();
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* Meta de Aportes */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        {...createStaggerAnimation(0.5)}
       >
-        <Card>
+        <Card hover={true} animation="subtle">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-primary" />
@@ -59,11 +59,9 @@ const ProgressCards = memo(function ProgressCards({
 
       {/* Teto de Gastos */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        {...createStaggerAnimation(0.6)}
       >
-        <Card>
+        <Card hover={true} animation="subtle">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-warning" />

@@ -1,12 +1,15 @@
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/enhanced-card';
+import { useMicroInteractions } from '@/hooks/useMicroInteractions';
 
 const ExpenseBreakdown = memo(function ExpenseBreakdown({
   expensesByCategory,
   totalMonthlyExpenses,
   expenseCategories,
 }) {
+  const { createStaggerAnimation } = useMicroInteractions();
+  
   // Verificar se há gastos para exibir
   const hasExpenses = Object.keys(expensesByCategory).some(catId => expensesByCategory[catId] > 0);
 
@@ -16,11 +19,9 @@ const ExpenseBreakdown = memo(function ExpenseBreakdown({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.8 }}
+      {...createStaggerAnimation(0.8)}
     >
-      <Card>
+      <Card hover={true} animation="subtle">
         <CardHeader>
           <CardTitle>Gastos por Categoria</CardTitle>
           <CardDescription>Distribuição dos seus gastos no período</CardDescription>

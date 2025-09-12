@@ -1,16 +1,17 @@
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/enhanced-card';
 import { TrendingUp } from 'lucide-react';
+import { useMicroInteractions } from '@/hooks/useMicroInteractions';
 
 const ProjectionCard = memo(function ProjectionCard({ projection12m }) {
+  const { createStaggerAnimation } = useMicroInteractions();
+  
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.7 }}
+      {...createStaggerAnimation(0.7)}
     >
-      <Card className="h-full">
+      <Card className="h-full" hover={true} animation="subtle">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-income" /> Projeção de 12 meses (aporte médio 3m)

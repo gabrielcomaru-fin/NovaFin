@@ -8,6 +8,7 @@ export function MainLayout({ user, onLogout }) {
   const location = useLocation();
   const { isMobile } = useResponsive();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   if (!user) {
     return null;
@@ -25,6 +26,10 @@ export function MainLayout({ user, onLogout }) {
     setSidebarOpen(true);
   };
 
+  const handleCollapseChange = (isCollapsed) => {
+    setSidebarCollapsed(isCollapsed);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       {/* Unified Navigation */}
@@ -35,13 +40,16 @@ export function MainLayout({ user, onLogout }) {
         isOpen={sidebarOpen}
         onClose={closeSidebar}
         onOpen={openSidebar}
+        onCollapseChange={handleCollapseChange}
       />
 
       {/* Main Content */}
       <main className={`flex-1 transition-all duration-300 ease-in-out ${
         isMobile 
           ? 'pt-16' // Add top padding for mobile header
-          : 'lg:ml-64' // Desktop sidebar margin
+          : sidebarCollapsed 
+            ? 'lg:ml-16' // Desktop sidebar margin when collapsed
+            : 'lg:ml-64' // Desktop sidebar margin when expanded
       }`}>
         <div className={`px-4 py-4 ${isMobile ? 'px-3 py-3' : ''}`}>
           <AnimatePresence mode="wait">

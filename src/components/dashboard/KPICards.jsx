@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/enhanced-card';
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { useMicroInteractions } from '@/hooks/useMicroInteractions';
 
 const KPICards = memo(function KPICards({
   totalMonthlyExpenses,
@@ -12,6 +13,7 @@ const KPICards = memo(function KPICards({
   periodInvestmentGoal,
   investmentProgress,
 }) {
+  const { createStaggerAnimation } = useMicroInteractions();
   const kpiData = [
     {
       title: 'Gastos no Período',
@@ -56,11 +58,9 @@ const KPICards = memo(function KPICards({
         return (
           <motion.div
             key={kpi.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: kpi.delay }}
+            {...createStaggerAnimation(kpi.delay)}
           >
-            <Card className="h-full">
+            <Card className="h-full" hover={true} animation="subtle">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {kpi.title}
