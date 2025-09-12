@@ -81,7 +81,7 @@ export function AccountForm() {
     setEditingAccount(account);
     setFormData({
       nome_banco: account.nome_banco,
-      saldo: account.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).replace('.', ','),
+      saldo: account.saldo.toString(),
     });
     setIsOpen(true);
   };

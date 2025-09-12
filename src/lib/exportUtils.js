@@ -1,6 +1,5 @@
 // Utilitários para exportação de dados
 import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 // Função para exportar dados como CSV
 export const exportToCSV = (data, filename, headers) => {
@@ -62,12 +61,12 @@ export const formatExpensesForExport = (expenses, categories) => {
   }, {});
 
   return expenses.map(expense => ({
-    'Data': format(parseISO(expense.data), 'dd/MM/yyyy', { locale: ptBR }),
+    'Data': format(parseISO(expense.data), 'dd/MM/yyyy'),
     'Descrição': expense.descricao || '',
     'Valor': expense.valor,
     'Categoria': categoryMap[expense.categoria_id] || 'Sem categoria',
     'Status': expense.pago ? 'Pago' : 'Pendente',
-    'Data de Criação': format(parseISO(expense.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+    'Data de Criação': format(parseISO(expense.created_at), 'dd/MM/yyyy HH:mm')
   }));
 };
 
@@ -84,13 +83,13 @@ export const formatInvestmentsForExport = (investments, categories, accounts) =>
   }, {});
 
   return investments.map(investment => ({
-    'Data': format(parseISO(investment.data), 'dd/MM/yyyy', { locale: ptBR }),
+    'Data': format(parseISO(investment.data), 'dd/MM/yyyy'),
     'Descrição': investment.descricao || '',
     'Valor do Aporte': investment.valor_aporte,
     'Saldo Total': investment.saldo_total || 0,
     'Categoria': categoryMap[investment.categoria_id] || 'Sem categoria',
     'Instituição': accountMap[investment.instituicao_id] || 'Sem instituição',
-    'Data de Criação': format(parseISO(investment.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+    'Data de Criação': format(parseISO(investment.created_at), 'dd/MM/yyyy HH:mm')
   }));
 };
 
@@ -101,7 +100,7 @@ export const formatAccountsForExport = (accounts) => {
     'Tipo': account.tipo,
     'Saldo': account.saldo || 0,
     'Descrição': account.descricao || '',
-    'Data de Criação': format(parseISO(account.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+    'Data de Criação': format(parseISO(account.created_at), 'dd/MM/yyyy HH:mm')
   }));
 };
 
@@ -109,7 +108,7 @@ export const formatAccountsForExport = (accounts) => {
 export const generateFullReport = (expenses, investments, accounts, categories, period) => {
   const report = {
     periodo: period,
-    dataGeracao: format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+    dataGeracao: format(new Date(), 'dd/MM/yyyy HH:mm'),
     resumo: {
       totalGastos: expenses.reduce((sum, exp) => sum + exp.valor, 0),
       totalInvestimentos: investments.reduce((sum, inv) => sum + inv.valor_aporte, 0),

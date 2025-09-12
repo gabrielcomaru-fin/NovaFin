@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useFinance } from '@/contexts/FinanceDataContext';
 // import { useExport } from '@/hooks/useExport';
+// import { formatExpensesForExport, formatInvestmentsForExport } from '@/lib/exportUtils';
 import { PeriodFilter } from '@/components/PeriodFilter';
 import { ExpenseTrendChart } from '@/components/charts/ExpenseTrendChart';
 import { InvestmentGrowthChart } from '@/components/charts/InvestmentGrowthChart';
@@ -63,7 +64,13 @@ const ReportsPage = memo(function ReportsPage() {
   }, [filteredExpenses, filteredInvestments]);
 
   const handleExportReport = () => {
-    console.log('Exportar relatório - funcionalidade em desenvolvimento');
+    console.log('Export button clicked - funcionalidade temporariamente desabilitada');
+    alert('Funcionalidade de exportação temporariamente desabilitada para correção');
+  };
+
+  const handleExportFilteredData = () => {
+    console.log('Export filtered data clicked - funcionalidade temporariamente desabilitada');
+    alert('Funcionalidade de exportação temporariamente desabilitada para correção');
   };
 
   if (loading) {
@@ -113,16 +120,28 @@ const ReportsPage = memo(function ReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <PeriodFilter 
-              periodType={periodType}
-              setPeriodType={setPeriodType}
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-              month={month}
-              setMonth={setMonth}
-              year={year}
-              setYear={setYear}
-            />
+            <div className="space-y-4">
+              <PeriodFilter 
+                periodType={periodType}
+                setPeriodType={setPeriodType}
+                dateRange={dateRange}
+                setDateRange={setDateRange}
+                month={month}
+                setMonth={setMonth}
+                year={year}
+                setYear={setYear}
+              />
+              <div className="flex justify-end">
+                <Button 
+                  onClick={handleExportFilteredData} 
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Exportar Dados Filtrados
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
