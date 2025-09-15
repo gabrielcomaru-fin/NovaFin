@@ -30,6 +30,7 @@ import {
   BarChart3,
   Wallet,
   Search,
+  Trophy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -43,6 +44,7 @@ const navItems = [
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { to: '/contas', label: 'Contas', icon: Wallet },
   { to: '/calculadora', label: 'Calculadora', icon: Calculator },
+  { to: '/conquistas', label: 'Conquistas', icon: Trophy },
   { to: '/planos', label: 'Planos', icon: Star },
 ];
 

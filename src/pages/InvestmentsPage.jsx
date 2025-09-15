@@ -16,6 +16,7 @@ import { TrendingUp, DollarSign, BarChart3, ListChecks, AlertCircle, Flame, Targ
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, eachMonthOfInterval, subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useGamification } from '@/contexts/GamificationContext';
 
 const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'investmentsPage';
@@ -23,6 +24,7 @@ const PAGE_ID = 'investmentsPage';
 export function InvestmentsPage() {
   const { investments, categories, accounts, addInvestment, updateInvestment, deleteInvestment, investmentGoal } = useFinance();
   const { toast } = useToast();
+  const { addPoints, registerAction, evaluateAchievements, setMetaMonthHit } = useGamification();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [investmentToEdit, setInvestmentToEdit] = useState(null);
@@ -265,6 +267,21 @@ export function InvestmentsPage() {
       } else {
         await addInvestment(dataToSave);
         toast({ title: 'Aporte adicionado com sucesso!' });
+        // Gamificação: pontos por novo aporte
+        const aporteValor = Number(dataToSave.valor_aporte) || 0;
+        const base = 10;
+        const bonus = Math.min(40, Math.floor(aporteValor / 100)); // +1 ponto a cada R$100 até +40
+        addPoints(base + bonus, 'novo_aporte');
+        registerAction('deposit', { amount: aporteValor });
+        // Atualiza badge de meta do mês
+        const newTotal = totalInvested + aporteValor;
+        const hit = periodGoal > 0 && newTotal >= periodGoal;
+        setMetaMonthHit(hit);
+        // Para conquistas de streak mensal, deixamos para o painel calcular via dados financeiros
+        evaluateAchievements({ monthlyStreak: undefined });
+        if (hit) {
+          toast({ title: 'Meta do período alcançada! 🎯', description: 'Conquista liberada e pontos adicionados.' });
+        }
       }
       setIsFormOpen(false);
       setInvestmentToEdit(null);

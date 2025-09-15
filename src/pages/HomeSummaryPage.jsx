@@ -6,13 +6,15 @@ import { Progress } from '@/components/ui/progress';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CompactHeader } from '@/components/CompactHeader';
-import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb, Trophy } from 'lucide-react';
+import { useGamification } from '@/contexts/GamificationContext';
 // import { InfoTooltip } from '@/components/ui/tooltip';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, subMonths, parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const HomeSummaryPage = memo(function HomeSummaryPage() {
   const { expenses, investments, categories, accounts, investmentGoal, totalPatrimony, totalInvestmentBalance } = useFinance();
+  const { evaluateAchievements } = useGamification();
 
   const [periodType, setPeriodType] = React.useState('monthly');
   const [dateRange, setDateRange] = React.useState(undefined);
@@ -100,6 +102,10 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
     }
     return s;
   }, [series6]);
+
+  React.useEffect(() => {
+    evaluateAchievements({ monthlyStreak: investStreak });
+  }, [investStreak, evaluateAchievements]);
 
   // Dicas educativas dinâmicas
   const educationTips = useMemo(() => {
@@ -234,6 +240,12 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
                 <CardDescription>Dicas personalizadas baseadas no seu momento atual</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
+                {investStreak > 0 && (
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border bg-card text-xs">
+                    <Trophy className="h-3.5 w-3.5 text-primary" />
+                    Streak mensal: {investStreak}m
+                  </div>
+                )}
                 {educationTips.map((tip, i) => (
                   <div key={i} className="p-4 rounded-lg bg-secondary/50 text-sm flex items-start gap-3">
                     {tip.type === 'warning' && <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0"/>}

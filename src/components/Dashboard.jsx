@@ -4,6 +4,7 @@ import { ProgressCards } from '@/components/dashboard/ProgressCards';
 import { ProjectionCard } from '@/components/dashboard/ProjectionCard';
 import { ExpenseBreakdown } from '@/components/dashboard/ExpenseBreakdown';
 import { TipsSection } from '@/components/dashboard/TipsSection';
+import { GamificationPanel } from '@/components/GamificationPanel';
 
 const Dashboard = memo(function Dashboard({
   totalMonthlyExpenses,
@@ -88,6 +89,9 @@ const Dashboard = memo(function Dashboard({
         periodInvestmentGoal={periodInvestmentGoal}
         investmentProgress={investmentProgress}
       />
+
+      {/* Gamificação */}
+      <GamificationPanel />
 
       {/* Cards de progresso */}
       <ProgressCards

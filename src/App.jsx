@@ -17,10 +17,12 @@ import { PlansPage } from '@/pages/PlansPage';
 import { CalculatorPage } from '@/pages/CalculatorPage';
 import { InvestmentProjectionPage } from '@/pages/InvestmentProjectionPage';
 import { ReportsPage } from '@/pages/ReportsPage';
+import { GamificationPage } from '@/pages/GamificationPage';
 import { MainLayout } from '@/components/MainLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { FinanceDataProvider } from '@/contexts/FinanceDataContext';
 import { ThemeProvider } from '@/hooks/useTheme';
+import { GamificationProvider } from '@/contexts/GamificationContext';
 
 function AppContent() {
   const { user, loading, signOut } = useAuth();
@@ -48,6 +50,7 @@ function AppContent() {
       
       <Router>
         <FinanceDataProvider>
+          <GamificationProvider>
           <Routes>
             <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
@@ -63,12 +66,15 @@ function AppContent() {
               <Route path="/contas" element={user ? <AccountsPage /> : <Navigate to="/login" />} />
               <Route path="/calculadora" element={user ? <CalculatorPage /> : <Navigate to="/login" />} />
               <Route path="/relatorios" element={user ? <ReportsPage /> : <Navigate to="/login" />} />
+              <Route path="/conquistas" element={user ? <GamificationPage /> : <Navigate to="/login" />} />
+              <Route path="/gamificacao" element={<Navigate to="/conquistas" replace />} />
               <Route path="/configuracoes" element={user ? <SettingsPage /> : <Navigate to="/login" />} />
               <Route path="/planos" element={user ? <PlansPage /> : <Navigate to="/login" />} />
             </Route>
             
             <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
           </Routes>
+          </GamificationProvider>
         </FinanceDataProvider>
       </Router>
       
