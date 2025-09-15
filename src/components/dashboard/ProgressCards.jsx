@@ -42,12 +42,16 @@ const ProgressCards = memo(function ProgressCards({
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     {investmentProgress >= 100
-                      ? '🎉 Meta atingida! Parabéns!'
+                      ? `🎉 Meta superada! ${Math.round(investmentProgress)}% alcançado!`
                       : `${Math.round(investmentProgress)}% da meta alcançada`}
                   </p>
-                  {investmentProgress < 100 && (
+                  {investmentProgress < 100 ? (
                     <p className="text-xs text-muted-foreground">
                       Faltam R$ {(periodInvestmentGoal - totalMonthlyInvestments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      R$ {(totalMonthlyInvestments - periodInvestmentGoal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} além da meta!
                     </p>
                   )}
                 </div>

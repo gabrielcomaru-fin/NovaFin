@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, TrendingUp, Target } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpen }) {
-  const { investmentGoal, setInvestmentGoal, categories, accounts } = useFinance();
+  const { investmentGoal, handleSetInvestmentGoal, categories, accounts } = useFinance();
   const { toast } = useToast();
 
   const investmentCategories = categories.filter(c => c.tipo === 'investimento');
@@ -110,7 +111,7 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
     setGoalFormData({ goal: value });
   };
 
-  const handleGoalSubmit = (e) => {
+  const handleGoalSubmit = async (e) => {
     e.preventDefault();
     const newGoal = parseCurrency(goalFormData.goal);
     if (isNaN(newGoal) || newGoal < 0) {
@@ -121,7 +122,12 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
       });
       return;
     }
-    setInvestmentGoal(newGoal);
+    try {
+      await handleSetInvestmentGoal(newGoal);
+    } catch (err) {
+      toast({ title: 'Erro', description: 'Não foi possível salvar a meta.', variant: 'destructive' });
+      return;
+    }
     toast({
       title: "Meta atualizada!",
       description: `Nova meta mensal: R$ ${newGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
@@ -130,7 +136,12 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex items-center gap-2">
+      {Number(investmentGoal) > 0 && (
+        <Badge variant="secondary">
+          Meta atual: R$ {Number(investmentGoal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+        </Badge>
+      )}
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         {!investmentToEdit?.id && (
           <DialogTrigger asChild>

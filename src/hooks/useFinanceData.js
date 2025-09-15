@@ -56,14 +56,25 @@ export const useFinanceData = () => {
             if (accountsError) throw accountsError;
             setAccounts(accountsData || []);
             
-            // Buscar meta de investimento
-            const { data: goalData, error: goalError } = await supabase
-                .from('metas_investimento')
-                .select('meta_mensal')
-                .eq('usuario_id', user.id)
-                .maybeSingle();
-            if (goalError) throw goalError;
-            setInvestmentGoal(goalData?.meta_mensal || 0);
+            // Buscar meta de investimento com fallback localStorage
+            try {
+                const { data: goalData, error: goalError } = await supabase
+                    .from('metas_investimento')
+                    .select('meta_mensal')
+                    .eq('usuario_id', user.id)
+                    .maybeSingle();
+                if (goalError) throw goalError;
+                const goalValue = goalData?.meta_mensal ?? 0;
+                setInvestmentGoal(goalValue);
+                try { localStorage.setItem('novaFin_investment_goal_v1', String(goalValue)); } catch {}
+            } catch (err) {
+                try {
+                    const localGoal = Number(localStorage.getItem('novaFin_investment_goal_v1')) || 0;
+                    setInvestmentGoal(localGoal);
+                } catch {
+                    setInvestmentGoal(0);
+                }
+            }
 
         } catch (error) {
             console.error('Erro ao buscar dados financeiros:', error);
@@ -330,22 +341,49 @@ export const useFinanceData = () => {
     }, [user]);
 
     const handleSetInvestmentGoal = useCallback(async (goal) => {
-        if (!user) return;
-        
+        if (!user) {
+            // Permitir uso offline: salvar localmente
+            try { localStorage.setItem('novaFin_investment_goal_v1', String(goal)); } catch {}
+            setInvestmentGoal(goal);
+            return { persisted: 'local' };
+        }
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
+            // Primeiro tenta atualizar registro existente por usuario_id
+            let data = null;
+            let error = null;
+            const updateRes = await supabase
                 .from('metas_investimento')
-                .upsert([{ usuario_id: user.id, meta_mensal: goal }])
-                .select()
-                .single();
-            
+                .update({ meta_mensal: goal })
+                .eq('usuario_id', user.id)
+                .select('usuario_id, meta_mensal')
+                .maybeSingle();
+
+            if (!updateRes.error && updateRes.data) {
+                data = updateRes.data;
+            } else {
+                // Se não existir, insere (sem depender de unique constraint)
+                const insertRes = await supabase
+                    .from('metas_investimento')
+                    .insert([{ usuario_id: user.id, meta_mensal: goal }])
+                    .select('usuario_id, meta_mensal')
+                    .single();
+                if (insertRes.error) {
+                    error = insertRes.error;
+                } else {
+                    data = insertRes.data;
+                }
+            }
+
             if (error) throw error;
             setInvestmentGoal(goal);
-            return data;
+            try { localStorage.setItem('novaFin_investment_goal_v1', String(goal)); } catch {}
+            return { persisted: 'db', data };
         } catch (error) {
-            console.error('Erro ao definir meta de investimento:', error);
-            throw error;
+            console.warn('Falha ao salvar meta no Supabase, usando fallback local:', error);
+            setInvestmentGoal(goal);
+            try { localStorage.setItem('novaFin_investment_goal_v1', String(goal)); } catch {}
+            return { persisted: 'local' };
         } finally {
             setIsLoading(false);
         }

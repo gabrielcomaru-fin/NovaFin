@@ -41,7 +41,7 @@ const KPICards = memo(function KPICards({
     },
     {
       title: 'Progresso da Meta',
-      value: periodInvestmentGoal > 0 ? `${Math.min(100, Math.round(investmentProgress))}%` : '-',
+      value: periodInvestmentGoal > 0 ? `${Math.round(investmentProgress)}%` : '-',
       icon: Target,
       iconColor: 'text-primary',
       subtitle: periodInvestmentGoal > 0

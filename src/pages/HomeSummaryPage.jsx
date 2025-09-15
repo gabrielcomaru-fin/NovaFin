@@ -70,7 +70,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
   }, [dateRange, periodType, year]);
 
   const periodGoal = (Number(investmentGoal) || 0) * periodMonths;
-  const goalProgress = periodGoal > 0 ? Math.min(100, (totalInvested / periodGoal) * 100) : 0;
+  const goalProgress = periodGoal > 0 ? (totalInvested / periodGoal) * 100 : 0;
 
   // Taxa de poupança do período
   const savingsRate = (totalInvested + totalPaid) > 0 ? (totalInvested / (totalInvested + totalPaid)) * 100 : 0;
@@ -212,9 +212,14 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               {periodGoal > 0 ? (
                 <>
                   <div className="text-3xl font-bold">{Math.round(goalProgress)}%</div>
-                  <Progress value={goalProgress} className="h-3 mt-3" />
+                  <Progress value={Math.min(goalProgress, 100)} className="h-3 mt-3" />
                   <p className="text-xs text-muted-foreground mt-2">
                     R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ {periodGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {goalProgress > 100 && (
+                      <span className="block text-green-600 font-medium">
+                        R$ {(totalInvested - periodGoal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} além da meta! 🎉
+                      </span>
+                    )}
                   </p>
                 </>
               ) : (

@@ -503,8 +503,15 @@ export function InvestmentsPage() {
                 <CardContent>
                   {periodGoal > 0 ? (
                     <>
-                      <div className="text-2xl font-bold">{Math.min(100, Math.round((totalInvested / periodGoal) * 100))}%</div>
-                      <p className="text-xs text-muted-foreground">R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ {periodGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <div className="text-2xl font-bold">{Math.round((totalInvested / periodGoal) * 100)}%</div>
+                      <p className="text-xs text-muted-foreground">
+                        R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ {periodGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {totalInvested > periodGoal && (
+                          <span className="block text-green-600 font-medium">
+                            R$ {(totalInvested - periodGoal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} além da meta! 🎉
+                          </span>
+                        )}
+                      </p>
                     </>
                   ) : (
                     <p className="text-xs text-muted-foreground">Defina uma meta mensal para acompanhar o progresso.</p>

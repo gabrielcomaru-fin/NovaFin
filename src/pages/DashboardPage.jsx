@@ -81,7 +81,7 @@ export function DashboardPage() {
     const monthlyGoal = Number(investmentGoal) || 0;
     const periodInvestmentGoal = monthlyGoal * periodMonths;
     const investmentProgress = periodInvestmentGoal > 0 
-      ? Math.min((totalMonthlyInvestments / periodInvestmentGoal) * 100, 100)
+      ? (totalMonthlyInvestments / periodInvestmentGoal) * 100
       : 0;
 
     const expenseCeiling = accounts.reduce((sum, acc) => sum + (acc.teto_gasto || Infinity), Infinity); // teto de gastos definido por conta
