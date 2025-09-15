@@ -6,7 +6,8 @@ import {
   formatExpensesForExport, 
   formatInvestmentsForExport, 
   formatAccountsForExport,
-  generateFullReport 
+  generateFullReport,
+  exportToPDF
 } from '@/lib/exportUtils';
 
 export const useExport = () => {
@@ -75,6 +76,12 @@ export const useExport = () => {
         () => exportToJSON(report, filename),
         `${filename}.json`,
         'JSON'
+      );
+    } else if (format === 'PDF') {
+      exportData(
+        () => exportToPDF(report, filename),
+        `${filename}.pdf`,
+        'PDF'
       );
     } else {
       // Para CSV, exportar cada seção separadamente

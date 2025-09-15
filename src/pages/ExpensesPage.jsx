@@ -7,7 +7,8 @@ import { ExpenseForm } from '@/components/ExpenseForm';
 import { TransactionTable } from '@/components/TransactionTable';
 import { Pagination } from '@/components/Pagination';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
-import { CategoryChart } from '@/components/CategoryChart';
+import { CategoryBreakdownChart } from '@/components/charts/CategoryBreakdownChart';
+import { ExpenseTrendChart } from '@/components/charts/ExpenseTrendChart';
 import { CompactSearchFilter } from '@/components/CompactSearchFilter';
 import { CompactHeader } from '@/components/CompactHeader';
 import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle2, Clock } from 'lucide-react';
@@ -447,28 +448,11 @@ export function ExpensesPage() {
 
             </div>
 
-            {/* Gráfico por categoria */}
-            {expensesByCategoryChartData.length > 0 ? (
-              <CategoryChart
-                data={expensesByCategoryChartData}
-                title="Divisão de Despesas por Categoria"
-                description="Análise percentual dos seus gastos no período."
-              />
-            ) : (
-              <div className="text-center text-muted-foreground py-12">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                    <BarChart3 className="w-10 h-10 opacity-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="font-semibold text-lg">Nenhum dado de despesa para o dashboard.</p>
-                    <p className="text-sm max-w-md">
-                      Registre suas despesas para visualizar gráficos e insights detalhados aqui.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Tendência de Gastos (últimos meses) */}
+            <ExpenseTrendChart expenses={filteredExpenses} categories={expenseCategories} />
+
+            {/* Gráfico por categoria (pizza) */}
+            <CategoryBreakdownChart expenses={filteredExpenses} categories={categories} />
           </TabsContent>
         </Tabs>
       </div>

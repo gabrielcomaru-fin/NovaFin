@@ -4,8 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useFinance } from '@/contexts/FinanceDataContext';
-// import { useExport } from '@/hooks/useExport';
-// import { formatExpensesForExport, formatInvestmentsForExport } from '@/lib/exportUtils';
+import { useExport } from '@/hooks/useExport';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CompactHeader } from '@/components/CompactHeader';
 import { ExpenseTrendChart } from '@/components/charts/ExpenseTrendChart';
@@ -17,8 +16,8 @@ import { Download, FileText, BarChart3, PieChart, TrendingUp } from 'lucide-reac
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, subMonths, parseISO, format } from 'date-fns';
 
 const ReportsPage = memo(function ReportsPage() {
-  const { expenses, investments, categories, investmentGoal, loading } = useFinance();
-  // const { isExporting, exportFullReport, exportFilteredData } = useExport();
+  const { expenses, investments, categories, accounts, investmentGoal, loading } = useFinance();
+  const { isExporting, exportFullReport } = useExport();
   
   const [periodType, setPeriodType] = useState('monthly');
   const [dateRange, setDateRange] = useState(undefined);
@@ -65,8 +64,8 @@ const ReportsPage = memo(function ReportsPage() {
   }, [filteredExpenses, filteredInvestments]);
 
   const handleExportReport = () => {
-    console.log('Export button clicked - funcionalidade temporariamente desabilitada');
-    alert('Funcionalidade de exportação temporariamente desabilitada para correção');
+    const periodLabel = `${format(startDate, 'yyyy-MM-dd')}_a_${format(endDate, 'yyyy-MM-dd')}`;
+    exportFullReport(filteredExpenses, filteredInvestments, accounts, categories, periodLabel, 'PDF');
   };
 
   const handleExportFilteredData = () => {
@@ -112,9 +111,11 @@ const ReportsPage = memo(function ReportsPage() {
               variant="outline"
               size="sm"
               className="flex items-center gap-2"
+              disabled={isExporting}
+              title={isExporting ? 'Exportando…' : undefined}
             >
               <Download className="h-4 w-4" />
-              Exportar Relatório
+              {isExporting ? 'Exportando…' : 'Exportar Relatório'}
             </Button>
           </div>
         </CompactHeader>
