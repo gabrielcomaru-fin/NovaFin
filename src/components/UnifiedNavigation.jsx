@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   LayoutDashboard,
   Receipt,
@@ -26,6 +29,7 @@ import {
   Target,
   BarChart3,
   Wallet,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -54,6 +58,17 @@ export function UnifiedNavigation({
   const location = useLocation();
   const { user: authUser } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [favoriteRoutes, setFavoriteRoutes] = useState(() => {
+    try {
+      const raw = localStorage.getItem('sidebar:favorites');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  
   
   // Auto-close sidebar on mobile when route changes
   useEffect(() => {
@@ -61,6 +76,29 @@ export function UnifiedNavigation({
       onClose();
     }
   }, [isMobile, isOpen, onClose, location.pathname]);
+
+  // Persist favoritos e recentes
+  useEffect(() => {
+    try { localStorage.setItem('sidebar:favorites', JSON.stringify(favoriteRoutes)); } catch {}
+  }, [favoriteRoutes]);
+  
+
+  // Atalhos de teclado: Ctrl/Cmd+K para busca, Ctrl/Cmd+B para colapsar
+  useEffect(() => {
+    const handler = (e) => {
+      const isMod = e.ctrlKey || e.metaKey;
+      if (isMod && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setIsSearchOpen((v) => !v);
+      }
+      if (isMod && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        toggleCollapse();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const toggleCollapse = () => {
     const newCollapsedState = !isCollapsed;
@@ -73,8 +111,36 @@ export function UnifiedNavigation({
 
   const currentUser = user || authUser;
 
+  const toggleFavorite = useCallback((route) => {
+    setFavoriteRoutes((prev) => {
+      const exists = prev.includes(route);
+      return exists ? prev.filter((r) => r !== route) : [...prev, route];
+    });
+  }, []);
+
+  
+
+  const itemsByRoute = useMemo(() => {
+    const map = new Map();
+    navItems.forEach((i) => map.set(i.to, i));
+    return map;
+  }, []);
+
+  const favoriteItems = useMemo(() => favoriteRoutes
+    .map((r) => itemsByRoute.get(r))
+    .filter(Boolean), [favoriteRoutes, itemsByRoute]);
+
+  
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery) return navItems;
+    const q = searchQuery.toLowerCase();
+    return navItems.filter((i) => i.label.toLowerCase().includes(q) || i.to.toLowerCase().includes(q));
+  }, [searchQuery]);
+
   // Conteúdo do sidebar (reutilizado para desktop e mobile)
   const SidebarContent = () => (
+    <TooltipProvider>
     <div className="flex flex-col h-full relative">
       {/* Header */}
       <div className="flex items-center justify-between p-2 border-b border-border">
@@ -87,7 +153,8 @@ export function UnifiedNavigation({
           )}
         </Link>
         
-        {/* Botão de fechar no mobile */}
+          {/* Botões header à direita */}
+          <div className="flex items-center gap-1">
         {isMobile && (
           <Button
             variant="ghost"
@@ -98,6 +165,7 @@ export function UnifiedNavigation({
             <X className="h-4 w-4" />
           </Button>
         )}
+          </div>
       </div>
       
       {/* Botão de colapsar no desktop - posicionado absolutamente */}
@@ -115,24 +183,56 @@ export function UnifiedNavigation({
         </Button>
       )}
 
-      {/* Navigation */}
+        {/* Campo de busca inline quando expandido (desktop) */}
+        {!isMobile && !isCollapsed && (
+          <div className="px-2 pt-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar... (Ctrl/⌘K)"
+                className="pl-9 h-8 text-sm"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Navegação com grupos inteligentes */}
       <nav className="flex-1 px-1.5 py-1 space-y-1">
-        {navItems.map((item) => (
-          <NavLink
+          {/* Favoritos */}
+          {favoriteItems.length > 0 && (!isCollapsed || isMobile) && (
+            <div className="px-3 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Favoritos</div>
+          )}
+          {favoriteItems.map((item) => (
+            <NavEntry
+              key={`fav-${item.to}`}
+              item={item}
+              isCollapsed={isCollapsed && !isMobile}
+              isMobile={isMobile}
+              isActivePath={location.pathname}
+              onFavorToggle={toggleFavorite}
+              isFavorite={favoriteRoutes.includes(item.to)}
+            />
+          ))}
+
+          {/* Recentes */}
+          
+
+          {/* Todos */}
+          {(!isCollapsed || isMobile) && (
+            <div className="px-3 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Navegação</div>
+          )}
+          {(searchQuery ? filteredItems : navItems).map((item) => (
+            <NavEntry
             key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center space-x-3 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )
-            }
-          >
-            <item.icon className="h-4 w-4 flex-shrink-0" />
-            {(!isCollapsed || isMobile) && <span className="truncate">{item.label}</span>}
-          </NavLink>
+              item={item}
+              isCollapsed={isCollapsed && !isMobile}
+              isMobile={isMobile}
+              isActivePath={location.pathname}
+              onFavorToggle={toggleFavorite}
+              isFavorite={favoriteRoutes.includes(item.to)}
+            />
         ))}
       </nav>
 
@@ -173,7 +273,62 @@ export function UnifiedNavigation({
         </DropdownMenu>
       </div>
     </div>
+    </TooltipProvider>
   );
+
+  // Entrada de navegação com suporte a tooltip no modo rail
+  const NavEntry = ({ item, isCollapsed, isMobile, isActivePath, onFavorToggle, isFavorite, onNavigate }) => {
+    const content = (
+      <NavLink
+        to={item.to}
+        onClick={() => onNavigate && onNavigate()}
+        className={({ isActive }) =>
+          cn(
+            "group flex items-center space-x-3 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            isActive
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )
+        }
+      >
+        <item.icon className="h-4 w-4 flex-shrink-0" />
+        {(!isCollapsed || isMobile) && (
+          <span className="truncate flex-1">{item.label}</span>
+        )}
+        {(!isCollapsed || isMobile) && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onFavorToggle(item.to); }}
+            className={cn(
+              "h-6 w-6 p-0 opacity-60 hover:opacity-100",
+              isFavorite ? "text-yellow-500" : "text-muted-foreground"
+            )}
+            aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+            title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          >
+            <Star className={cn("h-3.5 w-3.5", isFavorite && "fill-yellow-500")}/>
+          </Button>
+        )}
+      </NavLink>
+    );
+
+    if (isCollapsed && !isMobile) {
+      return (
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            {content}
+          </TooltipTrigger>
+          <TooltipContent side="right" className="flex items-center gap-2">
+            <item.icon className="h-3.5 w-3.5" />
+            <span className="text-sm">{item.label}</span>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+    return content;
+  };
 
   return (
     <>
@@ -256,6 +411,46 @@ export function UnifiedNavigation({
           </DropdownMenu>
         </header>
       )}
+
+      {/* Command Palette / Busca Global */}
+      <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-2">
+            <DialogTitle>Buscar</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 pt-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Pesquisar páginas..."
+                className="pl-10 h-10"
+              />
+            </div>
+            <div className="mt-3 max-h-72 overflow-auto">
+              {(filteredItems.length === 0) && (
+                <div className="text-sm text-muted-foreground px-2 py-3">Nenhum resultado.</div>
+              )}
+              {filteredItems.map((item) => (
+                <Link
+                  key={`search-${item.to}`}
+                  to={item.to}
+                  onClick={() => { setIsSearchOpen(false); registerRecent(item.to); }}
+                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="text-sm">{item.label}</span>
+                  {favoriteRoutes.includes(item.to) && (
+                    <Star className="ml-auto h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
