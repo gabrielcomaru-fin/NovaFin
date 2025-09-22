@@ -70,7 +70,7 @@ export function CalculatorPage() {
   return (
     <>
       <Helmet>
-        <title>Calculadora de Juros Compostos - FinanceApp</title>
+        <title>Calculadora de Juros Compostos - Lumify</title>
         <meta name="description" content="Projete o crescimento dos seus investimentos com a calculadora de juros compostos." />
       </Helmet>
       <div className="space-y-6">

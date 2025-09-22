@@ -62,7 +62,7 @@ export function PlansPage() {
   return (
     <>
       <Helmet>
-        <title>Planos - FinanceApp</title>
+        <title>Planos - Lumify</title>
         <meta name="description" content="Escolha o plano que melhor se adapta às suas necessidades financeiras." />
       </Helmet>
       <div className="space-y-6">

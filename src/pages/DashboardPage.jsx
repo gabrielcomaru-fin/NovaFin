@@ -179,7 +179,7 @@ export function DashboardPage() {
   return (
     <>
       <Helmet>
-        <title>Dashboard - FinanceApp</title>
+        <title>Dashboard - Lumify</title>
         <meta name="description" content="Seu controle financeiro." />
       </Helmet>
 

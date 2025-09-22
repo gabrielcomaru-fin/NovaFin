@@ -1,4 +1,4 @@
-# NovaFin - Sistema de Controle Financeiro Pessoal
+# Lumify - Sistema de Controle Financeiro Pessoal
 
 Um aplicativo moderno para gerenciamento de finanças pessoais, construído com React, Vite, Tailwind CSS e Supabase.
 
@@ -33,7 +33,7 @@ Um aplicativo moderno para gerenciamento de finanças pessoais, construído com 
 ### 1. Clone o repositório
 ```bash
 git clone <url-do-repositorio>
-cd NovaFin
+cd Lumify
 ```
 
 ### 2. Instale as dependências

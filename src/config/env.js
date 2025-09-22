@@ -5,7 +5,7 @@ export const config = {
     anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   },
   app: {
-    name: 'NovaFin',
+    name: 'Lumify',
     version: '1.0.0',
     environment: import.meta.env.MODE,
   }

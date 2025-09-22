@@ -8,7 +8,7 @@ export function RegisterPage() {
   return (
     <>
       <Helmet>
-        <title>Criar Conta - FinanceApp</title>
+        <title>Criar Conta - Lumify</title>
       </Helmet>
       <AuthForm onRegister={signUp} />
     </>

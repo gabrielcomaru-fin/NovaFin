@@ -199,7 +199,7 @@ export const exportToPDF = (report, filename) => {
   // Título
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('Relatório Financeiro - NovaFin', pageWidth / 2, y, { align: 'center' });
+  doc.text('Relatório Financeiro - Lumify', pageWidth / 2, y, { align: 'center' });
   y += 24;
 
   doc.setFont('helvetica', 'normal');
@@ -288,7 +288,7 @@ export const exportToPDF = (report, filename) => {
     const footerY = doc.internal.pageSize.getHeight() - 20;
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text('Gerado por NovaFin', pageWidth / 2, footerY, { align: 'center' });
+    doc.text('Gerado por Lumify', pageWidth / 2, footerY, { align: 'center' });
     doc.setTextColor(0);
   };
   addFooter();

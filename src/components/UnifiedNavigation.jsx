@@ -151,7 +151,7 @@ export function UnifiedNavigation({
             <DollarSign className="h-4 w-4 text-primary-foreground" />
           </div>
           {(!isCollapsed || isMobile) && (
-            <span className="text-base font-semibold text-foreground">FinanceApp</span>
+            <span className="text-base font-semibold text-foreground">Lumify</span>
           )}
         </Link>
         
@@ -384,7 +384,7 @@ export function UnifiedNavigation({
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold">FinanceApp</span>
+            <span className="text-lg font-semibold">Lumify</span>
           </Link>
           
           <DropdownMenu>

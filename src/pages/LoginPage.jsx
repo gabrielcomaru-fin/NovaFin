@@ -8,7 +8,7 @@ export function LoginPage() {
   return (
     <>
       <Helmet>
-        <title>Login - FinanceApp</title>
+        <title>Login - Lumify</title>
       </Helmet>
       <AuthForm onLogin={signIn} />
     </>

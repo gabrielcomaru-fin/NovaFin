@@ -444,7 +444,7 @@ export function InvestmentProjectionPage() {
     return (
         <>
             <Helmet>
-                <title>Projeção de Investimentos - FinanceApp</title>
+                <title>Projeção de Investimentos - Lumify</title>
                 <meta name="description" content="Simule o crescimento do seu patrimônio com base em suas metas e rendimentos." />
             </Helmet>
             <div className="space-y-6">

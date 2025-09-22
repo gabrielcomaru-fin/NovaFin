@@ -154,7 +154,7 @@ export function SettingsPage() {
   return (
     <>
       <Helmet>
-        <title>Configurações - FinanceApp</title>
+        <title>Configurações - Lumify</title>
         <meta name="description" content="Gerencie suas preferências e configurações de conta." />
       </Helmet>
       <div className="space-y-6">

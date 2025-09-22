@@ -24,7 +24,7 @@ export function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Helmet>
-        <title>Redefinir senha - FinanceApp</title>
+        <title>Redefinir senha - Lumify</title>
       </Helmet>
       <div className="w-full max-w-md">
         <Card>

@@ -1,14 +1,56 @@
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<link rel="icon" type="image/svg+xml" href="/vite.svg" />
-		<meta name="generator" content="Hostinger Horizons" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hostinger Horizons</title>
-	</head>
-	<body>
-		<div id="root"></div>
-		<script type="module" src="/src/main.jsx"></script>
-	</body>
-</html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Lumify — Inteligência Financeira para Decisões Brilhantes</title>
+    <meta name="description" content="Lumify é uma plataforma de inteligência financeira que transforma dados em estratégias vencedoras. Teste grátis e planos premium." />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="icon" href="/lumify-favicon.svg" />
+    <link rel="stylesheet" href="/landing/styles.css" />
+    <script defer src="/landing/script.js"></script>
+  </head>
+  <body>
+    <script>document.documentElement.classList.add('js')</script>
+    <header class="site-header">
+      <div class="container nav">
+        <a href="#hero" class="logo" aria-label="Lumify">
+          <span class="logo-mark" aria-hidden="true"></span>
+          <span class="logo-text">Lumify</span>
+        </a>
+
+        <button class="nav-toggle" aria-expanded="false" aria-label="Abrir menu">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+
+        <nav class="nav-links" aria-label="Principal">
+          <a href="#features">Recursos</a>
+          <a href="#pricing">Preços</a>
+          <a href="#testimonials">Depoimentos</a>
+          <a href="#faq">FAQ</a>
+          <a href="/app.html" class="btn btn-cta" title="Ir para o App">Produto (App)</a>
+          <a href="#pricing" class="btn btn-cta">Teste Grátis</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div id="landing-root"></div>
+      <script>
+        // Injeta o conteúdo da landing mantendo um único arquivo raiz
+        fetch('/landing/index.html').then(r=>r.text()).then(html=>{
+          const parser=new DOMParser();
+          const doc=parser.parseFromString(html,'text/html');
+          const main=doc.querySelector('main');
+          const footer=doc.querySelector('footer');
+          const container=document.getElementById('landing-root');
+          if(main) container.appendChild(document.importNode(main,true));
+          if(footer) document.body.appendChild(document.importNode(footer,true));
+        });
+      </script>
+    </main>
+  </body>
+  </html>

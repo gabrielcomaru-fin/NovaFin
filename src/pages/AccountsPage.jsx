@@ -6,7 +6,7 @@ export function AccountsPage() {
   return (
     <>
       <Helmet>
-        <title>Instituições Financeiras - FinanceApp</title>
+        <title>Instituições Financeiras - Lumify</title>
         <meta name="description" content="Gerencie suas instituições financeiras e patrimônio." />
       </Helmet>
       <div className="space-y-4">

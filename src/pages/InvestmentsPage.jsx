@@ -320,7 +320,7 @@ export function InvestmentsPage() {
   return (
     <>
       <Helmet>
-        <title>Gestão de Investimentos - FinanceApp</title>
+        <title>Gestão de Investimentos - Lumify</title>
         <meta name="description" content="Acompanhe seus aportes e metas de investimento." />
       </Helmet>
       <div className="space-y-4">

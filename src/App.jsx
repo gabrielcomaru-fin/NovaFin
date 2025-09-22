@@ -42,10 +42,10 @@ function AppContent() {
   return (
     <>
       <Helmet>
-        <title>FinanceApp - Seu Controle Financeiro Pessoal</title>
-        <meta name="description" content="Gerencie suas finanças pessoais com facilidade. Controle gastos, acompanhe investimentos e alcance suas metas financeiras." />
-        <meta property="og:title" content="FinanceApp - Seu Controle Financeiro Pessoal" />
-        <meta property="og:description" content="Gerencie suas finanças pessoais com facilidade. Controle gastos, acompanhe investimentos e alcance suas metas financeiras." />
+        <title>Lumify - Seu Controle Financeiro Pessoal</title>
+        <meta name="description" content="Lumify: controle de despesas, investimentos e metas com dashboards claros e projeções inteligentes." />
+        <meta property="og:title" content="Lumify - Seu Controle Financeiro Pessoal" />
+        <meta property="og:description" content="Controle suas finanças com o Lumify: orçamento, investimentos e relatórios em um só lugar." />
       </Helmet>
       
       <Router>

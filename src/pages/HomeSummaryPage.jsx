@@ -146,7 +146,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
   return (
     <>
       <Helmet>
-        <title>Resumo Geral - FinanceApp</title>
+        <title>Resumo Geral - Lumify</title>
       </Helmet>
       <div className="space-y-6">
         <CompactHeader 

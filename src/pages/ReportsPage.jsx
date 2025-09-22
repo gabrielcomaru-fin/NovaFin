@@ -87,7 +87,7 @@ const ReportsPage = memo(function ReportsPage() {
   return (
     <>
       <Helmet>
-        <title>Relatórios - FinanceApp</title>
+        <title>Relatórios - Lumify</title>
       </Helmet>
       
       <div className="space-y-4">

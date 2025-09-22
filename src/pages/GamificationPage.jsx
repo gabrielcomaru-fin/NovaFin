@@ -7,7 +7,7 @@ export function GamificationPage() {
   return (
     <>
       <Helmet>
-        <title>Conquistas - FinanceApp</title>
+        <title>Conquistas - Lumify</title>
         <meta name="description" content="Acompanhe seus pontos, streaks e conquistas." />
       </Helmet>
       <div className="space-y-6">

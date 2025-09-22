@@ -239,7 +239,7 @@ export function ExpensesPage() {
   return (
     <>
       <Helmet>
-        <title>Controle de Despesas - FinanceApp</title>
+        <title>Controle de Despesas - Lumify</title>
         <meta name="description" content="Adicione e gerencie suas despesas." />
       </Helmet>
       <div className="space-y-4">
