@@ -10,7 +10,7 @@ export function GamificationPage() {
         <title>Conquistas - Lumify</title>
         <meta name="description" content="Acompanhe seus pontos, streaks e conquistas." />
       </Helmet>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-5 page-top">
         <h1 className="text-2xl font-bold tracking-tight">Conquistas</h1>
 
         <GamificationPanel />

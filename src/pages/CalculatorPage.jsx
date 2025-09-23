@@ -73,7 +73,7 @@ export function CalculatorPage() {
         <title>Calculadora de Juros Compostos - Lumify</title>
         <meta name="description" content="Projete o crescimento dos seus investimentos com a calculadora de juros compostos." />
       </Helmet>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-5 page-top">
         <h1 className="text-2xl font-bold tracking-tight">Calculadora de Juros Compostos</h1>
         
         <Card>
@@ -82,7 +82,7 @@ export function CalculatorPage() {
             <CardDescription>Veja o potencial de crescimento dos seus investimentos ao longo do tempo.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
               <div className="space-y-2">
                 <Label htmlFor="initialAmount">Valor Inicial (R$)</Label>
                 <CurrencyInput
@@ -120,9 +120,9 @@ export function CalculatorPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
+            className="space-y-4 md:space-y-5"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Total Acumulado</CardTitle>

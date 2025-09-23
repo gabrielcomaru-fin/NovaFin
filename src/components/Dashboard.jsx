@@ -17,6 +17,9 @@ const Dashboard = memo(function Dashboard({
   savingsRate,
   projection12m,
   categories,
+  previousMonthExpenses = 0,
+  previousMonthInvestments = 0,
+  isLoading = false,
 }) {
   // Memoizar cálculos pesados
   const investmentProgress = useMemo(() => 
@@ -78,7 +81,7 @@ const Dashboard = memo(function Dashboard({
   }, [expenseCategories, expensesByCategory, totalMonthlyInvestments, investmentGoal, totalMonthlyExpenses]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-5">
       {/* KPIs principais */}
       <KPICards
         totalMonthlyExpenses={totalMonthlyExpenses}
@@ -88,6 +91,9 @@ const Dashboard = memo(function Dashboard({
         savingsRate={savingsRate}
         periodInvestmentGoal={periodInvestmentGoal}
         investmentProgress={investmentProgress}
+        previousMonthExpenses={previousMonthExpenses}
+        previousMonthInvestments={previousMonthInvestments}
+        isLoading={isLoading}
       />
 
       {/* Gamificação */}
@@ -107,7 +113,7 @@ const Dashboard = memo(function Dashboard({
       <ProjectionCard projection12m={projection12m} />
 
       {/* Gastos por categoria e dicas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         <ExpenseBreakdown
           expensesByCategory={expensesByCategory}
           totalMonthlyExpenses={totalMonthlyExpenses}

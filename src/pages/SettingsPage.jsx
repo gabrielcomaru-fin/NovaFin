@@ -157,10 +157,10 @@ export function SettingsPage() {
         <title>Configurações - Lumify</title>
         <meta name="description" content="Gerencie suas preferências e configurações de conta." />
       </Helmet>
-      <div className="space-y-6">
+      <div className="space-y-5 md:space-y-6 page-top">
         <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-6">
                 <Card>
                     <CardHeader>

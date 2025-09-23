@@ -9,7 +9,7 @@ export function AccountsPage() {
         <title>Instituições Financeiras - Lumify</title>
         <meta name="description" content="Gerencie suas instituições financeiras e patrimônio." />
       </Helmet>
-      <div className="space-y-4">
+      <div className="space-y-4 page-top">
         <h1 className="text-2xl font-bold tracking-tight">Instituições Financeiras</h1>
         <AccountForm />
       </div>

@@ -323,7 +323,7 @@ export function InvestmentsPage() {
         <title>Gestão de Investimentos - Lumify</title>
         <meta name="description" content="Acompanhe seus aportes e metas de investimento." />
       </Helmet>
-      <div className="space-y-4">
+      <div className="space-y-4 md:space-y-5 page-top">
         <CompactHeader 
           title="Gestão de Investimentos"
           subtitle="Acompanhe seus aportes e metas de investimento"
@@ -370,7 +370,7 @@ export function InvestmentsPage() {
               showPaymentFilter={false}
             />
           </div>
-          <TabsContent value="relatorio" className="mt-6 space-y-6">
+          <TabsContent value="relatorio" className="mt-4 md:mt-5 space-y-4 md:space-y-5">
             <Card>
               <CardHeader>
                 <CardTitle>Seus Aportes</CardTitle>
@@ -419,7 +419,7 @@ export function InvestmentsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="dashboard" className="mt-6 space-y-6">
+          <TabsContent value="dashboard" className="mt-4 md:mt-5 space-y-4 md:space-y-5">
             {showStartOfMonthAlert && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -443,7 +443,7 @@ export function InvestmentsPage() {
                 </CardContent>
               </Card>
             )}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Aportado</CardTitle>
@@ -553,7 +553,7 @@ export function InvestmentsPage() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
               {investmentsByCategoryChartData.length > 0 ? (
                 <CategoryChart 
                   data={investmentsByCategoryChartData}

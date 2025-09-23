@@ -8,7 +8,7 @@ import { startOfYear, endOfYear, startOfMonth, endOfMonth, parseISO, subMonths, 
 import { useFinance } from '@/contexts/FinanceDataContext';
 
 export function DashboardPage() {
-  const { expenses, investments, accounts, categories, investmentGoal, totalPatrimony, totalInvestmentBalance } = useFinance();
+  const { expenses, investments, accounts, categories, investmentGoal, totalPatrimony, totalInvestmentBalance, isLoading } = useFinance();
 
   const [periodType, setPeriodType] = useState('monthly');
   const [dateRange, setDateRange] = useState(undefined);
@@ -103,6 +103,16 @@ export function DashboardPage() {
     }, 0) / (last3Months.length || 1);
     const projection12m = avgLast3 * 12;
 
+    // Calcular mês anterior
+    const prevStart = startOfMonth(subMonths(startDate, 1));
+    const prevEnd = endOfMonth(subMonths(endDate, 1));
+    const prevExpenses = expenses
+      .filter(e => { const d = parseISO(e.data); return d >= prevStart && d <= prevEnd; })
+      .reduce((s, e) => s + e.valor, 0);
+    const prevInvestments = investments
+      .filter(i => { const d = parseISO(i.data); return d >= prevStart && d <= prevEnd; })
+      .reduce((s, i) => s + i.valor_aporte, 0);
+
     return {
       filteredExpenses,
       filteredInvestments,
@@ -116,6 +126,8 @@ export function DashboardPage() {
       periodInvestmentGoal,
       savingsRate,
       projection12m,
+      previousMonthExpenses: prevExpenses,
+      previousMonthInvestments: prevInvestments,
     };
   }, [expenses, investments, categories, periodType, dateRange, month, year, accounts, investmentGoal]);
 
@@ -183,7 +195,7 @@ export function DashboardPage() {
         <meta name="description" content="Seu controle financeiro." />
       </Helmet>
 
-      <div className="space-y-4">
+      <div className="space-y-4 page-top">
         <CompactHeader 
           title="Dashboard Financeiro"
           subtitle="Visão geral das suas finanças"
@@ -216,6 +228,9 @@ export function DashboardPage() {
           expenseProgress={filteredData.expenseProgress}
           investmentProgress={filteredData.investmentProgress}
           educationTips={educationTips}
+          previousMonthExpenses={filteredData.previousMonthExpenses}
+          previousMonthInvestments={filteredData.previousMonthInvestments}
+          isLoading={isLoading}
         />
 
         <MonthlyComparisonChart data={monthlyComparisonData} />

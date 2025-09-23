@@ -45,14 +45,14 @@ export const AuthProvider = ({ children }) => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign up Failed",
-        description: error.message || "Something went wrong",
+        title: "Falha no cadastro",
+        description: error.message || "Ocorreu um problema ao criar sua conta.",
       });
     } else {
-        toast({
-            title: "Cadastro realizado com sucesso!",
-            description: "Enviamos um e-mail de confirmação para você.",
-        });
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Enviamos um e-mail de confirmação para você.",
+      });
     }
 
     return { data, error };
@@ -67,8 +67,8 @@ export const AuthProvider = ({ children }) => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign in Failed",
-        description: error.message || "Something went wrong",
+        title: "Falha no login",
+        description: error.message || "Não foi possível realizar o login.",
       });
     }
 
@@ -81,8 +81,8 @@ export const AuthProvider = ({ children }) => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign out Failed",
-        description: error.message || "Something went wrong",
+        title: "Falha ao sair",
+        description: error.message || "Não foi possível encerrar a sessão.",
       });
     }
 

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { useToast } from '@/components/ui/use-toast';
+import { usePersistentState } from '@/hooks/usePersistentState';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExpenseForm } from '@/components/ExpenseForm';
 import { TransactionTable } from '@/components/TransactionTable';
@@ -33,30 +34,12 @@ export function ExpensesPage() {
   const [paymentStatus, setPaymentStatus] = useState('all'); // 'all', 'paid', 'pending'
   const [sortBy, setSortBy] = useState('date-desc');
 
-  const getInitialFilter = () => {
-    const savedFilter = localStorage.getItem(`filter_${PAGE_ID}`);
-    if (savedFilter) {
-      const { periodType, dateRange, month, year } = JSON.parse(savedFilter);
-      return {
-        periodType: periodType || 'monthly',
-        dateRange: dateRange ? { from: new Date(dateRange.from), to: dateRange.to ? new Date(dateRange.to) : undefined } : undefined,
-        month: month !== undefined ? month : new Date().getMonth(),
-        year: year !== undefined ? year : new Date().getFullYear(),
-      };
-    }
-    return {
-      periodType: 'monthly',
-      dateRange: undefined,
-      month: new Date().getMonth(),
-      year: new Date().getFullYear(),
-    };
-  };
-
-  const [filter, setFilter] = useState(getInitialFilter);
-
-  useEffect(() => {
-    localStorage.setItem(`filter_${PAGE_ID}`, JSON.stringify(filter));
-  }, [filter]);
+  const [filter, setFilter] = usePersistentState(`filter_${PAGE_ID}`, () => ({
+    periodType: 'monthly',
+    dateRange: undefined,
+    month: new Date().getMonth(),
+    year: new Date().getFullYear(),
+  }));
 
   const handleSetDateRange = (range) => {
     setFilter({ ...filter, dateRange: range });
@@ -242,7 +225,7 @@ export function ExpensesPage() {
         <title>Controle de Despesas - Lumify</title>
         <meta name="description" content="Adicione e gerencie suas despesas." />
       </Helmet>
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4 page-top">
         <CompactHeader 
           title="Controle de Despesas"
           subtitle="Gerencie suas despesas e acompanhe seus gastos"
@@ -292,7 +275,7 @@ export function ExpensesPage() {
             />
           </div>
 
-          <TabsContent value="relatorio" className="mt-6 space-y-6">
+          <TabsContent value="relatorio" className="mt-4 md:mt-5 space-y-4 md:space-y-5">
             <Card>
               <CardHeader>
                 <CardTitle>Suas Despesas</CardTitle>
@@ -342,8 +325,8 @@ export function ExpensesPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="dashboard" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <TabsContent value="dashboard" className="mt-4 md:mt-5 space-y-4 md:space-y-5">
+            <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
 
               {/* Despesas Pagas */}
               <Card className="hover:shadow-lg transition-shadow">

@@ -1,23 +1,22 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Toaster } from '@/components/ui/toaster';
-import { LandingPage } from '@/pages/LandingPage';
-import { LoginPage } from '@/pages/LoginPage';
-import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
-import { RegisterPage } from '@/pages/RegisterPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { HomeSummaryPage } from '@/pages/HomeSummaryPage';
-import { ExpensesPage } from '@/pages/ExpensesPage';
-import { InvestmentsPage } from '@/pages/InvestmentsPage';
-import { AccountsPage } from '@/pages/AccountsPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { PlansPage } from '@/pages/PlansPage';
-import { CalculatorPage } from '@/pages/CalculatorPage';
-import { InvestmentProjectionPage } from '@/pages/InvestmentProjectionPage';
-import { ReportsPage } from '@/pages/ReportsPage';
-import { GamificationPage } from '@/pages/GamificationPage';
+const LandingPage = lazy(() => import('@/pages/LandingPage').then(m => ({ default: m.LandingPage })));
+const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
+const RegisterPage = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const HomeSummaryPage = lazy(() => import('@/pages/HomeSummaryPage').then(m => ({ default: m.HomeSummaryPage })));
+const ExpensesPage = lazy(() => import('@/pages/ExpensesPage').then(m => ({ default: m.ExpensesPage })));
+const InvestmentsPage = lazy(() => import('@/pages/InvestmentsPage').then(m => ({ default: m.InvestmentsPage })));
+const AccountsPage = lazy(() => import('@/pages/AccountsPage').then(m => ({ default: m.AccountsPage })));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const PlansPage = lazy(() => import('@/pages/PlansPage').then(m => ({ default: m.PlansPage })));
+const CalculatorPage = lazy(() => import('@/pages/CalculatorPage').then(m => ({ default: m.CalculatorPage })));
+const InvestmentProjectionPage = lazy(() => import('@/pages/InvestmentProjectionPage').then(m => ({ default: m.InvestmentProjectionPage })));
+const ReportsPage = lazy(() => import('@/pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
+const GamificationPage = lazy(() => import('@/pages/GamificationPage').then(m => ({ default: m.GamificationPage })));
 import { MainLayout } from '@/components/MainLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { FinanceDataProvider } from '@/contexts/FinanceDataContext';
@@ -51,6 +50,15 @@ function AppContent() {
       <Router>
         <FinanceDataProvider>
           <GamificationProvider>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
+              />
+            </div>
+          }>
           <Routes>
             <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
@@ -74,11 +82,12 @@ function AppContent() {
             
             <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
           </Routes>
+          </Suspense>
           </GamificationProvider>
         </FinanceDataProvider>
       </Router>
       
-      <Toaster />
+      {/* Toaster é renderizado no App.jsx; manter import apenas se usado globalmente */}
     </>
   );
 }

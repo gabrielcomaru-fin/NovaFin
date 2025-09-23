@@ -152,6 +152,9 @@
 }
 
 @layer utilities {
+  .page-top {
+    @apply pt-2 md:pt-3;
+  }
   .gradient-text-blue {
     @apply bg-gradient-to-r from-blue-400 to-primary bg-clip-text text-transparent;
   }

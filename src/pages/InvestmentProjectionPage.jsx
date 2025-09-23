@@ -447,7 +447,7 @@ export function InvestmentProjectionPage() {
                 <title>Projeção de Investimentos - Lumify</title>
                 <meta name="description" content="Simule o crescimento do seu patrimônio com base em suas metas e rendimentos." />
             </Helmet>
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-5 page-top">
                 <h1 className="text-2xl font-bold tracking-tight">Projeção de Investimentos</h1>
 
                 <Tabs defaultValue="simple">
@@ -463,7 +463,7 @@ export function InvestmentProjectionPage() {
                                 <CardDescription>Usa seu histórico para preencher e simular automaticamente.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-3">
                                     <div className="space-y-2">
                                         <Label>Perfil de Risco</Label>
                                         <div className="grid grid-cols-3 gap-2">
@@ -513,7 +513,7 @@ export function InvestmentProjectionPage() {
 
                                 {/* Resumo rápido didático */}
                                 {result && (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-5">
                                         <Card>
                                             <CardHeader className="pb-2">
                                                 <CardTitle className="text-sm font-medium">Patrimônio estimado no fim</CardTitle>
@@ -552,7 +552,7 @@ export function InvestmentProjectionPage() {
 
                                 {/* Marcos por ano (tabela simples) */}
                                 {chartData.length > 0 && (
-                                    <div className="mt-6">
+                                    <div className="mt-4 md:mt-5">
                                         <div className="text-lg font-semibold mb-4 flex items-center gap-2">
                                             <Target className="h-5 w-5 text-primary" />
                                             Marcos por ano
@@ -625,7 +625,7 @@ export function InvestmentProjectionPage() {
                                 <CardDescription>Defina premissas e projete seu patrimônio com bandas de incerteza.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-5">
                                     <div className="space-y-2">
                                         <Label htmlFor="initialAmount">Patrimônio Inicial (R$)</Label>
                                         <CurrencyInput id="initialAmount" value={calcData.initialAmount} onChange={(val) => handleCurrencyChange(val, 'initialAmount')} />
@@ -681,10 +681,10 @@ export function InvestmentProjectionPage() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="space-y-6"
+                        className="space-y-4 md:space-y-5"
                     >
                         {/* Comparativo de cenários e sensibilidade de aporte */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
                             {/* Comparativo de cenários */}
                             <Card>
                                 <CardHeader>

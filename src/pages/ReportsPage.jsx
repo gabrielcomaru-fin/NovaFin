@@ -90,7 +90,7 @@ const ReportsPage = memo(function ReportsPage() {
         <title>Relatórios - Lumify</title>
       </Helmet>
       
-      <div className="space-y-4">
+      <div className="space-y-4 md:space-y-5 page-top">
         <CompactHeader 
           title="Relatórios"
           subtitle="Análises detalhadas dos seus dados financeiros"
@@ -121,7 +121,7 @@ const ReportsPage = memo(function ReportsPage() {
         </CompactHeader>
 
         {/* Resumo do Período */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -176,7 +176,7 @@ const ReportsPage = memo(function ReportsPage() {
         </div>
 
         {/* Tabs com diferentes tipos de relatórios */}
-        <Tabs defaultValue="trends" className="space-y-4">
+        <Tabs defaultValue="trends" className="space-y-4 md:space-y-5">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="trends" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -200,8 +200,8 @@ const ReportsPage = memo(function ReportsPage() {
             <ExpenseTrendChart expenses={expenses} categories={categories} />
           </TabsContent>
 
-          <TabsContent value="breakdown" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TabsContent value="breakdown" className="space-y-4 md:space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
               <CategoryBreakdownChart expenses={filteredExpenses} categories={categories} />
               <CategoryChart expenses={filteredExpenses} categories={categories} />
             </div>

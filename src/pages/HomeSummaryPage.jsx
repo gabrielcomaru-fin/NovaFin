@@ -148,7 +148,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
       <Helmet>
         <title>Resumo Geral - Lumify</title>
       </Helmet>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-5 page-top">
         <CompactHeader 
           title="Olá! 👋"
           subtitle="Aqui está seu resumo financeiro"
@@ -172,9 +172,9 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
         </CompactHeader>
 
         {/* KPIs principais - apenas os mais importantes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <Card className="border-l-4 border-l-destructive">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Gastos no Período
               </CardTitle>
@@ -189,7 +189,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
           </Card>
 
           <Card className="border-l-4 border-l-income">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Aportes no Período
               </CardTitle>
@@ -203,7 +203,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
           </Card>
 
           <Card className="border-l-4 border-l-primary">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Progresso da Meta
               </CardTitle>
@@ -233,7 +233,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
         </div>
 
         {/* Seção de insights e ações contextuais */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
           {/* Dicas educativas */}
           {educationTips.length > 0 && (
             <Card>

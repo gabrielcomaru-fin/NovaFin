@@ -51,7 +51,7 @@ export function MainLayout({ user, onLogout }) {
             ? 'lg:ml-16' // Desktop sidebar margin when collapsed
             : 'lg:ml-64' // Desktop sidebar margin when expanded
       }`}>
-        <div className={`px-4 py-4 ${isMobile ? 'px-3 py-3' : ''}`}>
+        <div className={`px-4 py-2 ${isMobile ? 'px-3 py-2' : ''}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
