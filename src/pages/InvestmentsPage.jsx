@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { useToast } from '@/components/ui/use-toast';
+import { usePersistentState } from '@/hooks/usePersistentState';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CategoryChart } from '@/components/CategoryChart';
 import { InvestmentForm } from '@/components/InvestmentForm';
@@ -29,42 +30,20 @@ export function InvestmentsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [investmentToEdit, setInvestmentToEdit] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('relatorio');
 
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
-  
-  const getInitialFilter = () => {
-    const savedFilter = localStorage.getItem(`filter_${PAGE_ID}`);
-    if (savedFilter) {
-      const { periodType, dateRange, month, year } = JSON.parse(savedFilter);
-      return {
-        periodType: periodType || 'monthly',
-        dateRange: dateRange ? { from: new Date(dateRange.from), to: dateRange.to ? new Date(dateRange.to) : undefined } : undefined,
-        month: month !== undefined ? month : new Date().getMonth(),
-        year: year !== undefined ? year : new Date().getFullYear(),
-      };
-    }
-    return {
-      periodType: 'monthly',
-      dateRange: undefined,
-      month: new Date().getMonth(),
-      year: new Date().getFullYear(),
-    };
-  };
 
-  const [filter, setFilter] = useState(getInitialFilter);
-
-  useEffect(() => {
-    if(filter.dateRange) {
-       setFilter(f => ({ ...f, periodType: 'monthly', month: undefined, year: undefined }));
-    }
-  }, [filter.dateRange]);
-
-  useEffect(() => {
-    localStorage.setItem(`filter_${PAGE_ID}`, JSON.stringify(filter));
-  }, [filter]);
+  // Filtro persistente, alinhado ao ExpensesPage
+  const [filter, setFilter] = usePersistentState(`filter_${PAGE_ID}`, () => ({
+    periodType: 'monthly',
+    dateRange: undefined,
+    month: new Date().getMonth(),
+    year: new Date().getFullYear(),
+  }));
 
   const handleSetDateRange = (range) => {
     setFilter({ ...filter, dateRange: range });
@@ -81,6 +60,11 @@ export function InvestmentsPage() {
   const handleSetPeriodType = (type) => {
     setFilter(f => ({ ...f, periodType: type, dateRange: undefined }));
   };
+
+  // Reset de página ao alterar filtros/busca/ordenação/aba
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, sortBy, filter, activeTab]);
 
   const investmentCategories = useMemo(() => categories.filter(c => c.tipo === 'investimento'), [categories]);
 
@@ -107,8 +91,8 @@ export function InvestmentsPage() {
         });
     }
 
-    // Aplicar busca por descrição
-    if (searchTerm) {
+    // Aplicar busca por descrição (apenas no Relatório)
+    if (activeTab === 'relatorio' && searchTerm) {
       filtered = filtered.filter(inv =>
         inv.descricao.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -137,7 +121,7 @@ export function InvestmentsPage() {
       filteredInvestments: filtered,
       totalInvested: total 
     };
-  }, [investments, filter, searchTerm, selectedCategory, sortBy]);
+  }, [investments, filter, searchTerm, selectedCategory, sortBy, activeTab]);
 
   // Alerta no começo do mês quando há meta definida e ainda não houve aportes
   const showStartOfMonthAlert = useMemo(() => {
@@ -348,7 +332,7 @@ export function InvestmentsPage() {
           />
         </CompactHeader>
         
-        <Tabs defaultValue="relatorio" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <TabsList className="grid w-full md:w-auto grid-cols-2">
               <TabsTrigger value="relatorio" className="flex items-center gap-2">
@@ -358,17 +342,31 @@ export function InvestmentsPage() {
                 <BarChart3 className="h-4 w-4" /> Dashboard
               </TabsTrigger>
             </TabsList>
-            <CompactSearchFilter
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              categories={investmentCategories}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              placeholder="Buscar por descrição..."
-              showPaymentFilter={false}
-            />
+            {activeTab === 'relatorio' ? (
+              <CompactSearchFilter
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                categories={investmentCategories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                placeholder="Buscar por descrição..."
+                showPaymentFilter={false}
+              />
+            ) : (
+              <CompactSearchFilter
+                searchTerm={''}
+                onSearchChange={() => {}}
+                categories={investmentCategories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                sortBy={'date-desc'}
+                onSortChange={() => {}}
+                placeholder="Filtrar por categoria"
+                showPaymentFilter={false}
+              />
+            )}
           </div>
           <TabsContent value="relatorio" className="mt-4 md:mt-5 space-y-4 md:space-y-5">
             <Card>

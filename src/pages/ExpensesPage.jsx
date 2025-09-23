@@ -27,6 +27,7 @@ export function ExpensesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [expenseToEdit, setExpenseToEdit] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('relatorio');
 
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,8 +83,8 @@ export function ExpensesPage() {
       });
     }
 
-    // Aplicar busca por descrição
-    if (searchTerm) {
+    // Aplicar busca por descrição (apenas no Relatório)
+    if (activeTab === 'relatorio' && searchTerm) {
       filtered = filtered.filter(exp =>
         exp.descricao.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -94,8 +95,8 @@ export function ExpensesPage() {
       filtered = filtered.filter(exp => exp.categoria_id === selectedCategory);
     }
 
-    // Aplicar filtro por status de pagamento
-    if (paymentStatus !== 'all') {
+    // Aplicar filtro por status de pagamento (apenas no Relatório)
+    if (activeTab === 'relatorio' && paymentStatus !== 'all') {
       filtered = filtered.filter(exp => {
         if (paymentStatus === 'paid') return exp.pago === true;
         if (paymentStatus === 'pending') return exp.pago === false;
@@ -147,7 +148,7 @@ export function ExpensesPage() {
       totalPaid: totalPaidAmount,
       totalPending: totalPendingAmount
     };
-  }, [expenses, filter, searchTerm, selectedCategory, paymentStatus, sortBy]);
+  }, [expenses, filter, searchTerm, selectedCategory, paymentStatus, sortBy, activeTab]);
 
   const expensesByCategoryChartData = useMemo(() => {
     if (filteredExpenses.length === 0) return [];
@@ -219,6 +220,11 @@ export function ExpensesPage() {
 
   const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  // Reset de página ao alterar filtros/busca/ordenação/aba
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, paymentStatus, sortBy, filter, activeTab]);
+
   return (
     <>
       <Helmet>
@@ -250,7 +256,7 @@ export function ExpensesPage() {
           />
         </CompactHeader>
 
-        <Tabs defaultValue="relatorio" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <TabsList className="grid w-full md:w-auto grid-cols-2">
               <TabsTrigger value="relatorio" className="flex items-center gap-2">
@@ -260,19 +266,33 @@ export function ExpensesPage() {
                 <BarChart3 className="h-4 w-4" /> Dashboard
               </TabsTrigger>
             </TabsList>
-            <CompactSearchFilter
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              categories={expenseCategories}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              paymentStatus={paymentStatus}
-              onPaymentStatusChange={setPaymentStatus}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              placeholder="Buscar por descrição..."
-              showPaymentFilter={true}
-            />
+            {activeTab === 'relatorio' ? (
+              <CompactSearchFilter
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                categories={expenseCategories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                paymentStatus={paymentStatus}
+                onPaymentStatusChange={setPaymentStatus}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                placeholder="Buscar por descrição..."
+                showPaymentFilter={true}
+              />
+            ) : (
+              <CompactSearchFilter
+                searchTerm={''}
+                onSearchChange={() => {}}
+                categories={expenseCategories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                sortBy={'date-desc'}
+                onSortChange={() => {}}
+                placeholder="Filtrar por categoria"
+                showPaymentFilter={false}
+              />
+            )}
           </div>
 
           <TabsContent value="relatorio" className="mt-4 md:mt-5 space-y-4 md:space-y-5">
