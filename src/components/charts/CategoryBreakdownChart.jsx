@@ -18,7 +18,7 @@ const CategoryBreakdownChart = memo(function CategoryBreakdownChart({ expenses, 
     });
 
     // Criar dados para o gráfico
-    const data = expenseCategories
+    const full = expenseCategories
       .map(category => ({
         name: category.nome,
         value: categoryTotals[category.id] || 0,
@@ -27,7 +27,10 @@ const CategoryBreakdownChart = memo(function CategoryBreakdownChart({ expenses, 
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
 
-    return data;
+    const top5 = full.slice(0, 5);
+    const othersSum = full.slice(5).reduce((s, e) => s + e.value, 0);
+    if (othersSum > 0) top5.push({ name: 'Outros', value: othersSum, color: '#94a3b8' });
+    return top5;
   }, [expenses, categories]);
 
   const totalExpenses = useMemo(() => 

@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Target } from 'lucide-react';
 import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
@@ -11,8 +11,6 @@ const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments,
       end: new Date()
     });
 
-    let cumulativeInvestment = 0;
-
     return last12Months.map(month => {
       const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
       const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
@@ -23,22 +21,20 @@ const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments,
       });
 
       const monthAmount = monthInvestments.reduce((sum, inv) => sum + inv.valor_aporte, 0);
-      cumulativeInvestment += monthAmount;
 
       return {
         month: format(month, 'MMM/yy'),
         monthly: monthAmount,
-        cumulative: cumulativeInvestment,
         goal: investmentGoal || 0,
         fullMonth: format(month, 'MMMM yyyy')
       };
     });
   }, [investments, investmentGoal]);
 
-  const growthRate = useMemo(() => {
+  const momDelta = useMemo(() => {
     if (chartData.length < 2) return 0;
-    const current = chartData[chartData.length - 1].cumulative;
-    const previous = chartData[chartData.length - 2].cumulative;
+    const current = chartData[chartData.length - 1].monthly;
+    const previous = chartData[chartData.length - 2].monthly;
     return previous > 0 ? ((current - previous) / previous) * 100 : 0;
   }, [chartData]);
 
@@ -63,14 +59,14 @@ const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments,
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-green-500" />
-          Crescimento dos Investimentos
+          Aportes Mensais x Meta
         </CardTitle>
         <CardDescription>
-          Evolução acumulada dos aportes nos últimos 12 meses
-          {growthRate > 0 && (
+          Últimos 12 meses: comparação dos aportes com a meta mensal
+          {momDelta !== 0 && (
             <span className="ml-2 flex items-center gap-1 text-green-600">
               <TrendingUp className="h-3 w-3" />
-              +{growthRate.toFixed(1)}% vs mês anterior
+              {momDelta > 0 ? '+' : ''}{momDelta.toFixed(1)}% vs mês anterior
             </span>
           )}
         </CardDescription>
@@ -104,24 +100,15 @@ const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments,
               <Legend />
               <Area
                 type="monotone"
-                dataKey="cumulative"
+                dataKey="monthly"
                 stroke="hsl(var(--green-500))"
                 fillOpacity={1}
                 fill="url(#colorInvestment)"
-                name="Total Investido"
+                name="Aporte Mensal"
                 strokeWidth={2}
               />
               {investmentGoal > 0 && (
-                <Area
-                  type="monotone"
-                  dataKey="goal"
-                  stroke="hsl(var(--primary))"
-                  fillOpacity={0.3}
-                  fill="url(#colorGoal)"
-                  name="Meta Mensal"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                />
+                <ReferenceLine y={investmentGoal} stroke="hsl(var(--primary))" strokeDasharray="5 5" label={{ value: 'Meta', position: 'right', fill: 'hsl(var(--primary))' }} />
               )}
             </AreaChart>
           </ResponsiveContainer>
