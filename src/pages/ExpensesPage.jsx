@@ -27,7 +27,6 @@ export function ExpensesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [expenseToEdit, setExpenseToEdit] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('relatorio');
 
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,8 +82,8 @@ export function ExpensesPage() {
       });
     }
 
-    // Aplicar busca por descrição (apenas no Relatório)
-    if (activeTab === 'relatorio' && searchTerm) {
+    // Aplicar busca por descrição
+    if (searchTerm) {
       filtered = filtered.filter(exp =>
         exp.descricao.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -95,8 +94,8 @@ export function ExpensesPage() {
       filtered = filtered.filter(exp => exp.categoria_id === selectedCategory);
     }
 
-    // Aplicar filtro por status de pagamento (apenas no Relatório)
-    if (activeTab === 'relatorio' && paymentStatus !== 'all') {
+    // Aplicar filtro por status de pagamento
+    if (paymentStatus !== 'all') {
       filtered = filtered.filter(exp => {
         if (paymentStatus === 'paid') return exp.pago === true;
         if (paymentStatus === 'pending') return exp.pago === false;
@@ -148,7 +147,7 @@ export function ExpensesPage() {
       totalPaid: totalPaidAmount,
       totalPending: totalPendingAmount
     };
-  }, [expenses, filter, searchTerm, selectedCategory, paymentStatus, sortBy, activeTab]);
+  }, [expenses, filter, searchTerm, selectedCategory, paymentStatus, sortBy]);
 
   const expensesByCategoryChartData = useMemo(() => {
     if (filteredExpenses.length === 0) return [];
@@ -220,11 +219,6 @@ export function ExpensesPage() {
 
   const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  // Reset de página ao alterar filtros/busca/ordenação/aba
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory, paymentStatus, sortBy, filter, activeTab]);
-
   return (
     <>
       <Helmet>
@@ -244,19 +238,9 @@ export function ExpensesPage() {
             />
           }
         >
-          <CompactPeriodFilter
-            periodType={filter.periodType}
-            setPeriodType={handleSetPeriodType}
-            dateRange={filter.dateRange}
-            setDateRange={handleSetDateRange}
-            month={filter.month}
-            setMonth={handleSetMonth}
-            year={filter.year}
-            setYear={handleSetYear}
-          />
         </CompactHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue="relatorio" className="w-full">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <TabsList className="grid w-full md:w-auto grid-cols-2">
               <TabsTrigger value="relatorio" className="flex items-center gap-2">
@@ -266,33 +250,18 @@ export function ExpensesPage() {
                 <BarChart3 className="h-4 w-4" /> Dashboard
               </TabsTrigger>
             </TabsList>
-            {activeTab === 'relatorio' ? (
-              <CompactSearchFilter
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                categories={expenseCategories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                paymentStatus={paymentStatus}
-                onPaymentStatusChange={setPaymentStatus}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                placeholder="Buscar por descrição..."
-                showPaymentFilter={true}
+            <div className="w-full md:w-auto">
+              <CompactPeriodFilter
+                periodType={filter.periodType}
+                setPeriodType={handleSetPeriodType}
+                dateRange={filter.dateRange}
+                setDateRange={handleSetDateRange}
+                month={filter.month}
+                setMonth={handleSetMonth}
+                year={filter.year}
+                setYear={handleSetYear}
               />
-            ) : (
-              <CompactSearchFilter
-                searchTerm={''}
-                onSearchChange={() => {}}
-                categories={expenseCategories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                sortBy={'date-desc'}
-                onSortChange={() => {}}
-                placeholder="Filtrar por categoria"
-                showPaymentFilter={false}
-              />
-            )}
+            </div>
           </div>
 
           <TabsContent value="relatorio" className="mt-4 md:mt-5 space-y-4 md:space-y-5">
@@ -302,44 +271,24 @@ export function ExpensesPage() {
                 <CardDescription>Lista de todas as despesas no período selecionado.</CardDescription>
               </CardHeader>
               <CardContent>
-                {paginatedExpenses.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-12">
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                        <Receipt className="w-10 h-10 opacity-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="font-semibold text-lg">Nenhuma despesa encontrada</p>
-                        <p className="text-sm max-w-md">
-                          {filteredExpenses.length === 0
-                            ? 'Você ainda não registrou nenhuma despesa. Comece adicionando sua primeira despesa!'
-                            : 'Não há despesas no período selecionado. Ajuste o filtro de período.'}
-                        </p>
-                      </div>
-                      {filteredExpenses.length === 0 && (
-                        <button
-                          onClick={() => setIsFormOpen(true)}
-                          className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                        >
-                          <Receipt className="w-4 h-4 mr-2" /> Adicionar Primeira Despesa
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <TransactionTable
-                      transactions={paginatedExpenses}
-                      categories={expenseCategories}
-                      type="expense"
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onTogglePayment={handleTogglePayment}
-                    />
-                    {totalPages > 1 && (
-                      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-                    )}
-                  </>
+                <TransactionTable
+                  transactions={paginatedExpenses}
+                  categories={expenseCategories}
+                  type="expense"
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onTogglePayment={handleTogglePayment}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  paymentStatus={paymentStatus}
+                  onPaymentStatusChange={setPaymentStatus}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                />
+                {totalPages > 1 && (
+                  <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
                 )}
               </CardContent>
             </Card>

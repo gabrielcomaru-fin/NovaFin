@@ -320,16 +320,6 @@ export function InvestmentsPage() {
             />
           }
         >
-          <CompactPeriodFilter 
-            periodType={filter.periodType}
-            setPeriodType={handleSetPeriodType}
-            dateRange={filter.dateRange}
-            setDateRange={handleSetDateRange}
-            month={filter.month}
-            setMonth={handleSetMonth}
-            year={filter.year}
-            setYear={handleSetYear}
-          />
         </CompactHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -342,31 +332,18 @@ export function InvestmentsPage() {
                 <BarChart3 className="h-4 w-4" /> Dashboard
               </TabsTrigger>
             </TabsList>
-            {activeTab === 'relatorio' ? (
-              <CompactSearchFilter
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                categories={investmentCategories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                placeholder="Buscar por descrição..."
-                showPaymentFilter={false}
+            <div className="w-full md:w-auto">
+              <CompactPeriodFilter 
+                periodType={filter.periodType}
+                setPeriodType={handleSetPeriodType}
+                dateRange={filter.dateRange}
+                setDateRange={handleSetDateRange}
+                month={filter.month}
+                setMonth={handleSetMonth}
+                year={filter.year}
+                setYear={handleSetYear}
               />
-            ) : (
-              <CompactSearchFilter
-                searchTerm={''}
-                onSearchChange={() => {}}
-                categories={investmentCategories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                sortBy={'date-desc'}
-                onSortChange={() => {}}
-                placeholder="Filtrar por categoria"
-                showPaymentFilter={false}
-              />
-            )}
+            </div>
           </div>
           <TabsContent value="relatorio" className="mt-4 md:mt-5 space-y-4 md:space-y-5">
             <Card>
@@ -377,42 +354,20 @@ export function InvestmentsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {paginatedInvestments.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-12">
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                        <TrendingUp className="w-10 h-10 opacity-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="font-semibold text-lg">Nenhum aporte encontrado</p>
-                        <p className="text-sm max-w-md">
-                          {filteredInvestments.length === 0 
-                            ? "Você ainda não registrou nenhum aporte. Comece investindo hoje mesmo para construir seu patrimônio e alcançar a independência financeira!"
-                            : "Não há aportes no período selecionado. Tente ajustar o filtro de período."
-                          }
-                        </p>
-                      </div>
-                      {filteredInvestments.length === 0 && (
-                        <button
-                          onClick={() => setIsFormOpen(true)}
-                          className="inline-flex items-center px-4 py-2 bg-income text-income-foreground rounded-md hover:bg-income/90 transition-colors"
-                        >
-                          <TrendingUp className="w-4 h-4 mr-2" />
-                          Fazer Primeiro Aporte
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                    <TransactionTable
-                      transactions={paginatedInvestments}
-                      categories={investmentCategories}
-                      accounts={accounts}
-                      type="investment"
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                )}
+                <TransactionTable
+                  transactions={paginatedInvestments}
+                  categories={investmentCategories}
+                  accounts={accounts}
+                  type="investment"
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                />
                 {totalPages > 1 && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />}
               </CardContent>
             </Card>

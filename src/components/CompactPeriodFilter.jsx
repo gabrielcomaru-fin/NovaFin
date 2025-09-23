@@ -71,7 +71,7 @@ export function CompactPeriodFilter({
       
       {/* Seletor de tipo de período */}
       <Select value={displayPeriodType} onValueChange={setPeriodType}>
-        <SelectTrigger className="w-[100px] h-8 text-xs border-0 bg-transparent shadow-none">
+        <SelectTrigger className="w-[130px] h-8 text-xs border-0 bg-transparent shadow-none">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
