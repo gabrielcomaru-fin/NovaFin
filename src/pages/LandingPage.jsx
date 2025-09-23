@@ -2,7 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { DollarSign, BarChart, Target, ShieldCheck, Zap, Star } from 'lucide-react';
+import { DollarSign, BarChart, Target, ShieldCheck, Star } from 'lucide-react';
 
 const LandingPage = () => {
   return (
@@ -33,7 +33,7 @@ const LandingPage = () => {
         })}</script>
       </Helmet>
       
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/40">
         {/* Header */}
         <header className="container mx-auto px-4 py-6">
           <nav className="flex items-center justify-between" aria-label="Primary">
@@ -52,250 +52,129 @@ const LandingPage = () => {
           </nav>
         </header>
 
-        {/* Hero Section */}
+        {/* Main */}
         <main className="container mx-auto px-4 py-16">
+          {/* Hero compacto */}
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl font-bold tracking-tight mb-6">
-              Controle total das suas <span className="text-primary">finanças</span>
+            <h1 className="text-5xl font-bold tracking-tight mb-5">
+              Clareza financeira <span className="text-primary">em minutos</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              O Lumify centraliza orçamento, despesas, investimentos e projeções. Decisões mais rápidas, metas batidas e tranquilidade financeira.
+            <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+              Orçamento, gastos, investimentos e metas em um só lugar. Simples, direto e bonito.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/register">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Começar grátis
-                </Button>
+                <Button size="lg" className="w-full sm:w-auto">Começar grátis</Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Ver demo
-                </Button>
+                <Button size="lg" variant="outline" className="w-full sm:w-auto">Ver demo</Button>
               </Link>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">Sem cartão de crédito • Cancele quando quiser</p>
-          </div>
-
-          {/* Prova social simples */}
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            <div>
-              <p className="text-3xl font-bold">5 min</p>
-              <p className="text-sm text-muted-foreground">para configurar</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold">4.8/5</p>
-              <p className="text-sm text-muted-foreground">satisfação média</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold">+12</p>
-              <p className="text-sm text-muted-foreground">gráficos e relatórios</p>
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Star className="h-4 w-4 text-yellow-500" />
+              <span>4.8/5 avaliação média</span>
+              <span className="mx-2">•</span>
+              <span>Sem cartão • Cancele quando quiser</span>
             </div>
           </div>
 
-          {/* Problema → Solução */}
-          <section className="mt-24 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold">Chega de planilhas quebradas e falta de visibilidade</h2>
-              <ul className="list-disc pl-5 text-muted-foreground space-y-2">
-                <li>Gastos espalhados e difícil entender para onde o dinheiro vai.</li>
-                <li>Metas de investimento sem acompanhamento real.</li>
-                <li>Relatórios confusos que não viram ação.</li>
+          {/* Mockup visual minimalista */}
+          <div className="relative mt-12">
+            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-primary/20 via-fuchsia-500/10 to-cyan-500/10 blur-3xl rounded-3xl" aria-hidden />
+            <div className="relative mx-auto max-w-5xl rounded-2xl border bg-card/80 backdrop-blur shadow-xl p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl border bg-background">
+                  <p className="text-sm text-muted-foreground">Saldo</p>
+                  <p className="mt-2 text-2xl font-bold">R$ 12.480</p>
+                  <div className="mt-4 flex items-end gap-1 h-16">
+                    <div className="w-2 bg-primary/30 h-6 rounded" />
+                    <div className="w-2 bg-primary/40 h-8 rounded" />
+                    <div className="w-2 bg-primary/60 h-10 rounded" />
+                    <div className="w-2 bg-primary/70 h-12 rounded" />
+                    <div className="w-2 bg-primary h-14 rounded" />
+                    <div className="w-2 bg-primary/60 h-10 rounded" />
+                    <div className="w-2 bg-primary/40 h-8 rounded" />
+            </div>
+                </div>
+                <div className="p-4 rounded-xl border bg-background">
+                  <p className="text-sm text-muted-foreground">Gastos do mês</p>
+                  <p className="mt-2 text-2xl font-bold text-red-500">R$ 3.260</p>
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    <div className="h-16 rounded bg-red-500/20" />
+                    <div className="h-10 rounded bg-amber-500/20" />
+                    <div className="h-8 rounded bg-blue-500/20" />
+                    <div className="h-6 rounded bg-emerald-500/20" />
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border bg-background">
+                  <p className="text-sm text-muted-foreground">Meta de aporte</p>
+                  <p className="mt-2 text-2xl font-bold text-emerald-500">R$ 1.000</p>
+                  <div className="mt-4 w-full h-2 bg-muted rounded">
+                    <div className="h-2 bg-emerald-500 rounded" style={{ width: '72%' }} />
+                </div>
+                  <p className="mt-2 text-xs text-muted-foreground">72% do objetivo neste mês</p>
+                </div>
+              </div>
+              </div>
+            </div>
+
+          {/* Features condensadas */}
+          <section className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-5 rounded-xl border bg-card">
+              <BarChart className="h-5 w-5 text-primary mb-2" />
+              <p className="font-medium">Dashboards claros</p>
+              <p className="text-sm text-muted-foreground">KPIs essenciais, sem ruído.</p>
+            </div>
+            <div className="p-5 rounded-xl border bg-card">
+              <Target className="h-5 w-5 text-primary mb-2" />
+              <p className="font-medium">Metas guiadas</p>
+              <p className="text-sm text-muted-foreground">Acompanhamento simples e objetivo.</p>
+            </div>
+            <div className="p-5 rounded-xl border bg-card">
+              <ShieldCheck className="h-5 w-5 text-primary mb-2" />
+              <p className="font-medium">Privacidade e segurança</p>
+              <p className="text-sm text-muted-foreground">Boas práticas por padrão.</p>
+            </div>
+          </section>
+
+          {/* Problema → Solução (compacto) */}
+          <section className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div>
+              <h2 className="text-2xl font-semibold">Problemas comuns</h2>
+              <ul className="mt-4 list-disc pl-5 text-sm text-muted-foreground space-y-2">
+                <li>Gastos dispersos e pouca clareza do todo</li>
+                <li>Metas sem acompanhamento real ao longo do mês</li>
+                <li>Relatórios que não se traduzem em ação</li>
               </ul>
             </div>
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Como o Lumify resolve</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-2xl font-semibold">Como o Lumify resolve</h3>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-4 rounded-lg border bg-card">
                   <BarChart className="h-5 w-5 text-primary mb-2" />
-                  <p className="font-medium">Insights acionáveis</p>
-                  <p className="text-sm text-muted-foreground">KPIs e gráficos que revelam oportunidades e riscos.</p>
+                  <p className="font-medium">Insights diretos</p>
+                  <p className="text-xs text-muted-foreground">KPIs essenciais, prontos para agir.</p>
                 </div>
                 <div className="p-4 rounded-lg border bg-card">
                   <Target className="h-5 w-5 text-primary mb-2" />
-                  <p className="font-medium">Metas guiadas</p>
-                  <p className="text-sm text-muted-foreground">Projeções e alertas para manter o ritmo mensal.</p>
+                  <p className="font-medium">Metas acompanhadas</p>
+                  <p className="text-xs text-muted-foreground">Alertas e progresso mensal sempre à vista.</p>
                 </div>
                 <div className="p-4 rounded-lg border bg-card">
                   <ShieldCheck className="h-5 w-5 text-primary mb-2" />
-                  <p className="font-medium">Dados seguros</p>
-                  <p className="text-sm text-muted-foreground">Boas práticas de segurança e foco em privacidade.</p>
-                </div>
-                <div className="p-4 rounded-lg border bg-card">
-                  <Zap className="h-5 w-5 text-primary mb-2" />
-                  <p className="font-medium">Configuração rápida</p>
-                  <p className="text-sm text-muted-foreground">Comece em minutos. Sem fricção.</p>
+                  <p className="font-medium">Dados organizados</p>
+                  <p className="text-xs text-muted-foreground">Tudo centralizado e seguro, sem planilhas quebradas.</p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Benefícios orientados a resultados */}
-          <section className="mt-24">
-            <h2 className="text-3xl font-bold text-center">Benefícios que geram resultado</h2>
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-lg font-semibold">Corte gastos desnecessários</p>
-                <p className="text-sm text-muted-foreground mt-2">Identifique categorias que mais pesam e ajuste com confiança.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-lg font-semibold">Invista com consistência</p>
-                <p className="text-sm text-muted-foreground mt-2">Acompanhe a meta mensal e construa patrimônio a longo prazo.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-lg font-semibold">Tenha clareza do agora</p>
-                <p className="text-sm text-muted-foreground mt-2">Saiba seu status e tome decisões sem adivinhações.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* Como funciona */}
-          <section className="mt-24">
-            <h2 className="text-3xl font-bold text-center">Como funciona</h2>
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm text-muted-foreground">Passo 1</p>
-                <p className="text-lg font-semibold">Crie sua conta</p>
-                <p className="text-sm text-muted-foreground mt-2">Personalize categorias e metas em poucos cliques.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm text-muted-foreground">Passo 2</p>
-                <p className="text-lg font-semibold">Registre gastos e aportes</p>
-                <p className="text-sm text-muted-foreground mt-2">Veja os números ganharem vida em dashboards.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm text-muted-foreground">Passo 3</p>
-                <p className="text-lg font-semibold">Aja com base em insights</p>
-                <p className="text-sm text-muted-foreground mt-2">Ajuste orçamento, aumente aportes e alcance as metas.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* Casos de uso */}
-          <section className="mt-24">
-            <h2 className="text-3xl font-bold text-center">Feito para diferentes momentos</h2>
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="font-semibold">Começando agora</p>
-                <p className="text-sm text-muted-foreground mt-2">Base sólida para organizar a vida financeira do zero.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="font-semibold">Buscando otimizar</p>
-                <p className="text-sm text-muted-foreground mt-2">Controle fino de categorias e corte de desperdícios.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="font-semibold">Foco em acumular</p>
-                <p className="text-sm text-muted-foreground mt-2">Metas de aporte consistentes e projeções de crescimento.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* Depoimentos curtos */}
-          <section className="mt-24">
-            <h2 className="text-3xl font-bold text-center">O que usuários dizem</h2>
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm">“Em 2 semanas cortei 12% dos gastos fixos.”</p>
-                <p className="mt-3 text-xs text-muted-foreground">Ana R.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm">“Finalmente bati minha meta de aporte 3 meses seguidos.”</p>
-                <p className="mt-3 text-xs text-muted-foreground">Marcos V.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm">“Clareza em minutos. Os dashboards são diretos e úteis.”</p>
-                <p className="mt-3 text-xs text-muted-foreground">Juliana C.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* Segurança */}
-          <section className="mt-24">
-            <h2 className="text-3xl font-bold text-center">Segurança e privacidade</h2>
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-lg border bg-card text-center">
-                <ShieldCheck className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="font-medium">Boas práticas</p>
-                <p className="text-sm text-muted-foreground">Padrões modernos aplicados de ponta a ponta.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card text-center">
-                <div className="h-6" />
-                <p className="font-medium">Controle de dados</p>
-                <p className="text-sm text-muted-foreground">Você decide o que guardar e remover.</p>
-              </div>
-              <div className="p-6 rounded-lg border bg-card text-center">
-                <div className="h-6" />
-                <p className="font-medium">Disponibilidade</p>
-                <p className="text-sm text-muted-foreground">Alta estabilidade para não atrapalhar sua rotina.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* FAQ */}
-          <section className="mt-24">
-            <h2 className="text-3xl font-bold text-center">Perguntas frequentes</h2>
-            <div className="mt-8 max-w-3xl mx-auto space-y-4">
-              <details className="p-4 rounded-lg border bg-card">
-                <summary className="font-medium cursor-pointer">Preciso de cartão para começar?</summary>
-                <p className="text-sm text-muted-foreground mt-2">Não. Você pode testar gratuitamente sem cartão.</p>
-              </details>
-              <details className="p-4 rounded-lg border bg-card">
-                <summary className="font-medium cursor-pointer">Posso exportar meus dados?</summary>
-                <p className="text-sm text-muted-foreground mt-2">Sim, exporte relatórios e dados para acompanhamento externo.</p>
-              </details>
-              <details className="p-4 rounded-lg border bg-card">
-                <summary className="font-medium cursor-pointer">Como defino minhas metas?</summary>
-                <p className="text-sm text-muted-foreground mt-2">Defina seu aporte mensal alvo e acompanhe o progresso automaticamente.</p>
-              </details>
-            </div>
-          </section>
-
-          {/* Planos (resumo) */}
-          <section className="mt-24">
-            <h2 className="text-3xl font-bold text-center">Planos simples e diretos</h2>
-            <p className="text-center text-muted-foreground mt-2">Comece grátis e evolua quando fizer sentido.</p>
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm text-muted-foreground">Gratuito</p>
-                <p className="text-3xl font-bold mt-2">R$ 0</p>
-                <ul className="mt-4 text-sm text-muted-foreground space-y-2">
-                  <li>• Controle de despesas</li>
-                  <li>• Dashboards básicos</li>
-                  <li>• Metas mensais</li>
-                </ul>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm text-muted-foreground">Essencial</p>
-                <p className="text-3xl font-bold mt-2">R$ 19/mês</p>
-                <ul className="mt-4 text-sm text-muted-foreground space-y-2">
-                  <li>• Tudo do Gratuito</li>
-                  <li>• Relatórios avançados</li>
-                  <li>• Exportações</li>
-                </ul>
-              </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <p className="text-sm text-muted-foreground">Pro</p>
-                <p className="text-3xl font-bold mt-2">R$ 39/mês</p>
-                <ul className="mt-4 text-sm text-muted-foreground space-y-2">
-                  <li>• Tudo do Essencial</li>
-                  <li>• Projeções avançadas</li>
-                  <li>• Prioridade no suporte</li>
-                </ul>
-              </div>
-            </div>
-            <div className="text-center mt-6">
-              <Link to="/planos">
-                <Button size="lg">Ver detalhes dos planos</Button>
-              </Link>
-            </div>
-          </section>
-
-          {/* CTA final */}
-          <section className="mt-24 text-center">
-            <h2 className="text-3xl font-bold">Pronto para iluminar suas finanças?</h2>
-            <p className="text-muted-foreground mt-3">Comece agora e tenha clareza desde o primeiro dia.</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+          {/* CTA final compacto */}
+          <section className="mt-16 text-center">
+            <p className="text-sm text-muted-foreground">Pronto para começar?</p>
+            <div className="mt-3 flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/register">
-                <Button size="lg" className="w-full sm:w-auto">Criar conta gratuita</Button>
+                <Button size="lg" className="w-full sm:w-auto">Criar conta</Button>
               </Link>
               <Link to="/login">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">Explorar demo</Button>
