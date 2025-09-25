@@ -12,10 +12,14 @@ import { CategoryBreakdownChart } from '@/components/charts/CategoryBreakdownCha
 import { ExpenseTrendChart } from '@/components/charts/ExpenseTrendChart';
 import { CompactSearchFilter } from '@/components/CompactSearchFilter';
 import { CompactHeader } from '@/components/CompactHeader';
-import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle2, Clock } from 'lucide-react';
+import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle2, Clock, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
 import { Sparklines, SparklinesLine } from 'react-sparklines';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { parseOfxFile } from '@/lib/ofx';
 
 const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'expensesPage';
@@ -33,6 +37,16 @@ export function ExpensesPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [paymentStatus, setPaymentStatus] = useState('all'); // 'all', 'paid', 'pending'
   const [sortBy, setSortBy] = useState('date-desc');
+
+  // Importação OFX
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [ofxTransactions, setOfxTransactions] = useState([]);
+  const expenseCategories = useMemo(() => categories.filter(c => c.tipo === 'gasto'), [categories]);
+  const defaultCategoryId = expenseCategories[0]?.id || '';
+  const [importCategoryId, setImportCategoryId] = useState(defaultCategoryId);
+  const [importPaid, setImportPaid] = useState(false);
+  const fileInputId = 'ofx-file-input';
 
   const [filter, setFilter] = usePersistentState(`filter_${PAGE_ID}`, () => ({
     periodType: 'monthly',
@@ -57,7 +71,71 @@ export function ExpensesPage() {
     setFilter(f => ({ ...f, periodType: type, dateRange: undefined }));
   };
 
-  const expenseCategories = useMemo(() => categories.filter(c => c.tipo === 'gasto'), [categories]);
+  useEffect(() => {
+    if (!importCategoryId && defaultCategoryId) setImportCategoryId(defaultCategoryId);
+  }, [defaultCategoryId, importCategoryId]);
+
+  const handleOfxSelectClick = () => {
+    const el = document.getElementById(fileInputId);
+    if (el) el.click();
+  };
+
+  const handleOfxFileChange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const txs = await parseOfxFile(file);
+      // Apenas despesas: valores negativos (saídas) ou tipo DEBIT
+      const expenseTxs = txs.filter(t => (t.valor < 0) || (String(t.tipo).toUpperCase() === 'DEBIT'))
+        .map(t => ({ ...t, valor: Math.abs(t.valor) }));
+      if (expenseTxs.length === 0) {
+        toast({ title: 'Nenhuma despesa encontrada no OFX', description: 'Verifique se o arquivo contém lançamentos de saída.', variant: 'destructive' });
+        e.target.value = '';
+        return;
+      }
+      setOfxTransactions(expenseTxs);
+      setIsImportOpen(true);
+    } catch (err) {
+      toast({ title: 'Falha ao ler OFX', description: err?.message || 'Formato inválido.', variant: 'destructive' });
+    } finally {
+      // permite selecionar o mesmo arquivo novamente, se necessário
+      e.target.value = '';
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importCategoryId) {
+      toast({ title: 'Selecione uma categoria', variant: 'destructive' });
+      return;
+    }
+    setIsImporting(true);
+    try {
+      let success = 0;
+      for (const t of ofxTransactions) {
+        const payload = {
+          descricao: t.descricao || 'Lançamento OFX',
+          valor: Number(t.valor) || 0,
+          categoria_id: importCategoryId,
+          pago: importPaid,
+          recorrente: false,
+          data: t.data || new Date().toISOString().split('T')[0],
+        };
+        try {
+          await addExpense(payload);
+          success++;
+        } catch (e) {
+          // Continua para próximo
+        }
+      }
+      toast({ title: 'Importação concluída', description: `${success} despesas adicionadas` });
+      setIsImportOpen(false);
+      setOfxTransactions([]);
+    } catch (e) {
+      toast({ title: 'Erro na importação', description: e?.message || 'Tente novamente.', variant: 'destructive' });
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const { filteredExpenses, totalSpent, trendData, paidExpenses, pendingExpenses, totalPaid, totalPending } = useMemo(() => {
     let filtered = [];
@@ -250,7 +328,11 @@ export function ExpensesPage() {
                 <BarChart3 className="h-4 w-4" /> Dashboard
               </TabsTrigger>
             </TabsList>
-            <div className="w-full md:w-auto">
+            <div className="w-full md:w-auto flex items-center gap-2">
+              <input id={fileInputId} type="file" accept=".ofx,.qfx,.ofc,.xml,.txt" className="hidden" onChange={handleOfxFileChange} />
+              <Button variant="outline" onClick={handleOfxSelectClick} className="flex items-center gap-2">
+                <Upload className="h-4 w-4" /> Importar OFX
+              </Button>
               <CompactPeriodFilter
                 periodType={filter.periodType}
                 setPeriodType={handleSetPeriodType}
@@ -407,6 +489,46 @@ export function ExpensesPage() {
             <CategoryBreakdownChart expenses={filteredExpenses} categories={categories} />
           </TabsContent>
         </Tabs>
+        <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Importar despesas do OFX</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                {ofxTransactions.length} lançamento{ofxTransactions.length !== 1 ? 's' : ''} de despesa encontrados.
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">Categoria para as despesas</label>
+                  <Select value={importCategoryId} onValueChange={setImportCategoryId}>
+                    <SelectTrigger className="w-full mt-1">
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {expenseCategories.map(c => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <input id="importPaid" type="checkbox" className="rounded accent-primary" checked={importPaid} onChange={(e) => setImportPaid(e.target.checked)} />
+                  <label htmlFor="importPaid" className="text-sm">Marcar como pago</label>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                As descrições e datas serão mantidas do extrato. Valores negativos são importados como despesas.
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setIsImportOpen(false)} disabled={isImporting}>Cancelar</Button>
+              <Button onClick={handleConfirmImport} disabled={isImporting || !importCategoryId}>
+                {isImporting ? 'Importando...' : 'Confirmar importação'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
