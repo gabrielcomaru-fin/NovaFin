@@ -12,7 +12,7 @@ import { CategoryBreakdownChart } from '@/components/charts/CategoryBreakdownCha
 import { ExpenseTrendChart } from '@/components/charts/ExpenseTrendChart';
 import { CompactSearchFilter } from '@/components/CompactSearchFilter';
 import { CompactHeader } from '@/components/CompactHeader';
-import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle2, Clock, Upload } from 'lucide-react';
+import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle2, Clock, Upload, CheckSquare, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
 import { Sparklines, SparklinesLine } from 'react-sparklines';
@@ -261,6 +261,42 @@ export function ExpensesPage() {
   const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
   const paginatedExpenses = filteredExpenses.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
+  // Seleção em lote na lista paginada
+  const [selectedIds, setSelectedIds] = useState([]);
+  const selectedCount = selectedIds.length;
+  const handleSelectOne = (id, checked) => {
+    setSelectedIds(prev => checked ? Array.from(new Set([...prev, id])) : prev.filter(x => x !== id));
+  };
+  const handleSelectAll = (ids, checked) => {
+    setSelectedIds(checked ? Array.from(new Set([...selectedIds, ...ids])) : selectedIds.filter(id => !ids.includes(id)));
+  };
+
+  const handleBulkMarkPaid = async () => {
+    if (selectedCount === 0) return;
+    try {
+      for (const id of selectedIds) {
+        await toggleExpensePayment(id);
+      }
+      toast({ title: 'Atualização concluída', description: `${selectedCount} lançamento(s) atualizados` });
+      setSelectedIds([]);
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar em lote', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCount === 0) return;
+    try {
+      for (const id of selectedIds) {
+        await deleteExpense(id);
+      }
+      toast({ title: 'Exclusão concluída', description: `${selectedCount} lançamento(s) excluídos` });
+      setSelectedIds([]);
+    } catch (error) {
+      toast({ title: 'Erro ao excluir em lote', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const handleFormSubmit = async (formData, id) => {
     try {
       if (id) {
@@ -367,6 +403,17 @@ export function ExpensesPage() {
                 <CardDescription>Lista de todas as despesas no período selecionado.</CardDescription>
               </CardHeader>
               <CardContent>
+                {selectedCount > 0 && (
+                  <div className="mb-2 flex items-center gap-2 text-sm">
+                    <div className="text-muted-foreground">Selecionados: {selectedCount}</div>
+                    <Button variant="outline" size="sm" onClick={handleBulkMarkPaid} className="flex items-center gap-2">
+                      <CheckSquare className="h-4 w-4" /> Marcar como pago
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" /> Excluir
+                    </Button>
+                  </div>
+                )}
                 <TransactionTable
                   transactions={paginatedExpenses}
                   categories={expenseCategories}
@@ -374,6 +421,10 @@ export function ExpensesPage() {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onTogglePayment={handleTogglePayment}
+                  selectable
+                  selectedIds={selectedIds}
+                  onSelectOne={handleSelectOne}
+                  onSelectAll={handleSelectAll}
                   searchTerm={searchTerm}
                   onSearchChange={setSearchTerm}
                   selectedCategory={selectedCategory}

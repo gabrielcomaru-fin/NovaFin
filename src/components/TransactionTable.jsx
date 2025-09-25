@@ -35,6 +35,11 @@ export const TransactionTable = ({
   onEdit,
   onDelete,
   onTogglePayment,
+  // seleção em lote (opcional)
+  selectable,
+  selectedIds = [],
+  onSelectOne,
+  onSelectAll,
   // filtros e ordenação controlados pelo pai
   searchTerm,
   onSearchChange,
@@ -75,6 +80,17 @@ export const TransactionTable = ({
         <Table>
           <TableHeader>
             <TableRow>
+              {selectable && (
+                <TableHead className="w-[40px] align-middle">
+                  <input
+                    type="checkbox"
+                    className="rounded accent-primary"
+                    checked={transactions.length > 0 && transactions.every(t => selectedIds.includes(t.id))}
+                    onChange={(e) => onSelectAll && onSelectAll(transactions.map(t => t.id), e.target.checked)}
+                    aria-label="Selecionar todos"
+                  />
+                </TableHead>
+              )}
               <TableHead className="align-middle whitespace-nowrap w-[30%]">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] uppercase text-muted-foreground">Descrição</span>
@@ -220,6 +236,17 @@ export const TransactionTable = ({
                   transition={{ duration: 0.3 }}
                   className="hover:bg-muted/50"
                 >
+                    {selectable && (
+                      <TableCell className="w-[40px]">
+                        <input
+                          type="checkbox"
+                          className="rounded accent-primary"
+                          checked={selectedIds.includes(transaction.id)}
+                          onChange={(e) => onSelectOne && onSelectOne(transaction.id, e.target.checked)}
+                          aria-label={`Selecionar ${description}`}
+                        />
+                      </TableCell>
+                    )}
                   <TableCell className="font-medium w-[30%]">
                     <div className="space-y-1">
                       <div>{description}</div>
