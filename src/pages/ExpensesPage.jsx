@@ -42,6 +42,8 @@ export function ExpensesPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [ofxTransactions, setOfxTransactions] = useState([]);
+  const [perTxCategories, setPerTxCategories] = useState({}); // { index: categoria_id }
+  const [perTxDescriptions, setPerTxDescriptions] = useState({}); // { index: descricao }
   const expenseCategories = useMemo(() => categories.filter(c => c.tipo === 'gasto'), [categories]);
   const defaultCategoryId = expenseCategories[0]?.id || '';
   const [importCategoryId, setImportCategoryId] = useState(defaultCategoryId);
@@ -94,6 +96,11 @@ export function ExpensesPage() {
         return;
       }
       setOfxTransactions(expenseTxs);
+      setPerTxCategories({});
+      setPerTxDescriptions(expenseTxs.reduce((acc, t, idx) => {
+        acc[idx] = t.descricao || 'Lançamento OFX';
+        return acc;
+      }, {}));
       setIsImportOpen(true);
     } catch (err) {
       toast({ title: 'Falha ao ler OFX', description: err?.message || 'Formato inválido.', variant: 'destructive' });
@@ -104,18 +111,23 @@ export function ExpensesPage() {
   };
 
   const handleConfirmImport = async () => {
-    if (!importCategoryId) {
-      toast({ title: 'Selecione uma categoria', variant: 'destructive' });
+    // Permite por-linha; se nenhuma linha tiver categoria e não houver default, bloqueia
+    const hasAnyCategory = ofxTransactions.some((_, idx) => perTxCategories[idx]) || !!importCategoryId;
+    if (!hasAnyCategory) {
+      toast({ title: 'Selecione uma categoria', description: 'Defina ao menos a categoria padrão ou por item.', variant: 'destructive' });
       return;
     }
     setIsImporting(true);
     try {
       let success = 0;
-      for (const t of ofxTransactions) {
+      for (let i = 0; i < ofxTransactions.length; i++) {
+        const t = ofxTransactions[i];
+        const categoria_id = perTxCategories[i] || importCategoryId;
+        if (!categoria_id) continue;
         const payload = {
-          descricao: t.descricao || 'Lançamento OFX',
+          descricao: perTxDescriptions[i] ?? t.descricao ?? 'Lançamento OFX',
           valor: Number(t.valor) || 0,
-          categoria_id: importCategoryId,
+          categoria_id,
           pago: importPaid,
           recorrente: false,
           data: t.data || new Date().toISOString().split('T')[0],
@@ -130,6 +142,8 @@ export function ExpensesPage() {
       toast({ title: 'Importação concluída', description: `${success} despesas adicionadas` });
       setIsImportOpen(false);
       setOfxTransactions([]);
+      setPerTxCategories({});
+      setPerTxDescriptions({});
     } catch (e) {
       toast({ title: 'Erro na importação', description: e?.message || 'Tente novamente.', variant: 'destructive' });
     } finally {
@@ -490,13 +504,18 @@ export function ExpensesPage() {
           </TabsContent>
         </Tabs>
         <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
               <DialogTitle>Importar despesas do OFX</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <div className="text-sm text-muted-foreground">
-                {ofxTransactions.length} lançamento{ofxTransactions.length !== 1 ? 's' : ''} de despesa encontrados.
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div className="text-sm text-muted-foreground">
+                  {ofxTransactions.length} lançamento{ofxTransactions.length !== 1 ? 's' : ''} de despesa encontrados.
+                </div>
+                <div className="text-sm font-medium">
+                  Total a importar: {currencyFormatter.format(ofxTransactions.reduce((s, t) => s + (Number(t.valor) || 0), 0))}
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
@@ -518,7 +537,41 @@ export function ExpensesPage() {
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">
-                As descrições e datas serão mantidas do extrato. Valores negativos são importados como despesas.
+                Revise as descrições e categorias. Valores negativos são importados como despesas.
+              </div>
+              {/* Lista por lançamento para categorização individual */}
+              <div className="max-h-[60vh] overflow-auto border rounded-md">
+                <div className="grid grid-cols-12 gap-2 p-2 text-xs text-muted-foreground border-b">
+                  <div className="col-span-5">Descrição</div>
+                  <div className="col-span-2">Data</div>
+                  <div className="col-span-2 text-right">Valor</div>
+                  <div className="col-span-3">Categoria</div>
+                </div>
+                {ofxTransactions.map((t, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 p-2 items-center border-b last:border-b-0">
+                    <div className="col-span-5">
+                      <input
+                        className="w-full px-2 py-1 border rounded text-sm"
+                        value={perTxDescriptions[idx] ?? t.descricao ?? 'Lançamento OFX'}
+                        onChange={(e) => setPerTxDescriptions(prev => ({ ...prev, [idx]: e.target.value }))}
+                      />
+                    </div>
+                    <div className="col-span-2 text-xs">{t.data}</div>
+                    <div className="col-span-2 text-right font-medium">{currencyFormatter.format(Number(t.valor) || 0)}</div>
+                    <div className="col-span-3">
+                      <Select value={perTxCategories[idx] || importCategoryId || ''} onValueChange={(val) => setPerTxCategories(prev => ({ ...prev, [idx]: val }))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {expenseCategories.map(c => (
+                            <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             <DialogFooter>
