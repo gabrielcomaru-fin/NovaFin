@@ -2,8 +2,14 @@ import React, { memo, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { useExport } from '@/hooks/useExport';
+import { useAdvancedMetrics } from '@/hooks/useAdvancedMetrics';
+import { useSmartInsights } from '@/hooks/useSmartInsights';
+import { usePersonalizedReports } from '@/hooks/usePersonalizedReports';
+import { useScenarioAnalysis } from '@/hooks/useScenarioAnalysis';
+import { useAdvancedExport } from '@/hooks/useAdvancedExport';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CompactHeader } from '@/components/CompactHeader';
 import { ExpenseTrendChart } from '@/components/charts/ExpenseTrendChart';
@@ -11,7 +17,10 @@ import { InvestmentGrowthChart } from '@/components/charts/InvestmentGrowthChart
 import { CategoryBreakdownChart } from '@/components/charts/CategoryBreakdownChart';
 import { CategoryChart } from '@/components/CategoryChart';
 import { InvestmentByInstitutionChart } from '@/components/charts/InvestmentByInstitutionChart';
-import { FileDown } from 'lucide-react';
+import { AdvancedCharts } from '@/components/charts/AdvancedCharts';
+import { BenchmarkingReports } from '@/components/reports/BenchmarkingReports';
+import { SmartAlerts } from '@/components/reports/SmartAlerts';
+import { FileDown, BarChart3, Target, AlertCircle, TrendingUp, Download } from 'lucide-react';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, format } from 'date-fns';
 import { formatCurrencyBRL, formatPercent } from '@/lib/format';
 import {
@@ -25,10 +34,18 @@ const ReportsPage = memo(function ReportsPage() {
   const { expenses, investments, categories, accounts, investmentGoal, loading } = useFinance();
   const { isExporting, exportFullReport, exportExpenses, exportInvestments, exportAccounts } = useExport();
   
+  // Novos hooks para relatórios avançados
+  const { financialHealth, trends } = useAdvancedMetrics();
+  const { insights, recommendations } = useSmartInsights();
+  const { personalizedReport } = usePersonalizedReports();
+  const { investmentScenarios, spendingScenarios, retirementScenarios } = useScenarioAnalysis();
+  const { exportToPDF, exportToCSV, exportToJSON } = useAdvancedExport();
+  
   const [periodType, setPeriodType] = useState('monthly');
   const [dateRange, setDateRange] = useState(undefined);
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
+  const [activeTab, setActiveTab] = useState('overview');
 
   const { startDate, endDate } = useMemo(() => {
     let s, e;
@@ -100,9 +117,32 @@ const ReportsPage = memo(function ReportsPage() {
     exportFullReport(filteredExpenses, filteredInvestments, accounts, categories, periodLabel, 'PDF');
   };
 
-  const handleExportFilteredData = () => {
-    console.log('Export filtered data clicked - funcionalidade temporariamente desabilitada');
-    alert('Funcionalidade de exportação temporariamente desabilitada para correção');
+  const handleAdvancedExport = async (format) => {
+    const reportData = {
+      expenses: filteredExpenses,
+      investments: filteredInvestments,
+      accounts,
+      categories,
+      financialHealth,
+      insights,
+      recommendations,
+      investmentScenarios,
+      spendingScenarios,
+      retirementScenarios
+    };
+
+    try {
+      if (format === 'PDF') {
+        await exportToPDF(reportData, 'comprehensive');
+      } else if (format === 'CSV') {
+        await exportToCSV(reportData, 'comprehensive');
+      } else if (format === 'JSON') {
+        await exportToJSON(reportData, 'comprehensive');
+      }
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      alert('Erro ao exportar relatório. Tente novamente.');
+    }
   };
 
   if (loading) {
@@ -124,7 +164,7 @@ const ReportsPage = memo(function ReportsPage() {
       
       <div className="space-y-4 md:space-y-5 page-top">
         <CompactHeader 
-          title="Relatórios"
+          title="Relatórios Avançados"
           subtitle={`Período: ${format(startDate, 'dd/MM/yyyy')} — ${format(endDate, 'dd/MM/yyyy')}`}
         >
           <div className="flex items-center justify-between gap-4">
@@ -140,30 +180,55 @@ const ReportsPage = memo(function ReportsPage() {
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-              disabled={isExporting}
-              title={isExporting ? 'Exportando…' : undefined}
-            >
-                  <FileDown className="h-4 w-4" />
-                  {isExporting ? 'Exportando…' : 'Exportar'}
-            </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  disabled={isExporting}
+                  title={isExporting ? 'Exportando…' : undefined}
+                >
+                  <Download className="h-4 w-4" />
+                  {isExporting ? 'Exportando…' : 'Exportar Avançado'}
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportReport}>Relatório completo (PDF)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportExpenses(filteredExpenses, categories, `gastos_${format(startDate, 'yyyyMMdd')}-${format(endDate, 'yyyyMMdd')}`)}>Gastos do período (CSV)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportInvestments(filteredInvestments, categories, accounts, `investimentos_${format(startDate, 'yyyyMMdd')}-${format(endDate, 'yyyyMMdd')}`)}>Investimentos do período (CSV)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportAccounts(accounts, `contas_${format(startDate, 'yyyyMMdd')}-${format(endDate, 'yyyyMMdd')}`)}>Contas (CSV)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAdvancedExport('PDF')}>Relatório Completo (PDF)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAdvancedExport('CSV')}>Dados Completos (CSV)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAdvancedExport('JSON')}>Dados Estruturados (JSON)</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportReport}>Relatório Básico (PDF)</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </CompactHeader>
 
-        {/* Resumo do Período com deltas */
-        }
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {/* Sistema de Abas para Relatórios Avançados */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Visão Geral
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Insights
+            </TabsTrigger>
+            <TabsTrigger value="benchmarks" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Benchmarks
+            </TabsTrigger>
+            <TabsTrigger value="scenarios" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Cenários
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Alertas
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4 md:space-y-5">
+            {/* Resumo do Período com deltas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -242,9 +307,119 @@ const ReportsPage = memo(function ReportsPage() {
             <InvestmentByInstitutionChart investments={filteredInvestments} accounts={accounts} />
           </div>
 
-          <ExpenseTrendChart />
-          <InvestmentGrowthChart />
-        </div>
+            <ExpenseTrendChart />
+            <InvestmentGrowthChart />
+          </div>
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-4 md:space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Insights Inteligentes</CardTitle>
+                  <CardDescription>Análise automática da sua situação financeira</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {insights && insights.length > 0 ? (
+                    <div className="space-y-3">
+                      {insights.slice(0, 5).map((insight, index) => (
+                        <div key={index} className="p-3 border rounded-lg">
+                          <h4 className="font-medium">{insight.title}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">{insight.message}</p>
+                          {insight.recommendation && (
+                            <p className="text-sm text-blue-600 mt-2">{insight.recommendation}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">Nenhum insight disponível no momento.</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardTitle>Recomendações Personalizadas</CardTitle>
+                <CardContent>
+                  {recommendations && recommendations.length > 0 ? (
+                    <div className="space-y-3">
+                      {recommendations.slice(0, 5).map((rec, index) => (
+                        <div key={index} className="p-3 border rounded-lg">
+                          <h4 className="font-medium">{rec.title}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">{rec.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">Nenhuma recomendação disponível no momento.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="benchmarks" className="space-y-4 md:space-y-5">
+            <BenchmarkingReports 
+              userMetrics={financialHealth} 
+              userProfile={{ age: 30, experience: 'intermediate' }}
+            />
+          </TabsContent>
+
+          <TabsContent value="scenarios" className="space-y-4 md:space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cenários de Investimento</CardTitle>
+                  <CardDescription>Projeções para os próximos 10 anos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {investmentScenarios && Object.values(investmentScenarios).map((scenario, index) => (
+                    <div key={index} className="mb-4 p-3 border rounded-lg">
+                      <h4 className="font-medium">{scenario.name}</h4>
+                      <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                      <div className="mt-2 text-lg font-bold">
+                        R$ {scenario.projection.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Ganhos: R$ {scenario.projection.totalGains.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cenários de Gastos</CardTitle>
+                  <CardDescription>Impacto de diferentes níveis de gastos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {spendingScenarios && Object.values(spendingScenarios).map((scenario, index) => (
+                    <div key={index} className="mb-4 p-3 border rounded-lg">
+                      <h4 className="font-medium">{scenario.name}</h4>
+                      <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                      <div className="mt-2 text-lg font-bold">
+                        R$ {scenario.monthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {scenario.impact}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="alerts" className="space-y-4 md:space-y-5">
+            <SmartAlerts 
+              insights={insights}
+              recommendations={recommendations}
+              financialHealth={financialHealth}
+              trends={trends}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );

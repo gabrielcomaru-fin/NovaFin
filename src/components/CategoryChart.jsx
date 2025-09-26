@@ -106,7 +106,6 @@ export const CategoryChart = ({
                   // Só mostra label se percentual >= 5% para evitar sobreposição
                   return percent >= 0.05 ? `${(percent * 100).toFixed(0)}%` : '';
                 }}
-                labelLine={false}
               >
                 {prepared.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
