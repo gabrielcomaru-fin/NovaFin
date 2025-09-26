@@ -547,8 +547,8 @@ export function ExpensesPage() {
 
             </div>
 
-            {/* Tendência de Gastos (últimos meses) */}
-            <ExpenseTrendChart expenses={filteredExpenses} categories={expenseCategories} />
+            {/* Tendência de Gastos (últimos meses - ignora filtros) */}
+            <ExpenseTrendChart />
 
             {/* Gráfico por categoria (pizza) */}
             <CategoryBreakdownChart expenses={filteredExpenses} categories={categories} />

@@ -3,8 +3,10 @@ import { ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Respon
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
+import { useFinance } from '@/contexts/FinanceDataContext';
 
-const ExpenseTrendChart = memo(function ExpenseTrendChart({ expenses, categories }) {
+const ExpenseTrendChart = memo(function ExpenseTrendChart() {
+  const { expenses } = useFinance();
   const chartData = useMemo(() => {
     const last6Months = eachMonthOfInterval({
       start: subMonths(new Date(), 5),

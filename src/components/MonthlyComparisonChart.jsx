@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useFinance } from '@/contexts/FinanceDataContext';
 
-export const MonthlyComparisonChart = ({ expenses, investments }) => {
+export const MonthlyComparisonChart = () => {
+  const { expenses, investments } = useFinance();
   const data = useMemo(() => {
     const last12Months = eachMonthOfInterval({
       start: subMonths(new Date(), 11),

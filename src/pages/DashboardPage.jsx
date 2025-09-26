@@ -233,7 +233,7 @@ export function DashboardPage() {
           isLoading={isLoading}
         />
 
-        <MonthlyComparisonChart data={monthlyComparisonData} />
+        <MonthlyComparisonChart />
       </div>
     </>
   );

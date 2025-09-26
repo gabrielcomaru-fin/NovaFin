@@ -1,6 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Percent } from 'lucide-react';
 import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
 
 // Exibe a taxa de poupança mensal: investimentos / (investimentos + gastos pagos)
@@ -62,7 +63,10 @@ const SavingsRateChart = memo(function SavingsRateChart({ expenses, investments 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Taxa de Poupança (12 meses)</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Percent className="h-5 w-5 text-primary" />
+          Taxa de Poupança (12 meses)
+        </CardTitle>
         <CardDescription>Percentual do que foi investido sobre (investido + gastos pagos)</CardDescription>
       </CardHeader>
       <CardContent>

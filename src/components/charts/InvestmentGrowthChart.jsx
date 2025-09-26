@@ -3,8 +3,10 @@ import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Respon
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Target } from 'lucide-react';
 import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
+import { useFinance } from '@/contexts/FinanceDataContext';
 
-const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments, investmentGoal }) {
+const InvestmentGrowthChart = memo(function InvestmentGrowthChart() {
+  const { investments, investmentGoal } = useFinance();
   const chartData = useMemo(() => {
     const last12Months = eachMonthOfInterval({
       start: subMonths(new Date(), 11),

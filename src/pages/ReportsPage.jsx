@@ -9,7 +9,6 @@ import { CompactHeader } from '@/components/CompactHeader';
 import { ExpenseTrendChart } from '@/components/charts/ExpenseTrendChart';
 import { InvestmentGrowthChart } from '@/components/charts/InvestmentGrowthChart';
 import { CategoryBreakdownChart } from '@/components/charts/CategoryBreakdownChart';
-import { MonthlyComparisonChart } from '@/components/MonthlyComparisonChart';
 import { CategoryChart } from '@/components/CategoryChart';
 import { InvestmentByInstitutionChart } from '@/components/charts/InvestmentByInstitutionChart';
 import { FileDown } from 'lucide-react';
@@ -243,9 +242,8 @@ const ReportsPage = memo(function ReportsPage() {
             <InvestmentByInstitutionChart investments={filteredInvestments} accounts={accounts} />
           </div>
 
-          <ExpenseTrendChart expenses={filteredExpenses} categories={categories} />
-          <MonthlyComparisonChart expenses={expenses} investments={investments} />
-          <InvestmentGrowthChart investments={investments} investmentGoal={investmentGoal} />
+          <ExpenseTrendChart />
+          <InvestmentGrowthChart />
         </div>
       </div>
     </>
