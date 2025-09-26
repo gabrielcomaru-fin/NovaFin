@@ -39,10 +39,8 @@ const navItems = [
   { to: '/investimentos', label: 'Investimentos', icon: TrendingUp },
   { to: '/projecao-investimentos', label: 'Projeção', icon: Target },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
-  { to: '/contas', label: 'Contas', icon: Wallet },
   { to: '/calculadora', label: 'Calculadora', icon: Calculator },
   { to: '/conquistas', label: 'Conquistas', icon: Trophy },
-  { to: '/planos', label: 'Planos', icon: Star },
 ];
 
 export function UnifiedNavigation({ 

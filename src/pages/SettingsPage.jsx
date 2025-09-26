@@ -1,13 +1,36 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Input, CurrencyInput } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
-import { Sun, Moon, Upload, Download, Edit, Plus, Trash2, Check, X, AlertTriangle } from 'lucide-react';
+import { 
+  Sun, 
+  Moon, 
+  Edit, 
+  Plus, 
+  Trash2, 
+  Check, 
+  X, 
+  AlertTriangle, 
+  User, 
+  Mail, 
+  Star, 
+  CheckCircle, 
+  Wallet,
+  Settings,
+  Bell,
+  Shield,
+  CreditCard,
+  Palette,
+  Database,
+  ChevronRight
+} from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceDataContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import {
   Dialog,
   DialogContent,
@@ -19,211 +42,716 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
-import { CurrencyInput } from '@/components/CurrencyInput';
+import { AccountForm } from '@/components/AccountForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
+// Componente para gerenciar categorias usando a mesma lógica do AccountForm
 function CategoryManager({ type }) {
     const { categories, addCategory, updateCategory, deleteCategory } = useFinance();
     const { toast } = useToast();
-    const [isAdding, setIsAdding] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
-    const [newCategory, setNewCategory] = useState({ nome: '', limite: '' });
+    const [formData, setFormData] = useState({ nome: '', limite: '' });
 
     const filteredCategories = categories.filter(c => c.tipo === type);
-    const title = type === 'gasto' ? 'Gerenciar Categorias de Gastos' : 'Gerenciar Categorias de Investimentos';
+    const title = type === 'gasto' ? 'Categorias de Gastos' : 'Categorias de Investimentos';
+    const icon = type === 'gasto' ? '💰' : '📈';
 
-    const handleAdd = async () => {
-        if (!newCategory.nome) {
-            toast({ title: 'Erro', description: 'O nome da categoria é obrigatório.', variant: 'destructive' });
-            return;
-        }
-        const unformattedLimite = newCategory.limite ? newCategory.limite.replace(/\./g, '').replace(',', '.') : null;
-
-        await addCategory({ ...newCategory, tipo: type, limite: unformattedLimite ? parseFloat(unformattedLimite) : null });
-        toast({ title: 'Sucesso', description: 'Categoria adicionada.' });
-        setNewCategory({ nome: '', limite: '' });
-        setIsAdding(false);
+    const handleCurrencyChange = (value) => {
+        setFormData({ ...formData, limite: value });
     };
 
-    const startEditing = (category) => {
-        setEditingCategory({ 
-            ...category,
-            limite: category.limite ? category.limite.toString().replace('.', ',') : '' 
-        });
-    }
+    const parseCurrency = (value) => {
+        if (value === '' || value === null || value === undefined) return null;
+        if (typeof value === 'number') return value;
+        const clean = value.replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(clean);
+        return isNaN(num) ? null : num;
+    };
 
-    const saveEditing = async () => {
-        const { id, created_at, usuario_id, icone, tipo, ...updateData } = editingCategory;
-        const unformattedLimite = updateData.limite ? updateData.limite.replace(/\./g, '').replace(',', '.') : null;
-        updateData.limite = unformattedLimite ? parseFloat(unformattedLimite) : null;
-        await updateCategory(id, updateData);
-        toast({ title: 'Sucesso', description: 'Categoria atualizada.' });
-        setEditingCategory(null);
-    }
-    
-    const handleDelete = async (id) => {
-        await deleteCategory(id);
-        toast({ title: 'Sucesso', description: 'Categoria excluída.' });
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!formData.nome.trim()) {
+            toast({
+                title: "Erro",
+                description: "O nome da categoria é obrigatório.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const limiteValue = parseCurrency(formData.limite);
+
+        try {
+            if (editingCategory) {
+                await updateCategory(editingCategory.id, {
+                    nome: formData.nome,
+                    limite: limiteValue,
+                });
+                toast({
+                    title: "Categoria atualizada!",
+                    description: `${formData.nome}${limiteValue ? ` - Limite: R$ ${limiteValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`,
+                });
+            } else {
+                await addCategory({
+                    nome: formData.nome,
+                    tipo: type,
+                    limite: limiteValue,
+                });
+                toast({
+                    title: "Categoria adicionada!",
+                    description: `${formData.nome}${limiteValue ? ` - Limite: R$ ${limiteValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`,
+                });
+            }
+
+            setFormData({ nome: '', limite: '' });
+            setEditingCategory(null);
+            setIsOpen(false);
+        } catch (error) {
+            toast({
+                title: "Erro",
+                description: error.message,
+                variant: "destructive"
+            });
+        }
+    };
+
+    const handleEdit = (category) => {
+        setEditingCategory(category);
+        setFormData({
+            nome: category.nome,
+            limite: typeof category.limite === 'number' ? category.limite : (category.limite ? parseFloat(String(category.limite).replace(/\./g, '').replace(',', '.')) : ''),
+        });
+        setIsOpen(true);
+    };
+
+    const handleDelete = async (categoryId) => {
+        if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
+            try {
+                await deleteCategory(categoryId);
+                toast({
+                    title: "Categoria excluída!",
+                    description: "A categoria foi removida com sucesso.",
+                });
+            } catch (error) {
+                toast({
+                    title: "Erro",
+                    description: error.message,
+                    variant: "destructive"
+                });
+            }
+        }
+    };
+
+    const handleOpenChange = (open) => {
+        setIsOpen(open);
+        if (!open) {
+            setEditingCategory(null);
+            setFormData({ nome: '', limite: '' });
+        }
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>Adicione, edite ou remova categorias.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    {filteredCategories.map(cat => (
-                        <div key={cat.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary group">
-                             {editingCategory && editingCategory.id === cat.id ? (
-                                <>
-                                    <div className="flex items-center gap-2 flex-grow">
-                                        <Input value={editingCategory.nome} onChange={(e) => setEditingCategory({...editingCategory, nome: e.target.value})} className="h-8"/>
-                                        {type === 'gasto' && <CurrencyInput placeholder="Limite" value={editingCategory.limite || ''} onChange={(value) => setEditingCategory({...editingCategory, limite: value})} className="h-8 w-24"/>}
-                                    </div>
-                                    <div className="flex gap-1">
-                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={saveEditing}><Check className="w-4 h-4 text-green-500"/></Button>
-                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingCategory(null)}><X className="w-4 h-4 text-destructive"/></Button>
-                                    </div>
-                                </>
-                             ) : (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <span>{cat.nome}</span>
-                                        {cat.limite > 0 && <span className="text-xs text-muted-foreground">(Limite: R$ {cat.limite.toLocaleString('pt-BR')})</span>}
-                                    </div>
-                                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditing(cat)}><Edit className="w-4 h-4"/></Button>
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8"><Trash2 className="w-4 h-4 text-destructive"/></Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/> Excluir Categoria</DialogTitle>
-                                                    <DialogDescription>
-                                                        Tem certeza que deseja excluir a categoria "<strong>{cat.nome}</strong>"? Esta ação não pode ser desfeita. As transações associadas a esta categoria não serão excluídas, mas ficarão sem categoria.
-                                                    </DialogDescription>
-                                                </DialogHeader>
-                                                <DialogFooter>
-                                                    <DialogClose asChild>
-                                                        <Button variant="outline">Cancelar</Button>
-                                                    </DialogClose>
-                                                    <DialogClose asChild>
-                                                        <Button variant="destructive" onClick={() => handleDelete(cat.id)}>Excluir</Button>
-                                                    </DialogClose>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </div>
-                                </>
-                             )}
-                        </div>
-                    ))}
-                </div>
-
-                {isAdding ? (
-                    <div className="flex items-center gap-2 p-2 rounded-lg border border-dashed">
-                        <Input placeholder="Nome da categoria" value={newCategory.nome} onChange={(e) => setNewCategory({...newCategory, nome: e.target.value})} className="h-9"/>
-                        {type === 'gasto' && <CurrencyInput placeholder="Limite (opcional)" value={newCategory.limite} onChange={(value) => setNewCategory({...newCategory, limite: value})} className="h-9 w-32"/>}
-                        <Button onClick={handleAdd} className="h-9">Salvar</Button>
-                        <Button variant="ghost" onClick={() => setIsAdding(false)} className="h-9">Cancelar</Button>
-                    </div>
-                ) : (
-                    <Button variant="outline" onClick={() => setIsAdding(true)} className="w-full">
-                        <Plus className="w-4 h-4 mr-2" /> Adicionar Categoria
+        <div className="space-y-6">
+            <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+                <DialogTrigger asChild>
+                    <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nova Categoria
                     </Button>
-                )}
-            </CardContent>
-        </Card>
-    )
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <span className="text-lg">{icon}</span>
+                            {editingCategory ? 'Editar Categoria' : 'Adicionar Categoria'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {editingCategory ? 'Atualize os dados da categoria.' : `Registre uma nova categoria de ${type === 'gasto' ? 'gastos' : 'investimentos'}.`}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Nome da Categoria</Label>
+                            <Input
+                                id="name"
+                                placeholder={`Ex: ${type === 'gasto' ? 'Alimentação, Transporte, Lazer' : 'Ações, Fundos, CDB'}`}
+                                value={formData.nome}
+                                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                                required
+                            />
+                        </div>
+                        
+                        {type === 'gasto' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="limit">Limite Mensal (R$) - Opcional</Label>
+                                <CurrencyInput
+                                    id="limit"
+                                    placeholder="0,00"
+                                    value={formData.limite}
+                                    onChange={handleCurrencyChange}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Defina um limite mensal para controlar seus gastos nesta categoria
+                                </p>
+                            </div>
+                        )}
+                        
+                        <Button type="submit" className="w-full">
+                            {editingCategory ? 'Atualizar Categoria' : 'Adicionar Categoria'}
+                        </Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <span className="text-lg">{icon}</span>
+                        {title}
+                    </CardTitle>
+                    <CardDescription>
+                        {type === 'gasto' ? 'Organize seus gastos por categoria' : 'Categorize seus investimentos'}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {filteredCategories.length === 0 ? (
+                        <div className="text-center text-muted-foreground py-8">
+                            <span className="text-4xl mb-4 block opacity-50">{icon}</span>
+                            <p className="font-semibold">Nenhuma categoria registrada ainda.</p>
+                            <p className="text-sm">Adicione categorias para organizar melhor suas finanças!</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {filteredCategories.map((category, index) => (
+                                <motion.div
+                                    key={category.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="flex justify-between items-center p-4 bg-secondary rounded-lg"
+                                >
+                                    <div>
+                                        <p className="font-semibold">{category.nome}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {type === 'gasto' ? 'Categoria de Gasto' : 'Categoria de Investimento'}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {category.limite > 0 && (
+                                            <div className="text-right">
+                                                <p className="text-xs text-muted-foreground">Limite</p>
+                                                <p className="font-medium text-sm text-primary">
+                                                    R$ {category.limite.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleEdit(category)}
+                                                className="h-8 w-8 p-0"
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDelete(category.id)}
+                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
 }
 
-export function SettingsPage() {
+// Componente para configurações de perfil
+function ProfileSettings() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { theme, toggleTheme } = useTheme();
+  const [isEditing, setIsEditing] = useState(false);
+  const [userData, setUserData] = useState({
+    name: user?.user_metadata?.nome || user?.email?.split('@')[0] || '',
+    email: user?.email || '',
+  });
 
-  const handleNotImplemented = () => {
+  const handleSave = () => {
     toast({
       title: "🚧 Funcionalidade em desenvolvimento!",
-      description: "Esta funcionalidade ainda não foi implementada, mas você pode solicitá-la no próximo prompt!",
+      description: "A atualização de perfil será implementada em breve.",
+    });
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <User className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Informações Pessoais</h3>
+          <p className="text-sm text-muted-foreground">Gerencie seus dados de perfil</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Nome</Label>
+          <Input 
+            id="name" 
+            placeholder="Seu nome" 
+            value={userData.name}
+            onChange={(e) => setUserData({...userData, name: e.target.value})}
+            disabled={!isEditing}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-muted-foreground" />
+            <Input 
+              id="email" 
+              type="email" 
+              value={userData.email}
+              disabled 
+              className="bg-muted"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
+        </div>
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button onClick={handleSave}>Salvar Alterações</Button>
+              <Button variant="outline" onClick={() => setIsEditing(false)}>Cancelar</Button>
+            </>
+          ) : (
+            <Button variant="outline" onClick={() => setIsEditing(true)}>
+              <Edit className="w-4 h-4 mr-2" />
+              Editar Perfil
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente para configurações de aparência
+function AppearanceSettings() {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <Palette className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Aparência</h3>
+          <p className="text-sm text-muted-foreground">Personalize a interface</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="space-y-1">
+            <Label htmlFor="dark-mode" className="text-base font-medium">Modo Escuro</Label>
+            <p className="text-sm text-muted-foreground">Alternar entre tema claro e escuro</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Sun className="h-5 w-5 text-muted-foreground" />
+            <Switch
+              id="dark-mode"
+              checked={theme === 'dark'}
+              onCheckedChange={toggleTheme}
+            />
+            <Moon className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente para configurações de notificações
+function NotificationSettings() {
+  const { toast } = useToast();
+  const [notifications, setNotifications] = useState({
+    email: true,
+    push: false,
+    weekly: true,
+    monthly: true
+  });
+
+  const handleNotificationChange = (key, value) => {
+    setNotifications(prev => ({ ...prev, [key]: value }));
+    toast({
+      title: "🚧 Funcionalidade em desenvolvimento!",
+      description: "As configurações de notificação serão implementadas em breve.",
     });
   };
 
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <Bell className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Notificações</h3>
+          <p className="text-sm text-muted-foreground">Configure como você quer ser notificado</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="space-y-1">
+            <Label className="text-base font-medium">Email</Label>
+            <p className="text-sm text-muted-foreground">Receber notificações por email</p>
+          </div>
+          <Switch
+            checked={notifications.email}
+            onCheckedChange={(value) => handleNotificationChange('email', value)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="space-y-1">
+            <Label className="text-base font-medium">Push</Label>
+            <p className="text-sm text-muted-foreground">Notificações no navegador</p>
+          </div>
+          <Switch
+            checked={notifications.push}
+            onCheckedChange={(value) => handleNotificationChange('push', value)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="space-y-1">
+            <Label className="text-base font-medium">Relatórios Semanais</Label>
+            <p className="text-sm text-muted-foreground">Resumo semanal das suas finanças</p>
+          </div>
+          <Switch
+            checked={notifications.weekly}
+            onCheckedChange={(value) => handleNotificationChange('weekly', value)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="space-y-1">
+            <Label className="text-base font-medium">Relatórios Mensais</Label>
+            <p className="text-sm text-muted-foreground">Análise mensal detalhada</p>
+          </div>
+          <Switch
+            checked={notifications.monthly}
+            onCheckedChange={(value) => handleNotificationChange('monthly', value)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente para configurações de segurança
+function SecuritySettings() {
+  const { toast } = useToast();
+
+  const handlePasswordChange = () => {
+    toast({
+      title: "🚧 Funcionalidade em desenvolvimento!",
+      description: "A alteração de senha será implementada em breve.",
+    });
+  };
+
+  const handleTwoFactor = () => {
+    toast({
+      title: "🚧 Funcionalidade em desenvolvimento!",
+      description: "A autenticação de dois fatores será implementada em breve.",
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <Shield className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Segurança</h3>
+          <p className="text-sm text-muted-foreground">Proteja sua conta</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="space-y-1">
+            <Label className="text-base font-medium">Alterar Senha</Label>
+            <p className="text-sm text-muted-foreground">Atualize sua senha regularmente</p>
+          </div>
+          <Button variant="outline" onClick={handlePasswordChange}>
+            Alterar
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="space-y-1">
+            <Label className="text-base font-medium">Autenticação de Dois Fatores</Label>
+            <p className="text-sm text-muted-foreground">Adicione uma camada extra de segurança</p>
+          </div>
+          <Button variant="outline" onClick={handleTwoFactor}>
+            Configurar
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente para configurações de contas bancárias
+function BankSettings() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <Wallet className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Contas Bancárias</h3>
+          <p className="text-sm text-muted-foreground">Gerencie suas instituições financeiras</p>
+        </div>
+      </div>
+
+      <AccountForm />
+    </div>
+  );
+}
+
+// Componente para planos e assinatura
+function PlansSettings() {
+  const { toast } = useToast();
+
+  const plans = [
+    {
+      name: 'Free',
+      price: 'R$0',
+      description: 'O essencial para começar a organizar suas finanças.',
+      features: [
+        'Controle de gastos básico',
+        'Cadastro de 1 conta bancária',
+        'Visão geral no dashboard',
+      ],
+      cta: 'Seu plano atual',
+      isCurrent: true,
+    },
+    {
+      name: 'Pro',
+      price: 'R$9,90',
+      priceSuffix: '/mês',
+      description: 'Ferramentas poderosas para otimizar seus resultados.',
+      features: [
+        'Tudo do plano Free',
+        'Múltiplas contas bancárias',
+        'Metas de aporte personalizadas',
+        'Teto de gastos por categoria',
+        'Dicas financeiras automáticas',
+      ],
+      cta: 'Fazer Upgrade',
+    },
+    {
+      name: 'Premium',
+      price: 'R$19,90',
+      priceSuffix: '/mês',
+      description: 'A experiência completa para dominar suas finanças.',
+      features: [
+        'Tudo do plano Pro',
+        'Projeções de investimento avançadas',
+        'Simulador de juros compostos detalhado',
+        'Relatórios completos (PDF/Excel)',
+        'Suporte prioritário',
+      ],
+      cta: 'Fazer Upgrade',
+    },
+  ];
+
+  const handleUpgradeClick = (planName) => {
+    toast({
+      title: '🚧 Funcionalidade em desenvolvimento!',
+      description: `A integração com o Stripe para o plano ${planName} ainda não foi implementada.`,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <Star className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Planos e Assinatura</h3>
+          <p className="text-sm text-muted-foreground">Escolha o plano ideal para suas necessidades</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {plans.map((plan, index) => (
+          <motion.div
+            key={plan.name}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+          >
+            <Card className={`flex flex-col h-full ${plan.name === 'Pro' ? 'border-primary ring-2 ring-primary' : ''}`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  {plan.name === 'Pro' && <Star className="text-primary w-4 h-4" />}
+                  {plan.name}
+                  {plan.isCurrent && <CheckCircle className="w-4 h-4 text-green-500" />}
+                </CardTitle>
+                <CardDescription className="text-sm">{plan.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow pb-3">
+                <div className="mb-4">
+                  <span className="text-2xl font-bold">{plan.price}</span>
+                  {plan.priceSuffix && <span className="text-muted-foreground text-sm">{plan.priceSuffix}</span>}
+                </div>
+                <ul className="space-y-2">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardContent className="pt-0">
+                <Button
+                  className="w-full"
+                  disabled={plan.isCurrent}
+                  onClick={() => handleUpgradeClick(plan.name)}
+                  variant={plan.name === 'Pro' ? 'default' : 'outline'}
+                  size="sm"
+                >
+                  {plan.cta}
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Página principal de configurações
+export function SettingsPage() {
   return (
     <>
       <Helmet>
         <title>Configurações - Lumify</title>
         <meta name="description" content="Gerencie suas preferências e configurações de conta." />
       </Helmet>
-      <div className="space-y-5 md:space-y-6 page-top">
-        <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Aparência</CardTitle>
-                        <CardDescription>Personalize a aparência do aplicativo.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                            <Label htmlFor="dark-mode" className="text-base">Modo Escuro</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Sun className="h-[1.2rem] w-[1.2rem]" />
-                            <Switch
-                            id="dark-mode"
-                            checked={theme === 'dark'}
-                            onCheckedChange={toggleTheme}
-                            />
-                            <Moon className="h-[1.2rem] w-[1.2rem]" />
-                        </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Perfil do Usuário</CardTitle>
-                        <CardDescription>Atualize suas informações pessoais.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                        <Label htmlFor="name">Nome</Label>
-                        <Input id="name" placeholder="Seu nome" defaultValue="Usuário Exemplo" />
-                        </div>
-                        <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" placeholder="Seu email" defaultValue="exemplo@email.com" disabled />
-                        </div>
-                        <Button onClick={handleNotImplemented}>Salvar Alterações</Button>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="space-y-6">
-                 <CategoryManager type="gasto" />
-                 <CategoryManager type="investimento" />
-            </div>
+      
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+            <p className="text-muted-foreground">Gerencie suas preferências e configurações</p>
+          </div>
         </div>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Dados</CardTitle>
-                <CardDescription>Gerencie seus dados financeiros.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outline" onClick={handleNotImplemented} className="flex gap-2">
-                    <Upload className="w-4 h-4"/>
-                    Importar CSV
-                </Button>
-                <Button variant="outline" onClick={handleNotImplemented} className="flex gap-2">
-                    <Download className="w-4 h-4"/>
-                    Exportar CSV/Excel
-                </Button>
-            </CardContent>
-        </Card>
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Perfil</span>
+            </TabsTrigger>
+            <TabsTrigger value="finance" className="flex items-center gap-2">
+              <Wallet className="w-4 h-4" />
+              <span className="hidden sm:inline">Financeiro</span>
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Preferências</span>
+            </TabsTrigger>
+            <TabsTrigger value="billing" className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              <span className="hidden sm:inline">Cobrança</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <ProfileSettings />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <SecuritySettings />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="preferences" className="space-y-6">
+            <Card>
+              <CardContent className="pt-6">
+                <AppearanceSettings />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <NotificationSettings />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="finance" className="space-y-6">
+            <Card>
+              <CardContent className="pt-6">
+                <BankSettings />
+              </CardContent>
+            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <CategoryManager type="gasto" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <CategoryManager type="investimento" />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="billing" className="space-y-6">
+            <Card>
+              <CardContent className="pt-6">
+                <PlansSettings />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );
