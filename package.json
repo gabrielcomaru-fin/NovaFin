@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "generate:og": "node tools/generate-og-png.cjs"
+    "generate:og": "node tools/generate-og-png.cjs",
+    "health:supabase": "node tools/healthcheck-supabase.js",
+    "setup:supabase": "node setup-supabase.js",
+    "check:env": "node -r dotenv/config -e \"console.log('🔍 Verificando variáveis...'); console.log('SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? '✅ Definida' : '❌ Não definida'); console.log('SUPABASE_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? '✅ Definida' : '❌ Não definida');\""
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.2.1",
@@ -27,7 +30,7 @@
     "@radix-ui/react-switch": "^1.0.3",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.1.5",
-    "@supabase/supabase-js": "2.30.0",
+    "@supabase/supabase-js": "^2.45.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^2.30.0",
@@ -54,6 +57,7 @@
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.16",
+    "dotenv": "^17.2.2",
     "eslint": "^8.57.1",
     "eslint-config-react-app": "^7.0.1",
     "gh-pages": "^6.3.0",

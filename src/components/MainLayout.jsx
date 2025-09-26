@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UnifiedNavigation } from '@/components/UnifiedNavigation';
 import { useResponsive } from '@/hooks/useResponsive';
 
 export function MainLayout({ user, onLogout }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -30,12 +31,20 @@ export function MainLayout({ user, onLogout }) {
     setSidebarCollapsed(isCollapsed);
   };
 
+  const handleLogout = async () => {
+    try {
+      await onLogout?.();
+    } finally {
+      navigate('/', { replace: true });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       {/* Unified Navigation */}
       <UnifiedNavigation 
         user={user} 
-        onLogout={onLogout} 
+        onLogout={handleLogout} 
         isMobile={isMobile}
         isOpen={sidebarOpen}
         onClose={closeSidebar}

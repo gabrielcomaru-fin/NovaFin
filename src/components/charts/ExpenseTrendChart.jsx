@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
@@ -57,6 +57,11 @@ const ExpenseTrendChart = memo(function ExpenseTrendChart({ expenses, categories
     return null;
   };
 
+  // Cores explícitas para evitar "bolas pretas" em temas sem vars CSS
+  const COLOR_TOTAL = '#ef4444';   // red-500
+  const COLOR_PAID = '#16a34a';    // green-600
+  const COLOR_PENDING = '#f59e0b'; // amber-500
+
   return (
     <Card>
       <CardHeader>
@@ -79,7 +84,7 @@ const ExpenseTrendChart = memo(function ExpenseTrendChart({ expenses, categories
       <CardContent>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis 
                 dataKey="month" 
@@ -93,31 +98,39 @@ const ExpenseTrendChart = memo(function ExpenseTrendChart({ expenses, categories
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="total" 
-                stroke="hsl(var(--destructive))" 
-                strokeWidth={2}
-                name="Total"
-                dot={{ fill: 'hsl(var(--destructive))', strokeWidth: 2, r: 4 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="paid" 
-                stroke="hsl(var(--green-500))" 
-                strokeWidth={2}
+              {/* Áreas semitransparentes para comparação */}
+              <Area
+                type="monotone"
+                dataKey="paid"
                 name="Pago"
-                dot={{ fill: 'hsl(var(--green-500))', strokeWidth: 2, r: 4 }}
+                stroke={COLOR_PAID}
+                fill={COLOR_PAID}
+                fillOpacity={0.2}
+                strokeOpacity={0.7}
+                dot={false}
+                activeDot={{ r: 5, fill: COLOR_PAID, stroke: '#ffffff', strokeWidth: 2 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="pending" 
-                stroke="hsl(var(--yellow-500))" 
-                strokeWidth={2}
+              <Area
+                type="monotone"
+                dataKey="pending"
                 name="Pendente"
-                dot={{ fill: 'hsl(var(--yellow-500))', strokeWidth: 2, r: 4 }}
+                stroke={COLOR_PENDING}
+                fill={COLOR_PENDING}
+                fillOpacity={0.18}
+                strokeOpacity={0.6}
+                dot={false}
+                activeDot={{ r: 5, fill: COLOR_PENDING, stroke: '#ffffff', strokeWidth: 2 }}
               />
-            </LineChart>
+              <Line
+                type="monotone"
+                dataKey="total"
+                stroke={COLOR_TOTAL}
+                strokeWidth={2.5}
+                name="Total"
+                dot={{ fill: COLOR_TOTAL, stroke: COLOR_TOTAL, strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, fill: COLOR_TOTAL, stroke: '#ffffff', strokeWidth: 2 }}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

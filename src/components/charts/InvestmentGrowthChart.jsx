@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
+import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Target } from 'lucide-react';
 import { format, subMonths, eachMonthOfInterval, parseISO } from 'date-fns';
@@ -11,6 +11,7 @@ const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments,
       end: new Date()
     });
 
+    let runningTotal = 0;
     return last12Months.map(month => {
       const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
       const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
@@ -21,10 +22,12 @@ const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments,
       });
 
       const monthAmount = monthInvestments.reduce((sum, inv) => sum + inv.valor_aporte, 0);
+      runningTotal += monthAmount;
 
       return {
         month: format(month, 'MMM/yy'),
         monthly: monthAmount,
+        cumulative: runningTotal,
         goal: investmentGoal || 0,
         fullMonth: format(month, 'MMMM yyyy')
       };
@@ -74,7 +77,7 @@ const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments,
       <CardContent>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <defs>
                 <linearGradient id="colorInvestment" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--green-500))" stopOpacity={0.8}/>
@@ -107,10 +110,19 @@ const InvestmentGrowthChart = memo(function InvestmentGrowthChart({ investments,
                 name="Aporte Mensal"
                 strokeWidth={2}
               />
+              <Line
+                type="monotone"
+                dataKey="cumulative"
+                stroke="#2563eb"
+                strokeWidth={2.5}
+                name="Aportes Acumulados"
+                dot={{ r: 3 }}
+                activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
+              />
               {investmentGoal > 0 && (
                 <ReferenceLine y={investmentGoal} stroke="hsl(var(--primary))" strokeDasharray="5 5" label={{ value: 'Meta', position: 'right', fill: 'hsl(var(--primary))' }} />
               )}
-            </AreaChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

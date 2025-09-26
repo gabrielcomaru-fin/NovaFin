@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   LayoutDashboard,
@@ -29,7 +27,6 @@ import {
   Target,
   BarChart3,
   Wallet,
-  Search,
   Trophy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -60,18 +57,7 @@ export function UnifiedNavigation({
   const location = useLocation();
   const { user: authUser } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [favoriteRoutes, setFavoriteRoutes] = useState(() => {
-    try {
-      const raw = localStorage.getItem('sidebar:favorites');
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-  
-  
+
   // Auto-close sidebar on mobile when route changes
   useEffect(() => {
     if (isMobile && isOpen) {
@@ -79,20 +65,10 @@ export function UnifiedNavigation({
     }
   }, [isMobile, isOpen, onClose, location.pathname]);
 
-  // Persist favoritos e recentes
-  useEffect(() => {
-    try { localStorage.setItem('sidebar:favorites', JSON.stringify(favoriteRoutes)); } catch {}
-  }, [favoriteRoutes]);
-  
-
-  // Atalhos de teclado: Ctrl/Cmd+K para busca, Ctrl/Cmd+B para colapsar
+  // Atalho de teclado: Ctrl/Cmd+B para colapsar
   useEffect(() => {
     const handler = (e) => {
       const isMod = e.ctrlKey || e.metaKey;
-      if (isMod && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault();
-        setIsSearchOpen((v) => !v);
-      }
       if (isMod && (e.key === 'b' || e.key === 'B')) {
         e.preventDefault();
         toggleCollapse();
@@ -112,33 +88,6 @@ export function UnifiedNavigation({
   };
 
   const currentUser = user || authUser;
-
-  const toggleFavorite = useCallback((route) => {
-    setFavoriteRoutes((prev) => {
-      const exists = prev.includes(route);
-      return exists ? prev.filter((r) => r !== route) : [...prev, route];
-    });
-  }, []);
-
-  
-
-  const itemsByRoute = useMemo(() => {
-    const map = new Map();
-    navItems.forEach((i) => map.set(i.to, i));
-    return map;
-  }, []);
-
-  const favoriteItems = useMemo(() => favoriteRoutes
-    .map((r) => itemsByRoute.get(r))
-    .filter(Boolean), [favoriteRoutes, itemsByRoute]);
-
-  
-
-  const filteredItems = useMemo(() => {
-    if (!searchQuery) return navItems;
-    const q = searchQuery.toLowerCase();
-    return navItems.filter((i) => i.label.toLowerCase().includes(q) || i.to.toLowerCase().includes(q));
-  }, [searchQuery]);
 
   // Conteúdo do sidebar (reutilizado para desktop e mobile)
   const SidebarContent = () => (
@@ -185,55 +134,18 @@ export function UnifiedNavigation({
         </Button>
       )}
 
-        {/* Campo de busca inline quando expandido (desktop) */}
-        {!isMobile && !isCollapsed && (
-          <div className="px-2 pt-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar... (Ctrl/⌘K)"
-                className="pl-9 h-8 text-sm"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Navegação com grupos inteligentes */}
-      <nav className="flex-1 px-1.5 py-1 space-y-1">
-          {/* Favoritos */}
-          {favoriteItems.length > 0 && (!isCollapsed || isMobile) && (
-            <div className="px-3 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Favoritos</div>
-          )}
-          {favoriteItems.map((item) => (
-            <NavEntry
-              key={`fav-${item.to}`}
-              item={item}
-              isCollapsed={isCollapsed && !isMobile}
-              isMobile={isMobile}
-              isActivePath={location.pathname}
-              onFavorToggle={toggleFavorite}
-              isFavorite={favoriteRoutes.includes(item.to)}
-            />
-          ))}
-
-          {/* Recentes */}
-          
-
-          {/* Todos */}
+        {/* Navegação principal */}
+      <nav className="flex-1 px-1 py-2 space-y-0.5">
           {(!isCollapsed || isMobile) && (
-            <div className="px-3 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Navegação</div>
+            <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Menu</div>
           )}
-          {(searchQuery ? filteredItems : navItems).map((item) => (
+          {navItems.map((item) => (
             <NavEntry
-            key={item.to}
+              key={item.to}
               item={item}
               isCollapsed={isCollapsed && !isMobile}
               isMobile={isMobile}
               isActivePath={location.pathname}
-              onFavorToggle={toggleFavorite}
-              isFavorite={favoriteRoutes.includes(item.to)}
             />
         ))}
       </nav>
@@ -279,14 +191,14 @@ export function UnifiedNavigation({
   );
 
   // Entrada de navegação com suporte a tooltip no modo rail
-  const NavEntry = ({ item, isCollapsed, isMobile, isActivePath, onFavorToggle, isFavorite, onNavigate }) => {
+  const NavEntry = ({ item, isCollapsed, isMobile, onNavigate }) => {
     const content = (
       <NavLink
         to={item.to}
         onClick={() => onNavigate && onNavigate()}
         className={({ isActive }) =>
           cn(
-            "group flex items-center space-x-3 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            "group flex items-center gap-3 px-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
             isActive
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -296,22 +208,6 @@ export function UnifiedNavigation({
         <item.icon className="h-4 w-4 flex-shrink-0" />
         {(!isCollapsed || isMobile) && (
           <span className="truncate flex-1">{item.label}</span>
-        )}
-        {(!isCollapsed || isMobile) && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onFavorToggle(item.to); }}
-            className={cn(
-              "h-6 w-6 p-0 opacity-60 hover:opacity-100",
-              isFavorite ? "text-yellow-500" : "text-muted-foreground"
-            )}
-            aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-            title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-          >
-            <Star className={cn("h-3.5 w-3.5", isFavorite && "fill-yellow-500")}/>
-          </Button>
         )}
       </NavLink>
     );
@@ -337,7 +233,7 @@ export function UnifiedNavigation({
       {/* Sidebar Desktop */}
       <aside className={cn(
         "fixed left-0 top-0 z-50 h-full bg-card border-r transition-all duration-300 ease-in-out hidden md:flex",
-        isCollapsed ? "w-16" : "w-64"
+        isCollapsed ? "w-16" : "w-48"
       )}>
         <SidebarContent />
       </aside>
@@ -351,7 +247,7 @@ export function UnifiedNavigation({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed top-0 left-0 h-full w-64 bg-card border-r z-50 md:hidden"
+              className="fixed top-0 left-0 h-full w-48 bg-card border-r z-50 md:hidden"
             >
               <SidebarContent />
             </motion.aside>
@@ -413,46 +309,6 @@ export function UnifiedNavigation({
           </DropdownMenu>
         </header>
       )}
-
-      {/* Command Palette / Busca Global */}
-      <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-        <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
-          <DialogHeader className="p-4 pb-2">
-            <DialogTitle>Buscar</DialogTitle>
-          </DialogHeader>
-          <div className="p-4 pt-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquisar páginas..."
-                className="pl-10 h-10"
-              />
-            </div>
-            <div className="mt-3 max-h-72 overflow-auto">
-              {(filteredItems.length === 0) && (
-                <div className="text-sm text-muted-foreground px-2 py-3">Nenhum resultado.</div>
-              )}
-              {filteredItems.map((item) => (
-                <Link
-                  key={`search-${item.to}`}
-                  to={item.to}
-                  onClick={() => { setIsSearchOpen(false); registerRecent(item.to); }}
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span className="text-sm">{item.label}</span>
-                  {favoriteRoutes.includes(item.to) && (
-                    <Star className="ml-auto h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

@@ -13,21 +13,37 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const handleSession = useCallback(async (session) => {
-    setSession(session);
-    setUser(session?.user ?? null);
-    setLoading(false);
+    try {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    } catch (error) {
+      console.error('Session handling error:', error);
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      handleSession(session);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Get session error:', error);
+          setLoading(false);
+          return;
+        }
+        handleSession(session);
+      } catch (error) {
+        console.error('Session initialization error:', error);
+        setLoading(false);
+      }
     };
 
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         handleSession(session);
       }
     );
@@ -36,57 +52,95 @@ export const AuthProvider = ({ children }) => {
   }, [handleSession]);
 
   const signUp = useCallback(async (email, password, options) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options,
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options,
+      });
 
-    if (error) {
+      if (error) {
+        console.error('SignUp error:', error);
+        toast({
+          variant: "destructive",
+          title: "Falha no cadastro",
+          description: error.message || "Ocorreu um problema ao criar sua conta.",
+        });
+      } else {
+        console.log('SignUp successful:', data.user?.id);
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: "Enviamos um e-mail de confirmação para você.",
+        });
+      }
+
+      return { data, error };
+    } catch (error) {
+      console.error('SignUp network error:', error);
       toast({
         variant: "destructive",
-        title: "Falha no cadastro",
-        description: error.message || "Ocorreu um problema ao criar sua conta.",
+        title: "Erro de conexão",
+        description: "Verifique sua conexão com a internet e tente novamente.",
       });
-    } else {
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Enviamos um e-mail de confirmação para você.",
-      });
+      return { data: null, error };
     }
-
-    return { data, error };
   }, [toast]);
 
   const signIn = useCallback(async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
+      if (error) {
+        console.error('SignIn error:', error);
+        toast({
+          variant: "destructive",
+          title: "Falha no login",
+          description: error.message || "Não foi possível realizar o login.",
+        });
+      } else {
+        console.log('SignIn successful:', data.user?.id);
+      }
+
+      return { data, error };
+    } catch (error) {
+      console.error('SignIn network error:', error);
       toast({
         variant: "destructive",
-        title: "Falha no login",
-        description: error.message || "Não foi possível realizar o login.",
+        title: "Erro de conexão",
+        description: "Verifique sua conexão com a internet e tente novamente.",
       });
+      return { data: null, error };
     }
-
-    return { error };
   }, [toast]);
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
 
-    if (error) {
+      if (error) {
+        console.error('SignOut error:', error);
+        toast({
+          variant: "destructive",
+          title: "Falha ao sair",
+          description: error.message || "Não foi possível encerrar a sessão.",
+        });
+      } else {
+        console.log('SignOut successful');
+      }
+
+      return { error };
+    } catch (error) {
+      console.error('SignOut network error:', error);
       toast({
         variant: "destructive",
-        title: "Falha ao sair",
-        description: error.message || "Não foi possível encerrar a sessão.",
+        title: "Erro de conexão",
+        description: "Houve um problema ao encerrar a sessão.",
       });
+      return { error };
     }
-
-    return { error };
   }, [toast]);
 
   const resetPassword = useCallback(async (email) => {
@@ -94,6 +148,7 @@ export const AuthProvider = ({ children }) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
     if (error) {
+      console.error('Reset password error:', error);
       toast({
         variant: "destructive",
         title: "Falha ao enviar e-mail",

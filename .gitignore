@@ -20,6 +20,14 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
+.env.production
+
+# Chaves e credenciais
+*.pem
+*.key
+.secrets/
+credentials.json
 
 # Logs
 logs

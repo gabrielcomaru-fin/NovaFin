@@ -43,11 +43,22 @@ npm install
 
 ### 3. Configure as variáveis de ambiente
 
+**Opção 1: Configuração Automática (Recomendado)**
+```bash
+npm run setup:supabase
+```
+
+**Opção 2: Configuração Manual**
+
 Crie um arquivo `.env` na raiz do projeto:
 
 ```env
 VITE_SUPABASE_URL=sua_url_do_supabase
 VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+VITE_APP_NAME=NovaFin
+VITE_APP_VERSION=1.0.0
+VITE_APP_ENVIRONMENT=development
+VITE_REDIRECT_URL_BASE=http://localhost:5173
 ```
 
 **Como obter as credenciais do Supabase:**
@@ -56,6 +67,11 @@ VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
 2. Crie um novo projeto
 3. Vá em Settings > API
 4. Copie a URL e a chave anônima
+
+**Verificar configuração:**
+```bash
+npm run check:env
+```
 
 ### 4. Configure o banco de dados
 
