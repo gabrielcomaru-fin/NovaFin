@@ -1,13 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from '@/config/env';
 
-// Fallback para desenvolvimento (REMOVER EM PRODUÇÃO)
-const FALLBACK_URL = 'https://ztfxiqunsvhwxrwjabel.supabase.co';
-const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0ZnhpcXVuc3Zod3hyd2phYmVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NTQ2NjgsImV4cCI6MjA3MjMzMDY2OH0.GfR6PBU8sqfqaEHRN7QfoOJTJyb7Y3hLJ9FpiIY_5zw';
-
-// Usar variáveis de ambiente ou fallback em desenvolvimento
-const supabaseUrl = config.supabase.url || (config.app.environment === 'development' ? FALLBACK_URL : null);
-const supabaseAnonKey = config.supabase.anonKey || (config.app.environment === 'development' ? FALLBACK_KEY : null);
+// Usar apenas variáveis de ambiente - SEM FALLBACKS HARDCODED
+const supabaseUrl = config.supabase.url;
+const supabaseAnonKey = config.supabase.anonKey;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(

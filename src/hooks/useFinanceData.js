@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useValidation } from '@/hooks/useValidation';
 // import { useSupabaseCache } from '@/lib/cache';
 // import { useErrorHandler } from '@/hooks/useErrorHandler';
 // import { useLoading } from '@/hooks/useLoading';
 
 export const useFinanceData = () => {
     const { user } = useAuth();
+    const { validateExpense, validateInvestment, validateAccount, validateCategory, validateInvestmentGoal, sanitizeText } = useValidation();
     // const { getCachedData, invalidateCache } = useSupabaseCache();
     // const { handleError } = useErrorHandler();
     // const { isLoading, startLoading, stopLoading } = useLoading();
@@ -91,11 +93,24 @@ export const useFinanceData = () => {
     const addExpense = useCallback(async (expenseData) => {
         if (!user) return;
         
+        // Validar dados de entrada
+        const validation = validateExpense(expenseData);
+        if (!validation.isValid) {
+            throw new Error(`Dados inválidos: ${validation.errors.join(', ')}`);
+        }
+        
+        // Sanitizar dados
+        const sanitizedData = {
+            ...expenseData,
+            descricao: sanitizeText(expenseData.descricao),
+            usuario_id: user.id
+        };
+        
         setIsLoading(true);
         try {
             const { data, error } = await supabase
                 .from('gastos')
-                .insert([{ ...expenseData, usuario_id: user.id }])
+                .insert([sanitizedData])
                 .select()
                 .single();
             
@@ -108,7 +123,7 @@ export const useFinanceData = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [user]);
+    }, [user, validateExpense, sanitizeText]);
 
     const updateExpense = useCallback(async (id, updates) => {
         setIsLoading(true);
@@ -424,26 +439,32 @@ export const useFinanceData = () => {
         }
     }, []);
 
-    // Calcular patrimônio total (investimentos + saldos das contas bancárias)
-    const totalInvestmentBalance = investments.reduce((total, investment) => {
-        // Tentar diferentes campos possíveis para o saldo
-        const saldo = investment.saldo_total || 
-                     investment.valor_atual || 
-                     investment.valor || 
-                     investment.saldo || 
-                     investment.valor_aporte || 
-                     investment.amount || 
-                     investment.balance || 
-                     0;
-        
-        return total + saldo;
-    }, 0);
+    // Calcular patrimônio total (investimentos + saldos das contas bancárias) - MEMOIZADO
+    const totalInvestmentBalance = useMemo(() => {
+        return investments.reduce((total, investment) => {
+            // Tentar diferentes campos possíveis para o saldo
+            const saldo = investment.saldo_total || 
+                         investment.valor_atual || 
+                         investment.valor || 
+                         investment.saldo || 
+                         investment.valor_aporte || 
+                         investment.amount || 
+                         investment.balance || 
+                         0;
+            
+            return total + saldo;
+        }, 0);
+    }, [investments]);
 
-    const totalAccountBalance = accounts.reduce((total, account) => {
-        return total + (account.saldo || 0);
-    }, 0);
+    const totalAccountBalance = useMemo(() => {
+        return accounts.reduce((total, account) => {
+            return total + (account.saldo || 0);
+        }, 0);
+    }, [accounts]);
 
-    const totalPatrimony = totalInvestmentBalance + totalAccountBalance;
+    const totalPatrimony = useMemo(() => {
+        return totalInvestmentBalance + totalAccountBalance;
+    }, [totalInvestmentBalance, totalAccountBalance]);
     
 
     return {
