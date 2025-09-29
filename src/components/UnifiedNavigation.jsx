@@ -85,6 +85,24 @@ export function UnifiedNavigation({
     }
   };
 
+  // Persistência simples do estado colapsado no desktop
+  useEffect(() => {
+    if (!isMobile) {
+      const stored = localStorage.getItem('lumify.sidebar.collapsed');
+      if (stored !== null) {
+        setIsCollapsed(stored === '1');
+      }
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      try {
+        localStorage.setItem('lumify.sidebar.collapsed', isCollapsed ? '1' : '0');
+      } catch {}
+    }
+  }, [isCollapsed, isMobile]);
+
   const currentUser = user || authUser;
 
   // Conteúdo do sidebar (reutilizado para desktop e mobile)
@@ -124,6 +142,8 @@ export function UnifiedNavigation({
           size="sm"
           onClick={toggleCollapse}
           className="absolute -right-1 top-8 h-6 w-6 p-0 bg-card hover:bg-secondary border rounded-full z-10 shadow-sm"
+          aria-pressed={isCollapsed}
+          aria-label={isCollapsed ? 'Expandir menu' : 'Colapsar menu'}
         >
           <ChevronLeft className={cn(
             "h-3 w-3 transition-transform",
@@ -133,7 +153,7 @@ export function UnifiedNavigation({
       )}
 
         {/* Navegação principal */}
-      <nav className="flex-1 px-1 py-2 space-y-0.5">
+      <nav className="flex-1 px-1 py-2 space-y-0.5" role="menu" aria-label="Seções">
           {(!isCollapsed || isMobile) && (
             <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Menu</div>
           )}
@@ -144,6 +164,7 @@ export function UnifiedNavigation({
               isCollapsed={isCollapsed && !isMobile}
               isMobile={isMobile}
               isActivePath={location.pathname}
+              onNavigate={isMobile ? onClose : undefined}
             />
         ))}
       </nav>
@@ -194,6 +215,8 @@ export function UnifiedNavigation({
       <NavLink
         to={item.to}
         onClick={() => onNavigate && onNavigate()}
+        role="menuitem"
+        aria-label={item.label}
         className={({ isActive }) =>
           cn(
             "group flex items-center gap-3 px-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
@@ -232,7 +255,9 @@ export function UnifiedNavigation({
       <aside className={cn(
         "fixed left-0 top-0 z-50 h-full bg-card border-r transition-all duration-300 ease-in-out hidden md:flex",
         isCollapsed ? "w-16" : "w-48"
-      )}>
+      )}
+      role="navigation"
+      aria-label="Navegação principal">
         <SidebarContent />
       </aside>
 
@@ -246,6 +271,7 @@ export function UnifiedNavigation({
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="fixed top-0 left-0 h-full w-48 bg-card border-r z-50 md:hidden"
+              role="dialog" aria-modal="true" aria-label="Menu"
             >
               <SidebarContent />
             </motion.aside>
@@ -268,8 +294,9 @@ export function UnifiedNavigation({
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={onOpen} // Abre o sidebar
+            onClick={onOpen}
             className="h-8 w-8 p-0"
+            aria-label="Abrir menu"
           >
             <Menu className="h-4 w-4" />
           </Button>
@@ -283,7 +310,7 @@ export function UnifiedNavigation({
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="Abrir opções da conta">
                 <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                   <User className="h-5 w-5 text-muted-foreground" />
                 </div>
