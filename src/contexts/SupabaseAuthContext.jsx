@@ -8,6 +8,29 @@ export const AuthContext = createContext(undefined);
 export const AuthProvider = ({ children }) => {
   const { toast } = useToast();
 
+  // Traduz mensagens comuns de erro de autenticação do Supabase para PT-BR
+  const translateAuthError = useCallback((error) => {
+    if (!error) return 'Não foi possível realizar o login.';
+    const msg = (error.message || '').toLowerCase();
+
+    if (msg.includes('invalid login credentials')) {
+      return 'Credenciais inválidas. Verifique e tente novamente.';
+    }
+    if (msg.includes('email not confirmed') || msg.includes('email not confirmed')) {
+      return 'E-mail não confirmado. Verifique sua caixa de entrada para confirmar.';
+    }
+    if (msg.includes('user not found')) {
+      return 'Usuário não encontrado.';
+    }
+    if (msg.includes('rate limit') || msg.includes('too many') || msg.includes('too many requests')) {
+      return 'Muitas tentativas. Tente novamente em alguns minutos.';
+    }
+    if (msg.includes('network') || msg.includes('fetch')) {
+      return 'Problema de conexão. Verifique sua internet e tente novamente.';
+    }
+    return error.message || 'Não foi possível realizar o login.';
+  }, []);
+
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +121,7 @@ export const AuthProvider = ({ children }) => {
         toast({
           variant: "destructive",
           title: "Falha no login",
-          description: error.message || "Não foi possível realizar o login.",
+          description: translateAuthError(error),
         });
       } else {
         console.log('SignIn successful:', data.user?.id);
@@ -114,7 +137,7 @@ export const AuthProvider = ({ children }) => {
       });
       return { data: null, error };
     }
-  }, [toast]);
+  }, [toast, translateAuthError]);
 
   const signOut = useCallback(async () => {
     try {

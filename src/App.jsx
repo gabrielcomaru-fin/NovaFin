@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { FinanceDataProvider } from '@/contexts/FinanceDataContext';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { GamificationProvider } from '@/contexts/GamificationContext';
+import { Toaster } from '@/components/ui/toaster';
 
 function AppContent() {
   const { user, loading, signOut } = useAuth();
@@ -90,7 +91,8 @@ function AppContent() {
         </Router>
       </ErrorBoundary>
       
-      {/* Toaster é renderizado no App.jsx; manter import apenas se usado globalmente */}
+      {/* Toaster global para exibir notificações (erros de login, etc.) */}
+      <Toaster />
     </>
   );
 }
