@@ -1,0 +1,1 @@
+const n=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});function m(r){return typeof r!="number"||Number.isNaN(r)?"-":n.format(r)}function c(r,t={maximumFractionDigits:0}){return typeof r!="number"||Number.isNaN(r)?"-":new Intl.NumberFormat("pt-BR",{style:"percent",maximumFractionDigits:t.maximumFractionDigits??0}).format(r/100)}export{c as a,m as f};
