@@ -17,6 +17,7 @@ export const useFinanceData = () => {
     const [investments, setInvestments] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [paymentMethods, setPaymentMethods] = useState([]);
     const [investmentGoal, setInvestmentGoal] = useState(0);
 
     const fetchData = useCallback(async () => {
@@ -32,6 +33,16 @@ export const useFinanceData = () => {
                 .order('created_at', { ascending: true });
             if (categoriesError) throw categoriesError;
             setCategories(categoriesData || []);
+
+            // Buscar meios de pagamento
+            const { data: paymentMethodsData, error: paymentMethodsError } = await supabase
+                .from('meios_pagamento')
+                .select('*')
+                .or(`usuario_id.eq.${user.id},usuario_id.is.null`)
+                .eq('ativo', true)
+                .order('nome', { ascending: true });
+            if (paymentMethodsError) throw paymentMethodsError;
+            setPaymentMethods(paymentMethodsData || []);
 
             // Buscar gastos
             const { data: expensesData, error: expensesError } = await supabase
@@ -355,6 +366,171 @@ export const useFinanceData = () => {
         }
     }, [user]);
 
+    // Funções CRUD para meios de pagamento
+    const addPaymentMethod = useCallback(async (paymentMethodData) => {
+        if (!user) return;
+        
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('meios_pagamento')
+                .insert([{ ...paymentMethodData, usuario_id: user.id }])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            setPaymentMethods(prev => [data, ...prev]);
+            return data;
+        } catch (error) {
+            console.error('Erro ao adicionar meio de pagamento:', error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user]);
+
+    const updatePaymentMethod = useCallback(async (id, updates) => {
+        if (!user) {
+            throw new Error('Usuário não autenticado');
+        }
+        
+        setIsLoading(true);
+        try {
+            console.log('Tentando atualizar meio de pagamento:', id, updates);
+            
+            // Se o meio de pagamento é padrão (usuario_id = NULL), criar uma cópia personalizada
+            const { data: existingPaymentMethod, error: fetchError } = await supabase
+                .from('meios_pagamento')
+                .select('id, usuario_id, nome, tipo, cor')
+                .eq('id', id)
+                .single();
+            
+            if (fetchError) {
+                console.error('Erro ao buscar meio de pagamento:', fetchError);
+                throw new Error('Meio de pagamento não encontrado');
+            }
+            
+            if (existingPaymentMethod.usuario_id === null) {
+                console.log('Criando versão personalizada do meio de pagamento padrão');
+                
+                // Criar uma nova versão personalizada para o usuário
+                const { data: newPaymentMethod, error: createError } = await supabase
+                    .from('meios_pagamento')
+                    .insert([{
+                        nome: updates.nome || existingPaymentMethod.nome,
+                        tipo: updates.tipo || existingPaymentMethod.tipo,
+                        cor: updates.cor || existingPaymentMethod.cor,
+                        usuario_id: user.id,
+                        ativo: true
+                    }])
+                    .select()
+                    .single();
+                
+                if (createError) {
+                    console.error('Erro ao criar meio de pagamento personalizado:', createError);
+                    throw createError;
+                }
+                
+                console.log('Meio de pagamento personalizado criado com sucesso:', newPaymentMethod);
+                
+                // Atualizar a lista local: remover o padrão e adicionar o personalizado
+                setPaymentMethods(prev => {
+                    const filtered = prev.filter(pm => pm.id !== id);
+                    return [newPaymentMethod, ...filtered];
+                });
+                
+                return newPaymentMethod;
+            }
+            
+            // Atualizar meio de pagamento existente
+            const { data, error } = await supabase
+                .from('meios_pagamento')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+            
+            if (error) {
+                console.error('Erro do Supabase ao atualizar meio de pagamento:', error);
+                throw error;
+            }
+            
+            console.log('Meio de pagamento atualizado com sucesso:', data);
+            setPaymentMethods(prev => prev.map(paymentMethod => 
+                paymentMethod.id === id ? data : paymentMethod
+            ));
+            return data;
+        } catch (error) {
+            console.error('Erro ao atualizar meio de pagamento:', error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user]);
+
+    const deletePaymentMethod = useCallback(async (id) => {
+        if (!user) {
+            throw new Error('Usuário não autenticado');
+        }
+        
+        setIsLoading(true);
+        try {
+            // Se for um meio padrão, criar uma versão personalizada "desativada" para o usuário
+            const { data: existingPaymentMethod, error: fetchError } = await supabase
+                .from('meios_pagamento')
+                .select('id, usuario_id, nome, tipo, cor')
+                .eq('id', id)
+                .single();
+            
+            if (fetchError) {
+                console.error('Erro ao buscar meio de pagamento:', fetchError);
+                throw new Error('Meio de pagamento não encontrado');
+            }
+            
+            if (existingPaymentMethod.usuario_id === null) {
+                console.log('Criando versão desativada do meio de pagamento padrão');
+                
+                // Criar uma versão personalizada desativada para "ocultar" o padrão
+                const { data: newPaymentMethod, error: createError } = await supabase
+                    .from('meios_pagamento')
+                    .insert([{
+                        nome: existingPaymentMethod.nome,
+                        tipo: existingPaymentMethod.tipo,
+                        cor: existingPaymentMethod.cor,
+                        usuario_id: user.id,
+                        ativo: false // Desativado para "ocultar"
+                    }])
+                    .select()
+                    .single();
+                
+                if (createError) {
+                    console.error('Erro ao criar meio de pagamento desativado:', createError);
+                    throw createError;
+                }
+                
+                console.log('Meio de pagamento desativado com sucesso');
+                
+                // Remover da lista local
+                setPaymentMethods(prev => prev.filter(pm => pm.id !== id));
+                return;
+            }
+            
+            // Excluir meio de pagamento personalizado
+            const { error } = await supabase
+                .from('meios_pagamento')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            setPaymentMethods(prev => prev.filter(paymentMethod => paymentMethod.id !== id));
+        } catch (error) {
+            console.error('Erro ao excluir meio de pagamento:', error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user]);
+
     const handleSetInvestmentGoal = useCallback(async (goal) => {
         if (!user) {
             // Permitir uso offline: salvar localmente
@@ -472,6 +648,7 @@ export const useFinanceData = () => {
         investments,
         accounts,
         categories,
+        paymentMethods,
         investmentGoal,
         totalPatrimony,
         totalInvestmentBalance,
@@ -491,6 +668,9 @@ export const useFinanceData = () => {
         addCategory,
         updateCategory,
         deleteCategory,
+        addPaymentMethod,
+        updatePaymentMethod,
+        deletePaymentMethod,
         handleSetInvestmentGoal
     };
 };

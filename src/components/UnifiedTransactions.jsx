@@ -11,29 +11,77 @@ import {
   Search,
   Filter,
   Calendar,
-  DollarSign
+  DollarSign,
+  CreditCard,
+  Wallet,
+  Smartphone,
+  Banknote,
+  Building2,
+  FileText
 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { ExpenseForm } from '@/components/ExpenseForm';
 import { InvestmentForm } from '@/components/InvestmentForm';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export const UnifiedTransactions = () => {
-  const { expenses, investments, categories, accounts } = useFinance();
+  const { expenses, investments, categories, accounts, paymentMethods, updateExpense } = useFinance();
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
+  const [showPaymentMethodSelector, setShowPaymentMethodSelector] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+
+  // Função para obter o ícone baseado no tipo do meio de pagamento
+  const getPaymentMethodIcon = (tipo) => {
+    const iconMap = {
+      cartao_credito: CreditCard,
+      cartao_debito: CreditCard,
+      dinheiro: Banknote,
+      pix: Smartphone,
+      transferencia: Building2,
+      boleto: FileText,
+      outros: Wallet
+    };
+    return iconMap[tipo] || Wallet;
+  };
+
+  // Função para editar meio de pagamento
+  const handleEditPaymentMethod = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowPaymentMethodSelector(true);
+  };
+
+  const handleUpdatePaymentMethod = async (newPaymentMethodId) => {
+    if (!selectedTransaction) return;
+    
+    try {
+      await updateExpense(selectedTransaction.id, {
+        meio_pagamento_id: newPaymentMethodId
+      });
+      setShowPaymentMethodSelector(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('Erro ao atualizar meio de pagamento:', error);
+    }
+  };
 
   // Combinar todas as transações em uma lista unificada
   const allTransactions = useMemo(() => {
-    const expenseList = expenses.map(exp => ({
-      ...exp,
-      type: 'expense',
-      amount: exp.valor,
-      category: categories.find(c => c.id === exp.categoria_id)?.nome || 'Sem categoria',
-      icon: TrendingDown,
-      color: 'text-red-600'
-    }));
+    const expenseList = expenses.map(exp => {
+      const paymentMethod = paymentMethods.find(p => p.id === exp.meio_pagamento_id);
+      return {
+        ...exp,
+        type: 'expense',
+        amount: exp.valor,
+        category: categories.find(c => c.id === exp.categoria_id)?.nome || 'Sem categoria',
+        paymentMethod: paymentMethod?.nome || null,
+        paymentMethodData: paymentMethod || null,
+        icon: TrendingDown,
+        color: 'text-red-600'
+      };
+    });
 
     const investmentList = investments.map(inv => ({
       ...inv,
@@ -46,7 +94,7 @@ export const UnifiedTransactions = () => {
 
     return [...expenseList, ...investmentList]
       .sort((a, b) => new Date(b.data) - new Date(a.data));
-  }, [expenses, investments, categories]);
+  }, [expenses, investments, categories, paymentMethods]);
 
   // Filtrar transações baseado na aba ativa e termo de busca
   const filteredTransactions = useMemo(() => {
@@ -231,6 +279,32 @@ const TransactionList = ({ transactions }) => {
                   <p className="font-medium">{transaction.descricao || 'Transação'}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>{transaction.category}</span>
+                    {transaction.type === 'expense' && transaction.paymentMethodData && (
+                      <>
+                        <span>•</span>
+                        <button 
+                          className="flex items-center gap-1 hover:bg-muted/50 px-2 py-1 rounded transition-colors"
+                          onClick={() => handleEditPaymentMethod(transaction)}
+                          title={`Alterar meio de pagamento: ${transaction.paymentMethod}`}
+                        >
+                          <div 
+                            className="w-4 h-4 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: transaction.paymentMethodData.cor + '20' }}
+                          >
+                            {(() => {
+                              const IconComponent = getPaymentMethodIcon(transaction.paymentMethodData.tipo);
+                              return (
+                                <IconComponent 
+                                  className="w-2 h-2" 
+                                  style={{ color: transaction.paymentMethodData.cor }}
+                                />
+                              );
+                            })()}
+                          </div>
+                          <span>{transaction.paymentMethod}</span>
+                        </button>
+                      </>
+                    )}
                     <span>•</span>
                     <span>{transaction.data}</span>
                     {transaction.type === 'expense' && (
@@ -257,5 +331,109 @@ const TransactionList = ({ transactions }) => {
         </Card>
       ))}
     </div>
+  );
+
+  // Modal para seleção de meio de pagamento
+  const PaymentMethodSelector = () => (
+    <Dialog open={showPaymentMethodSelector} onOpenChange={setShowPaymentMethodSelector}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Alterar Meio de Pagamento</DialogTitle>
+          <DialogDescription>
+            Selecione um novo meio de pagamento para esta despesa.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          {paymentMethods.map((paymentMethod) => {
+            const IconComponent = getPaymentMethodIcon(paymentMethod.tipo);
+            return (
+              <button
+                key={paymentMethod.id}
+                onClick={() => handleUpdatePaymentMethod(paymentMethod.id)}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+              >
+                <div 
+                  className="w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: paymentMethod.cor + '20' }}
+                >
+                  <IconComponent 
+                    className="w-3 h-3" 
+                    style={{ color: paymentMethod.cor }}
+                  />
+                </div>
+                <span className="font-medium">{paymentMethod.nome}</span>
+              </button>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <>
+      {transactions.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">Nenhuma transação encontrada</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {transactions.map((transaction, index) => (
+            <Card key={index} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <transaction.icon className={`h-5 w-5 ${transaction.color}`} />
+                    <div>
+                      <p className="font-medium">{transaction.descricao || 'Transação'}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{transaction.category}</span>
+                        {transaction.type === 'expense' && transaction.paymentMethodData && (
+                          <>
+                            <span>•</span>
+                            <button 
+                              className="flex items-center gap-1 hover:bg-muted/50 px-2 py-1 rounded transition-colors"
+                              onClick={() => handleEditPaymentMethod(transaction)}
+                              title={`Alterar meio de pagamento: ${transaction.paymentMethod}`}
+                            >
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: transaction.paymentMethodData.cor }}
+                              />
+                              <span>{transaction.paymentMethod}</span>
+                            </button>
+                          </>
+                        )}
+                        <span>•</span>
+                        <span>{transaction.data}</span>
+                        {transaction.type === 'expense' && (
+                          <>
+                            <span>•</span>
+                            <Badge variant={transaction.pago ? "default" : "secondary"}>
+                              {transaction.pago ? "Pago" : "Pendente"}
+                            </Badge>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-bold ${transaction.color}`}>
+                      {transaction.type === 'expense' ? '-' : '+'}R$ {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {transaction.type === 'expense' ? 'Despesa' : 'Investimento'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      <PaymentMethodSelector />
+    </>
   );
 };
