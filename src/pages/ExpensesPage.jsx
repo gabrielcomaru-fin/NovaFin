@@ -25,7 +25,7 @@ const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'expensesPage';
 
 export function ExpensesPage() {
-  const { expenses, categories, paymentMethods, addExpense, updateExpense, deleteExpense, toggleExpensePayment } = useFinance();
+  const { expenses, categories, addExpense, updateExpense, deleteExpense, toggleExpensePayment } = useFinance();
   const { toast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -521,12 +521,10 @@ export function ExpensesPage() {
                 <TransactionTable
                   transactions={paginatedExpenses}
                   categories={expenseCategories}
-                  paymentMethods={paymentMethods}
                   type="expense"
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onTogglePayment={handleTogglePayment}
-                  onUpdatePaymentMethod={updateExpense}
                   selectable
                   selectedIds={selectedIds}
                   onSelectOne={handleSelectOne}

@@ -56,9 +56,9 @@ export function MainLayout({ user, onLogout }) {
       <main className={`flex-1 transition-all duration-300 ease-in-out ${
         isMobile 
           ? 'pt-16' // Add top padding for mobile header
-          : sidebarCollapsed 
+		  : sidebarCollapsed 
             ? 'lg:ml-16' // Desktop sidebar margin when collapsed
-            : 'lg:ml-64' // Desktop sidebar margin when expanded
+			: 'lg:ml-48' // Desktop sidebar margin when expanded (match w-48)
       }`}>
         <div className={`px-4 py-2 ${isMobile ? 'px-3 py-2' : ''}`}>
           <AnimatePresence mode="wait">

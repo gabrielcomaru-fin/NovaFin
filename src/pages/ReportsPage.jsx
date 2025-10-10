@@ -20,9 +20,7 @@ import { InvestmentByInstitutionChart } from '@/components/charts/InvestmentByIn
 import { AdvancedCharts } from '@/components/charts/AdvancedCharts';
 import { BenchmarkingReports } from '@/components/reports/BenchmarkingReports';
 import { SmartAlerts } from '@/components/reports/SmartAlerts';
-import { PaymentMethodAnalysis } from '@/components/charts/PaymentMethodAnalysis';
-import { PaymentMethodChart } from '@/components/charts/PaymentMethodChart';
-import { FileDown, BarChart3, Target, AlertCircle, TrendingUp, Download, CreditCard } from 'lucide-react';
+import { FileDown, BarChart3, Target, AlertCircle, TrendingUp, Download } from 'lucide-react';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, format } from 'date-fns';
 import { formatCurrencyBRL, formatPercent } from '@/lib/format';
 import {
@@ -33,7 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const ReportsPage = memo(function ReportsPage() {
-  const { expenses, investments, categories, accounts, paymentMethods, investmentGoal, loading } = useFinance();
+  const { expenses, investments, categories, accounts, investmentGoal, loading } = useFinance();
   const { isExporting, exportFullReport, exportExpenses, exportInvestments, exportAccounts } = useExport();
   
   // Novos hooks para relatórios avançados
@@ -205,14 +203,10 @@ const ReportsPage = memo(function ReportsPage() {
 
         {/* Sistema de Abas para Relatórios Avançados */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Visão Geral
-            </TabsTrigger>
-            <TabsTrigger value="payment-methods" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Pagamentos
             </TabsTrigger>
             <TabsTrigger value="insights" className="flex items-center gap-2">
               <Target className="h-4 w-4" />
@@ -316,25 +310,6 @@ const ReportsPage = memo(function ReportsPage() {
             <ExpenseTrendChart />
             <InvestmentGrowthChart />
           </div>
-          </TabsContent>
-
-          <TabsContent value="payment-methods" className="space-y-4 md:space-y-5">
-            <PaymentMethodAnalysis 
-              expenses={filteredExpenses} 
-              paymentMethods={paymentMethods} 
-            />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <PaymentMethodChart 
-                expenses={filteredExpenses} 
-                paymentMethods={paymentMethods} 
-                type="pie" 
-              />
-              <PaymentMethodChart 
-                expenses={filteredExpenses} 
-                paymentMethods={paymentMethods} 
-                type="bar" 
-              />
-            </div>
           </TabsContent>
 
           <TabsContent value="insights" className="space-y-4 md:space-y-5">
