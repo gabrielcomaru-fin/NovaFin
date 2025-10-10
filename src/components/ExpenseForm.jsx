@@ -4,32 +4,17 @@ import { Input, CurrencyInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Receipt, Repeat, DollarSign, CreditCard, Wallet, Smartphone, Banknote, Building2, FileText } from 'lucide-react';
+import { Plus, Receipt, Repeat, DollarSign } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceDataContext';
 
 export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
-  const { categories, paymentMethods } = useFinance();
+  const { categories } = useFinance();
   const expenseCategories = categories.filter(c => c.tipo === 'gasto');
-
-  // Função para obter o ícone baseado no tipo do meio de pagamento
-  const getPaymentMethodIcon = (tipo) => {
-    const iconMap = {
-      cartao_credito: CreditCard,
-      cartao_debito: CreditCard,
-      dinheiro: Banknote,
-      pix: Smartphone,
-      transferencia: Building2,
-      boleto: FileText,
-      outros: Wallet
-    };
-    return iconMap[tipo] || Wallet;
-  };
 
   const defaultFormData = {
     descricao: '',
     valor: '',
     categoria_id: '',
-    meio_pagamento_id: '',
     recorrente: false,
     pago: false,
     data: new Date().toISOString().split('T')[0]
@@ -52,7 +37,6 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
         descricao: expenseToEdit.descricao || '',
         valor: formatCurrencyForInput(expenseToEdit.valor),
         categoria_id: expenseToEdit.categoria_id || '',
-        meio_pagamento_id: expenseToEdit.meio_pagamento_id || '',
         recorrente: expenseToEdit.recorrente || false,
         pago: expenseToEdit.pago || false,
         data: expenseToEdit.data ? new Date(expenseToEdit.data).toISOString().split('T')[0] : defaultFormData.data
@@ -194,44 +178,6 @@ export function ExpenseForm({ onSubmit, expenseToEdit, onOpenChange, isOpen }) {
               </>
             ) : (
               <p className="text-sm text-muted-foreground">Nenhuma categoria de gasto disponível.</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="paymentMethod">Meio de Pagamento</Label>
-            {paymentMethods.length > 0 ? (
-              <Select
-                value={formData.meio_pagamento_id}
-                onValueChange={(value) => {
-                  setFormData({ ...formData, meio_pagamento_id: value });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um meio de pagamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentMethods.map((paymentMethod) => {
-                    const IconComponent = getPaymentMethodIcon(paymentMethod.tipo);
-                    return (
-                      <SelectItem key={paymentMethod.id} value={paymentMethod.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: paymentMethod.cor + '20' }}
-                          >
-                            <IconComponent 
-                              className="w-3 h-3" 
-                              style={{ color: paymentMethod.cor }}
-                            />
-                          </div>
-                          <span>{paymentMethod.nome}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            ) : (
-              <p className="text-sm text-muted-foreground">Nenhum meio de pagamento disponível.</p>
             )}
           </div>
           <div className="space-y-3">
