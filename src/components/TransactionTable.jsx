@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, CheckCircle, Clock, CreditCard, CheckCircle2, XCircle } from 'lucide-react';
+import { Edit, Trash2, CheckCircle, Clock, CreditCard, CheckCircle2, XCircle, Wallet, Smartphone, Banknote, Building2, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,10 +32,12 @@ export const TransactionTable = ({
   transactions,
   categories,
   accounts,
+  paymentMethods,
   type,
   onEdit,
   onDelete,
   onTogglePayment,
+  onUpdatePaymentMethod,
   // seleção em lote (opcional)
   selectable,
   selectedIds = [],
@@ -51,6 +54,41 @@ export const TransactionTable = ({
   onSortChange,
 }) => {
   const isExpense = type === 'expense';
+  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+
+  const handleEditPaymentMethod = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowPaymentMethodModal(true);
+  };
+
+  const handleUpdatePaymentMethod = async (newPaymentMethodId) => {
+    if (!selectedTransaction || !onUpdatePaymentMethod) return;
+    
+    try {
+      await onUpdatePaymentMethod(selectedTransaction.id, {
+        meio_pagamento_id: newPaymentMethodId
+      });
+      setShowPaymentMethodModal(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('Erro ao atualizar meio de pagamento:', error);
+    }
+  };
+
+  // Função para obter o ícone baseado no tipo do meio de pagamento
+  const getPaymentMethodIcon = (tipo) => {
+    const iconMap = {
+      cartao_credito: CreditCard,
+      cartao_debito: CreditCard,
+      dinheiro: Banknote,
+      pix: Smartphone,
+      transferencia: Building2,
+      boleto: FileText,
+      outros: Wallet
+    };
+    return iconMap[tipo] || Wallet;
+  };
 
   const isDescFiltered = Boolean(searchTerm && String(searchTerm).trim() !== '');
   const isCategoryFiltered = Boolean(selectedCategory && selectedCategory !== 'all');
@@ -91,7 +129,7 @@ export const TransactionTable = ({
                   />
                 </TableHead>
               )}
-              <TableHead className="align-middle whitespace-nowrap w-[30%]">
+              <TableHead className="align-middle whitespace-nowrap w-[38%]">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] uppercase text-muted-foreground">Descrição</span>
                   {onSearchChange && (
@@ -121,7 +159,7 @@ export const TransactionTable = ({
                   )}
                 </div>
               </TableHead>
-              <TableHead className="hidden sm:table-cell align-middle whitespace-nowrap w-[18%]">
+              <TableHead className="hidden sm:table-cell align-middle whitespace-nowrap w-[12%]">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] uppercase text-muted-foreground">Categoria</span>
                   {onCategoryChange && (
@@ -156,6 +194,13 @@ export const TransactionTable = ({
                   )}
                 </div>
               </TableHead>
+              {isExpense && (
+                <TableHead className="hidden md:table-cell align-middle whitespace-nowrap w-[8%]">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="text-xs uppercase text-muted-foreground">Meio</span>
+                  </div>
+                </TableHead>
+              )}
               {!isExpense && (
                 <TableHead className="hidden md:table-cell align-middle whitespace-nowrap w-[18%]">
                   <div className="flex items-center gap-1.5">
@@ -163,20 +208,20 @@ export const TransactionTable = ({
                   </div>
                 </TableHead>
               )}
-              <TableHead className="align-middle cursor-pointer select-none w-[14%]">
+              <TableHead className="align-middle cursor-pointer select-none w-[15%]">
                 <div className="flex items-center gap-1.5" onClick={() => toggleSort(isExpense ? 'value-asc' : 'value-asc', isExpense ? 'value-desc' : 'value-desc')}>
                   <span className="text-xs uppercase text-muted-foreground">Valor</span>
                   {sortIcon(isExpense ? 'value-asc' : 'value-asc', isExpense ? 'value-desc' : 'value-desc')}
                 </div>
               </TableHead>
-              <TableHead className="hidden md:table-cell align-middle cursor-pointer select-none w-[12%]">
+              <TableHead className="hidden md:table-cell align-middle cursor-pointer select-none w-[10%]">
                 <div className="flex items-center gap-1.5" onClick={() => toggleSort('date-asc', 'date-desc')}>
                   <span className="text-xs uppercase text-muted-foreground">Data</span>
                   {sortIcon('date-asc', 'date-desc')}
                 </div>
               </TableHead>
               {isExpense && (
-                <TableHead className="hidden sm:table-cell align-middle whitespace-nowrap w-[12%]">
+                <TableHead className="hidden sm:table-cell align-middle whitespace-nowrap w-[10%]">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11px] uppercase text-muted-foreground">Status</span>
                     {onPaymentStatusChange && (
@@ -211,7 +256,7 @@ export const TransactionTable = ({
                   </div>
                 </TableHead>
               )}
-              <TableHead className="align-middle whitespace-nowrap w-[10%]">
+              <TableHead className="align-middle whitespace-nowrap w-[8%]">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs uppercase text-muted-foreground">Ações</span>
                 </div>
@@ -247,7 +292,7 @@ export const TransactionTable = ({
                         />
                       </TableCell>
                     )}
-                  <TableCell className="font-medium w-[30%]">
+                  <TableCell className="font-medium w-[38%]">
                     <div className="space-y-1">
                       <div>{description}</div>
                       <div className="sm:hidden">
@@ -270,22 +315,55 @@ export const TransactionTable = ({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell w-[18%]">
+                  <TableCell className="hidden sm:table-cell w-[12%]">
                     <Badge variant="outline">{category?.nome || 'Sem categoria'}</Badge>
                   </TableCell>
+                  {isExpense && (
+                    <TableCell className="hidden md:table-cell w-[8%] align-middle">
+                      <div className="flex justify-center items-center">
+                        {(() => {
+                          const paymentMethod = paymentMethods?.find(p => p.id === transaction.meio_pagamento_id);
+                          if (!paymentMethod) {
+                            return (
+                              <button
+                                onClick={() => handleEditPaymentMethod(transaction)}
+                                className="w-4 h-4 rounded-full bg-muted hover:bg-muted/80 transition-colors inline-flex items-center justify-center"
+                                title="Adicionar meio de pagamento"
+                              >
+                                <span className="text-xs text-muted-foreground">+</span>
+                              </button>
+                            );
+                          }
+                          const IconComponent = getPaymentMethodIcon(paymentMethod.tipo);
+                          return (
+                            <button
+                              onClick={() => handleEditPaymentMethod(transaction)}
+                              className="w-4 h-4 hover:scale-110 transition-transform inline-flex items-center justify-center"
+                              title={`${paymentMethod.nome} - Clique para alterar`}
+                            >
+                              <IconComponent 
+                                className="w-4 h-4" 
+                                style={{ color: paymentMethod.cor }}
+                              />
+                            </button>
+                          );
+                        })()}
+                      </div>
+                    </TableCell>
+                  )}
                   {!isExpense && (
                     <TableCell className="hidden md:table-cell w-[18%]">
                       <Badge variant="secondary">{institution?.nome_banco || 'Sem instituição'}</Badge>
                     </TableCell>
                   )}
-                  <TableCell className={`font-semibold w-[14%] ${isExpense ? 'text-destructive text-left' : 'text-green-500 text-left'}`}>
+                  <TableCell className={`font-semibold w-[15%] ${isExpense ? 'text-destructive text-left' : 'text-green-500 text-left'}`}>
                     {isExpense ? '- R$ ' : '+ R$ '} {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground w-[12%] text-left">
+                  <TableCell className="hidden md:table-cell text-muted-foreground w-[10%] text-left">
                     {new Date(transaction.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                   </TableCell>
                   {isExpense && (
-                    <TableCell className="hidden sm:table-cell w-[12%]">
+                    <TableCell className="hidden sm:table-cell w-[10%]">
                       <div className="flex items-center">
                         {transaction.pago ? (
                           <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
@@ -301,7 +379,7 @@ export const TransactionTable = ({
                       </div>
                     </TableCell>
                   )}
-                  <TableCell className="w-[10%]">
+                  <TableCell className="w-[8%]">
                     <div className="flex items-center gap-1">
                       {isExpense && onTogglePayment && (
                         <Button 
@@ -361,6 +439,36 @@ export const TransactionTable = ({
         </TableBody>
         </Table>
       </div>
+      
+      {/* Modal para seleção de meio de pagamento */}
+      <Dialog open={showPaymentMethodModal} onOpenChange={setShowPaymentMethodModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Alterar Meio de Pagamento</DialogTitle>
+            <DialogDescription>
+              Selecione um novo meio de pagamento para esta despesa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {paymentMethods?.map((paymentMethod) => {
+              const IconComponent = getPaymentMethodIcon(paymentMethod.tipo);
+              return (
+                <button
+                  key={paymentMethod.id}
+                  onClick={() => handleUpdatePaymentMethod(paymentMethod.id)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                >
+                  <IconComponent 
+                    className="w-4 h-4" 
+                    style={{ color: paymentMethod.cor }}
+                  />
+                  <span className="font-medium">{paymentMethod.nome}</span>
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -25,7 +25,7 @@ const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'expensesPage';
 
 export function ExpensesPage() {
-  const { expenses, categories, addExpense, updateExpense, deleteExpense, toggleExpensePayment } = useFinance();
+  const { expenses, categories, paymentMethods, addExpense, updateExpense, deleteExpense, toggleExpensePayment } = useFinance();
   const { toast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -192,7 +192,7 @@ export function ExpensesPage() {
           pago: importPaid,
           recorrente: false,
           data: t.data || new Date().toISOString().split('T')[0],
-          meio_pagamento: perTxPaymentMethods[i] || importPaymentMethod || null,
+          meio_pagamento_id: perTxPaymentMethods[i] || importPaymentMethod || null,
         };
         try {
           await addExpense(payload);
@@ -521,10 +521,12 @@ export function ExpensesPage() {
                 <TransactionTable
                   transactions={paginatedExpenses}
                   categories={expenseCategories}
+                  paymentMethods={paymentMethods}
                   type="expense"
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onTogglePayment={handleTogglePayment}
+                  onUpdatePaymentMethod={updateExpense}
                   selectable
                   selectedIds={selectedIds}
                   onSelectOne={handleSelectOne}
@@ -694,14 +696,9 @@ export function ExpensesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Não especificado</SelectItem>
-                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                      <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                      <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                      <SelectItem value="pix">PIX</SelectItem>
-                      <SelectItem value="transferencia">Transferência</SelectItem>
-                      <SelectItem value="boleto">Boleto</SelectItem>
-                      <SelectItem value="cheque">Cheque</SelectItem>
-                      <SelectItem value="outros">Outros</SelectItem>
+                      {paymentMethods.map(pm => (
+                        <SelectItem key={pm.id} value={String(pm.id)}>{pm.nome}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -752,14 +749,9 @@ export function ExpensesPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">Não especificado</SelectItem>
-                          <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                          <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                          <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                          <SelectItem value="pix">PIX</SelectItem>
-                          <SelectItem value="transferencia">Transferência</SelectItem>
-                          <SelectItem value="boleto">Boleto</SelectItem>
-                          <SelectItem value="cheque">Cheque</SelectItem>
-                          <SelectItem value="outros">Outros</SelectItem>
+                          {paymentMethods.map(pm => (
+                            <SelectItem key={pm.id} value={String(pm.id)}>{pm.nome}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
