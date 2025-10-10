@@ -44,10 +44,15 @@ export function ExpensesPage() {
   const [ofxTransactions, setOfxTransactions] = useState([]);
   const [perTxCategories, setPerTxCategories] = useState({}); // { index: categoria_id }
   const [perTxDescriptions, setPerTxDescriptions] = useState({}); // { index: descricao }
+  const [perTxPaymentMethods, setPerTxPaymentMethods] = useState({}); // { index: meio_pagamento }
+  const [duplicatesFound, setDuplicatesFound] = useState([]); // Array de duplicatas encontradas
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateDecisions, setDuplicateDecisions] = useState({}); // { index: 'import' | 'skip' }
   const expenseCategories = useMemo(() => categories.filter(c => c.tipo === 'gasto'), [categories]);
   const defaultCategoryId = expenseCategories[0]?.id || '';
   const [importCategoryId, setImportCategoryId] = useState(defaultCategoryId);
   const [importPaid, setImportPaid] = useState(false);
+  const [importPaymentMethod, setImportPaymentMethod] = useState('');
   const fileInputId = 'ofx-file-input';
 
   const [filter, setFilter] = usePersistentState(`filter_${PAGE_ID}`, () => ({
@@ -77,6 +82,38 @@ export function ExpensesPage() {
     if (!importCategoryId && defaultCategoryId) setImportCategoryId(defaultCategoryId);
   }, [defaultCategoryId, importCategoryId]);
 
+  // Função para verificar duplicatas
+  const checkForDuplicates = (ofxTxs) => {
+    const duplicates = [];
+    
+    ofxTxs.forEach((ofxTx, ofxIndex) => {
+      const ofxDate = ofxTx.data;
+      const ofxDescription = ofxTx.descricao?.toLowerCase().trim() || '';
+      const ofxValue = Number(ofxTx.valor) || 0;
+      
+      // Verificar se existe despesa com mesma data, descrição e valor
+      const duplicate = expenses.find(expense => {
+        const expenseDate = expense.data;
+        const expenseDescription = expense.descricao?.toLowerCase().trim() || '';
+        const expenseValue = Number(expense.valor) || 0;
+        
+        return expenseDate === ofxDate && 
+               expenseDescription === ofxDescription && 
+               Math.abs(expenseValue - ofxValue) < 0.01; // Tolerância de 1 centavo
+      });
+      
+      if (duplicate) {
+        duplicates.push({
+          ofxIndex,
+          ofxTransaction: ofxTx,
+          existingExpense: duplicate
+        });
+      }
+    });
+    
+    return duplicates;
+  };
+
   const handleOfxSelectClick = () => {
     const el = document.getElementById(fileInputId);
     if (el) el.click();
@@ -95,13 +132,26 @@ export function ExpensesPage() {
         e.target.value = '';
         return;
       }
+      
+      // Verificar duplicatas
+      const duplicates = checkForDuplicates(expenseTxs);
+      setDuplicatesFound(duplicates);
+      setDuplicateDecisions({});
+      
       setOfxTransactions(expenseTxs);
       setPerTxCategories({});
       setPerTxDescriptions(expenseTxs.reduce((acc, t, idx) => {
         acc[idx] = t.descricao || 'Lançamento OFX';
         return acc;
       }, {}));
-      setIsImportOpen(true);
+      setPerTxPaymentMethods({});
+      
+      // Se há duplicatas, mostrar dialog de decisão primeiro
+      if (duplicates.length > 0) {
+        setShowDuplicateDialog(true);
+      } else {
+        setIsImportOpen(true);
+      }
     } catch (err) {
       toast({ title: 'Falha ao ler OFX', description: err?.message || 'Formato inválido.', variant: 'destructive' });
     } finally {
@@ -120,10 +170,21 @@ export function ExpensesPage() {
     setIsImporting(true);
     try {
       let success = 0;
+      let skipped = 0;
+      
       for (let i = 0; i < ofxTransactions.length; i++) {
         const t = ofxTransactions[i];
+        
+        // Verificar se é duplicata e se deve ser pulada
+        const duplicate = duplicatesFound.find(d => d.ofxIndex === i);
+        if (duplicate && duplicateDecisions[i] === 'skip') {
+          skipped++;
+          continue;
+        }
+        
         const categoria_id = perTxCategories[i] || importCategoryId;
         if (!categoria_id) continue;
+        
         const payload = {
           descricao: perTxDescriptions[i] ?? t.descricao ?? 'Lançamento OFX',
           valor: Number(t.valor) || 0,
@@ -131,6 +192,7 @@ export function ExpensesPage() {
           pago: importPaid,
           recorrente: false,
           data: t.data || new Date().toISOString().split('T')[0],
+          meio_pagamento: perTxPaymentMethods[i] || importPaymentMethod || null,
         };
         try {
           await addExpense(payload);
@@ -139,16 +201,58 @@ export function ExpensesPage() {
           // Continua para próximo
         }
       }
-      toast({ title: 'Importação concluída', description: `${success} despesas adicionadas` });
+      
+      let message = `${success} despesas adicionadas`;
+      if (skipped > 0) {
+        message += `, ${skipped} duplicatas ignoradas`;
+      }
+      
+      toast({ title: 'Importação concluída', description: message });
       setIsImportOpen(false);
       setOfxTransactions([]);
       setPerTxCategories({});
       setPerTxDescriptions({});
+      setPerTxPaymentMethods({});
+      setDuplicatesFound([]);
+      setDuplicateDecisions({});
     } catch (e) {
       toast({ title: 'Erro na importação', description: e?.message || 'Tente novamente.', variant: 'destructive' });
     } finally {
       setIsImporting(false);
     }
+  };
+
+  // Funções para lidar com duplicatas
+  const handleDuplicateDecision = (ofxIndex, decision) => {
+    setDuplicateDecisions(prev => ({
+      ...prev,
+      [ofxIndex]: decision
+    }));
+  };
+
+  const handleProceedWithDuplicates = () => {
+    setShowDuplicateDialog(false);
+    setIsImportOpen(true);
+  };
+
+  const handleSkipAllDuplicates = () => {
+    const skipDecisions = {};
+    duplicatesFound.forEach(dup => {
+      skipDecisions[dup.ofxIndex] = 'skip';
+    });
+    setDuplicateDecisions(skipDecisions);
+    setShowDuplicateDialog(false);
+    setIsImportOpen(true);
+  };
+
+  const handleImportAllDuplicates = () => {
+    const importDecisions = {};
+    duplicatesFound.forEach(dup => {
+      importDecisions[dup.ofxIndex] = 'import';
+    });
+    setDuplicateDecisions(importDecisions);
+    setShowDuplicateDialog(false);
+    setIsImportOpen(true);
   };
 
   const { filteredExpenses, totalSpent, trendData, paidExpenses, pendingExpenses, totalPaid, totalPending } = useMemo(() => {
@@ -570,7 +674,7 @@ export function ExpensesPage() {
                   Total a importar: {currencyFormatter.format(ofxTransactions.reduce((s, t) => s + (Number(t.valor) || 0), 0))}
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="text-sm font-medium">Categoria para as despesas</label>
                   <Select value={importCategoryId} onValueChange={setImportCategoryId}>
@@ -581,6 +685,25 @@ export function ExpensesPage() {
                       {expenseCategories.map(c => (
                         <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Meio de pagamento</label>
+                  <Select value={importPaymentMethod} onValueChange={setImportPaymentMethod}>
+                    <SelectTrigger className="w-full mt-1">
+                      <SelectValue placeholder="Selecione o meio de pagamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Não especificado</SelectItem>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                      <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="transferencia">Transferência</SelectItem>
+                      <SelectItem value="boleto">Boleto</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                      <SelectItem value="outros">Outros</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -595,14 +718,15 @@ export function ExpensesPage() {
               {/* Lista por lançamento para categorização individual */}
               <div className="max-h-[60vh] overflow-auto border rounded-md">
                 <div className="grid grid-cols-12 gap-2 p-2 text-xs text-muted-foreground border-b">
-                  <div className="col-span-5">Descrição</div>
+                  <div className="col-span-4">Descrição</div>
                   <div className="col-span-2">Data</div>
                   <div className="col-span-2 text-right">Valor</div>
-                  <div className="col-span-3">Categoria</div>
+                  <div className="col-span-2">Categoria</div>
+                  <div className="col-span-2">Meio de Pagamento</div>
                 </div>
                 {ofxTransactions.map((t, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 p-2 items-center border-b last:border-b-0">
-                    <div className="col-span-5">
+                    <div className="col-span-4">
                       <input
                         className="w-full px-2 py-1 border rounded text-sm"
                         value={perTxDescriptions[idx] ?? t.descricao ?? 'Lançamento OFX'}
@@ -611,7 +735,7 @@ export function ExpensesPage() {
                     </div>
                     <div className="col-span-2 text-xs">{t.data}</div>
                     <div className="col-span-2 text-right font-medium">{currencyFormatter.format(Number(t.valor) || 0)}</div>
-                    <div className="col-span-3">
+                    <div className="col-span-2">
                       <Select value={perTxCategories[idx] || importCategoryId || ''} onValueChange={(val) => setPerTxCategories(prev => ({ ...prev, [idx]: val }))}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Categoria" />
@@ -620,6 +744,24 @@ export function ExpensesPage() {
                           {expenseCategories.map(c => (
                             <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <Select value={perTxPaymentMethods[idx] || importPaymentMethod || ''} onValueChange={(val) => setPerTxPaymentMethods(prev => ({ ...prev, [idx]: val }))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Meio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Não especificado</SelectItem>
+                          <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                          <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                          <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                          <SelectItem value="pix">PIX</SelectItem>
+                          <SelectItem value="transferencia">Transferência</SelectItem>
+                          <SelectItem value="boleto">Boleto</SelectItem>
+                          <SelectItem value="cheque">Cheque</SelectItem>
+                          <SelectItem value="outros">Outros</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -633,6 +775,67 @@ export function ExpensesPage() {
                 {isImporting ? 'Importando...' : 'Confirmar importação'}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para lidar com duplicatas */}
+        <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+          <DialogContent className="sm:max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Duplicatas Encontradas</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Foram encontradas {duplicatesFound.length} transação(ões) que podem ser duplicatas de despesas já cadastradas. 
+                Você pode escolher importar ou ignorar cada uma delas.
+              </div>
+              
+              <div className="max-h-[50vh] overflow-auto border rounded-md">
+                <div className="grid grid-cols-12 gap-2 p-2 text-xs text-muted-foreground border-b">
+                  <div className="col-span-3">Descrição</div>
+                  <div className="col-span-2">Data</div>
+                  <div className="col-span-2 text-right">Valor</div>
+                  <div className="col-span-3">Despesa Existente</div>
+                  <div className="col-span-2">Ação</div>
+                </div>
+                {duplicatesFound.map((dup, idx) => (
+                  <div key={dup.ofxIndex} className="grid grid-cols-12 gap-2 p-2 items-center border-b last:border-b-0">
+                    <div className="col-span-3 text-sm">{dup.ofxTransaction.descricao}</div>
+                    <div className="col-span-2 text-xs">{dup.ofxTransaction.data}</div>
+                    <div className="col-span-2 text-right font-medium">{currencyFormatter.format(Number(dup.ofxTransaction.valor) || 0)}</div>
+                    <div className="col-span-3 text-xs text-muted-foreground">
+                      ID: {dup.existingExpense.id} - {dup.existingExpense.descricao}
+                    </div>
+                    <div className="col-span-2">
+                      <Select 
+                        value={duplicateDecisions[dup.ofxIndex] || ''} 
+                        onValueChange={(val) => handleDuplicateDecision(dup.ofxIndex, val)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Escolher" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="import">Importar</SelectItem>
+                          <SelectItem value="skip">Ignorar</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleSkipAllDuplicates}>
+                  Ignorar Todas
+                </Button>
+                <Button variant="outline" onClick={handleImportAllDuplicates}>
+                  Importar Todas
+                </Button>
+                <Button onClick={handleProceedWithDuplicates}>
+                  Prosseguir
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
