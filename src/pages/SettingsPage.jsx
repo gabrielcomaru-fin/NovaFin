@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
 import { AccountForm } from '@/components/AccountForm';
+import { PaymentMethodManager } from '@/components/PaymentMethodManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
@@ -742,6 +743,11 @@ export function SettingsPage() {
                 </CardContent>
               </Card>
             </div>
+            <Card>
+              <CardContent className="pt-6">
+                <PaymentMethodManager />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="billing" className="space-y-6">
