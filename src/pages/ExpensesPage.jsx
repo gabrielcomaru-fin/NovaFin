@@ -231,8 +231,37 @@ export function ExpensesPage() {
   };
 
   const handleProceedWithDuplicates = () => {
+    // Filtra as transações marcadas como "Ignorar" para não seguirem para classificação
+    const keptTransactions = [];
+    const keptDescriptions = {};
+    const keptCategories = {};
+    const keptPaymentMethods = {};
+
+    ofxTransactions.forEach((tx, idx) => {
+      const isDuplicate = duplicatesFound.some(d => d.ofxIndex === idx);
+      const decision = duplicateDecisions[idx];
+      if (isDuplicate && decision === 'skip') {
+        return; // ignora esta transação
+      }
+      const newIndex = keptTransactions.length;
+      keptTransactions.push(tx);
+      if (perTxDescriptions[idx] != null) keptDescriptions[newIndex] = perTxDescriptions[idx];
+      if (perTxCategories[idx] != null) keptCategories[newIndex] = perTxCategories[idx];
+      if (perTxPaymentMethods[idx] != null) keptPaymentMethods[newIndex] = perTxPaymentMethods[idx];
+    });
+
+    setOfxTransactions(keptTransactions);
+    setPerTxDescriptions(keptDescriptions);
+    setPerTxCategories(keptCategories);
+    setPerTxPaymentMethods(keptPaymentMethods);
+
     setShowDuplicateDialog(false);
-    setIsImportOpen(true);
+    if (keptTransactions.length > 0) {
+      setIsImportOpen(true);
+    } else {
+      // Nada a importar após ignorar duplicatas
+      setIsImportOpen(false);
+    }
   };
 
   const handleSkipAllDuplicates = () => {
@@ -241,8 +270,6 @@ export function ExpensesPage() {
       skipDecisions[dup.ofxIndex] = 'skip';
     });
     setDuplicateDecisions(skipDecisions);
-    setShowDuplicateDialog(false);
-    setIsImportOpen(true);
   };
 
   const handleImportAllDuplicates = () => {
@@ -251,8 +278,6 @@ export function ExpensesPage() {
       importDecisions[dup.ofxIndex] = 'import';
     });
     setDuplicateDecisions(importDecisions);
-    setShowDuplicateDialog(false);
-    setIsImportOpen(true);
   };
 
   const { filteredExpenses, totalSpent, trendData, paidExpenses, pendingExpenses, totalPaid, totalPending } = useMemo(() => {
@@ -677,7 +702,7 @@ export function ExpensesPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="text-sm font-medium">Categoria para as despesas</label>
-                  <Select value={importCategoryId} onValueChange={setImportCategoryId}>
+                  <Select value={importCategoryId || undefined} onValueChange={setImportCategoryId}>
                     <SelectTrigger className="w-full mt-1">
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
@@ -690,12 +715,12 @@ export function ExpensesPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Meio de pagamento</label>
-                  <Select value={importPaymentMethod} onValueChange={setImportPaymentMethod}>
+                  <Select value={importPaymentMethod || undefined} onValueChange={(val) => setImportPaymentMethod(val === 'none' ? '' : val)}>
                     <SelectTrigger className="w-full mt-1">
                       <SelectValue placeholder="Selecione o meio de pagamento" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Não especificado</SelectItem>
+                      <SelectItem value="none">Não especificado</SelectItem>
                       {paymentMethods.map(pm => (
                         <SelectItem key={pm.id} value={String(pm.id)}>{pm.nome}</SelectItem>
                       ))}
@@ -731,7 +756,7 @@ export function ExpensesPage() {
                     <div className="col-span-2 text-xs">{t.data}</div>
                     <div className="col-span-2 text-right font-medium">{currencyFormatter.format(Number(t.valor) || 0)}</div>
                     <div className="col-span-2">
-                      <Select value={perTxCategories[idx] || importCategoryId || ''} onValueChange={(val) => setPerTxCategories(prev => ({ ...prev, [idx]: val }))}>
+                      <Select value={perTxCategories[idx] || importCategoryId || undefined} onValueChange={(val) => setPerTxCategories(prev => ({ ...prev, [idx]: val }))}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Categoria" />
                         </SelectTrigger>
@@ -743,12 +768,12 @@ export function ExpensesPage() {
                       </Select>
                     </div>
                     <div className="col-span-2">
-                      <Select value={perTxPaymentMethods[idx] || importPaymentMethod || ''} onValueChange={(val) => setPerTxPaymentMethods(prev => ({ ...prev, [idx]: val }))}>
+                      <Select value={perTxPaymentMethods[idx] || importPaymentMethod || undefined} onValueChange={(val) => setPerTxPaymentMethods(prev => ({ ...prev, [idx]: val === 'none' ? '' : val }))}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Meio" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Não especificado</SelectItem>
+                          <SelectItem value="none">Não especificado</SelectItem>
                           {paymentMethods.map(pm => (
                             <SelectItem key={pm.id} value={String(pm.id)}>{pm.nome}</SelectItem>
                           ))}
@@ -794,11 +819,11 @@ export function ExpensesPage() {
                     <div className="col-span-2 text-xs">{dup.ofxTransaction.data}</div>
                     <div className="col-span-2 text-right font-medium">{currencyFormatter.format(Number(dup.ofxTransaction.valor) || 0)}</div>
                     <div className="col-span-3 text-xs text-muted-foreground">
-                      ID: {dup.existingExpense.id} - {dup.existingExpense.descricao}
+                      {dup.existingExpense.descricao}
                     </div>
                     <div className="col-span-2">
                       <Select 
-                        value={duplicateDecisions[dup.ofxIndex] || ''} 
+                        value={duplicateDecisions[dup.ofxIndex] || undefined} 
                         onValueChange={(val) => handleDuplicateDecision(dup.ofxIndex, val)}
                       >
                         <SelectTrigger className="w-full">
