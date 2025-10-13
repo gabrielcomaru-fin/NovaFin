@@ -34,15 +34,50 @@ export const useFinanceData = () => {
             if (categoriesError) throw categoriesError;
             setCategories(categoriesData || []);
 
-            // Buscar meios de pagamento
-            const { data: paymentMethodsData, error: paymentMethodsError } = await supabase
-                .from('meios_pagamento')
-                .select('*')
-                .or(`usuario_id.eq.${user.id},usuario_id.is.null`)
-                .eq('ativo', true)
-                .order('nome', { ascending: true });
-            if (paymentMethodsError) throw paymentMethodsError;
-            setPaymentMethods(paymentMethodsData || []);
+            // Buscar meios de pagamento com política de override:
+            // - Padrões (usuario_id = NULL) apenas ativos
+            // - Do usuário (usuario_id = user.id) ativos e inativos (inativo serve para suprimir um padrão)
+            const [defaultsRes, userRes] = await Promise.all([
+                supabase
+                    .from('meios_pagamento')
+                    .select('*')
+                    .is('usuario_id', null)
+                    .eq('ativo', true)
+                    .order('nome', { ascending: true }),
+                supabase
+                    .from('meios_pagamento')
+                    .select('*')
+                    .eq('usuario_id', user.id)
+                    .order('nome', { ascending: true })
+            ]);
+
+            if (defaultsRes.error) throw defaultsRes.error;
+            if (userRes.error) throw userRes.error;
+
+            const defaults = defaultsRes.data || [];
+            const userMethods = userRes.data || [];
+
+            // Nomes suprimidos via overrides inativos (marcadores de exclusão)
+            const suppressedNames = new Set(
+                userMethods
+                    .filter(pm => pm.ativo === false && pm.nome)
+                    .map(pm => pm.nome)
+            );
+
+            // Filtra padrões que tenham sido suprimidos pelo usuário
+            const visibleDefaults = defaults.filter(d => !suppressedNames.has(d.nome));
+
+            // Apenas métodos do usuário ativos são exibidos
+            const activeUserMethods = userMethods.filter(pm => pm.ativo !== false);
+
+            // Evita duplicação por nome: se o usuário tem um ativo com mesmo nome de um padrão, mantém o do usuário
+            const userNames = new Set(activeUserMethods.map(pm => pm.nome).filter(Boolean));
+            const effectiveDefaults = visibleDefaults.filter(d => !userNames.has(d.nome));
+
+            const effectivePaymentMethods = [...activeUserMethods, ...effectiveDefaults]
+                .sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+
+            setPaymentMethods(effectivePaymentMethods);
 
             // Buscar gastos
             const { data: expensesData, error: expensesError } = await supabase
@@ -379,7 +414,11 @@ export const useFinanceData = () => {
                 .single();
             
             if (error) throw error;
-            setPaymentMethods(prev => [data, ...prev]);
+            // Ao criar um método do usuário, ele deve sobrepor um padrão com o mesmo nome
+            setPaymentMethods(prev => {
+                const withoutSuppressedDefault = prev.filter(pm => !(pm.usuario_id === null && pm.nome === data.nome));
+                return [data, ...withoutSuppressedDefault];
+            });
             return data;
         } catch (error) {
             console.error('Erro ao adicionar meio de pagamento:', error);
@@ -515,7 +554,7 @@ export const useFinanceData = () => {
                 return;
             }
             
-            // Excluir meio de pagamento personalizado
+            // Excluir meio de pagamento personalizado (não reativa padrões; padrão já está suprimido apenas se existir um registro inativo específico)
             const { error } = await supabase
                 .from('meios_pagamento')
                 .delete()
