@@ -933,16 +933,18 @@ export function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="finance" className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <BankSettings />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <PaymentMethodsManager />
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <BankSettings />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <PaymentMethodsManager />
+                </CardContent>
+              </Card>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardContent className="pt-6">
