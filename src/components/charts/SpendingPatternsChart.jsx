@@ -1,9 +1,8 @@
 import React, { memo, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Calendar } from 'lucide-react';
-import { format, eachDayOfInterval, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Calendar } from 'lucide-react';
+import { parseISO } from 'date-fns';
 
 const SpendingPatternsChart = memo(function SpendingPatternsChart({ expenses, periodType = 'monthly' }) {
   const chartData = useMemo(() => {
@@ -30,14 +29,13 @@ const SpendingPatternsChart = memo(function SpendingPatternsChart({ expenses, pe
       'Domingo': 0
     };
 
+    const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     expenses.forEach(expense => {
-      const expenseDate = new Date(expense.data);
-      const dayName = format(expenseDate, 'EEEE', { locale: ptBR });
-      const capitalizedDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-      
-      if (dayOfWeekTotals.hasOwnProperty(capitalizedDay)) {
-        dayOfWeekTotals[capitalizedDay] += expense.valor;
-        dayOfWeekCounts[capitalizedDay] += 1;
+      const expenseDate = parseISO(expense.data);
+      const dayLabel = labels[expenseDate.getDay()];
+      if (dayOfWeekTotals.hasOwnProperty(dayLabel)) {
+        dayOfWeekTotals[dayLabel] += expense.valor;
+        dayOfWeekCounts[dayLabel] += 1;
       }
     });
 
