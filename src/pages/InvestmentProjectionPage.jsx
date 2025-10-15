@@ -12,11 +12,13 @@ import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function InvestmentProjectionPage() {
-    const { investments, investmentGoal } = useFinance();
+    const { investments, accounts, investmentGoal } = useFinance();
 
-    const totalInvestmentBalance = useMemo(() => {
-        return investments.reduce((sum, investment) => sum + (investment.valor_aporte || 0), 0);
-    }, [investments]);
+    // Patrimônio atual: usar saldo das contas (evita inflar com soma histórica de aportes)
+    const currentPortfolioBalance = useMemo(() => {
+        if (!accounts || accounts.length === 0) return 0;
+        return accounts.reduce((sum, account) => sum + (account.saldo || 0), 0);
+    }, [accounts]);
 
     const averageMonthlyInvestment = useMemo(() => {
         if (!investments || investments.length === 0) return 0;
@@ -92,7 +94,7 @@ export function InvestmentProjectionPage() {
         
         setCalcData(prev => ({
             ...prev,
-            initialAmount: formatCurrencyValue(totalInvestmentBalance || 0),
+            initialAmount: formatCurrencyValue(currentPortfolioBalance || 0),
             monthlyContribution: formatCurrencyValue(averageMonthlyInvestment || 0),
             goalContribution: formatCurrencyValue(investmentGoal || 0)
         }));
@@ -100,13 +102,13 @@ export function InvestmentProjectionPage() {
         // Debug para verificar valores
         if (process.env.NODE_ENV === 'development') {
             console.log('useEffect debug - valores sendo definidos:', {
-                totalInvestmentBalance,
+                currentPortfolioBalance,
                 averageMonthlyInvestment,
                 investmentGoal,
                 formattedMonthlyContribution: formatCurrencyValue(averageMonthlyInvestment || 0)
             });
         }
-    }, [totalInvestmentBalance, averageMonthlyInvestment, investmentGoal]);
+    }, [currentPortfolioBalance, averageMonthlyInvestment, investmentGoal]);
 
     const [result, setResult] = useState(null);
     const [chartData, setChartData] = useState([]);
@@ -164,26 +166,38 @@ export function InvestmentProjectionPage() {
     };
 
     const parseCurrency = (value) => {
-        if (typeof value === 'number') return value;
-        if (typeof value === 'string' && value.trim() === '') return 0;
-        
-        // Remove formatação brasileira (pontos como separadores de milhares, vírgula como decimal)
-        const cleanValue = String(value)
-            .replace(/\./g, '') // Remove pontos (separadores de milhares)
-            .replace(',', '.'); // Substitui vírgula por ponto (decimal)
-        
-        const parsed = parseFloat(cleanValue);
-        
-        // Debug temporário para verificar parsing
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+        if (typeof value !== 'string') return 0;
+        const raw = value.trim();
+        if (raw === '') return 0;
+
+        // Mantém apenas dígitos, separadores e sinal
+        const sanitized = raw.replace(/[^\d.,-]/g, '');
+        const hasComma = sanitized.includes(',');
+        const hasDot = sanitized.includes('.');
+        let normalized = sanitized;
+
+        if (hasComma && hasDot) {
+            // Padrão pt-BR: "." milhares, "," decimal
+            normalized = sanitized.replace(/\./g, '').replace(',', '.');
+        } else if (hasComma && !hasDot) {
+            // Somente vírgula: considerar vírgula decimal
+            normalized = sanitized.replace(',', '.');
+        } else {
+            // Somente ponto ou nenhum: considerar ponto decimal (en-US) ou inteiro
+            normalized = sanitized;
+        }
+
+        const parsed = parseFloat(normalized);
         if (process.env.NODE_ENV === 'development') {
-            console.log('parseCurrency debug:', { 
-                original: value, 
-                cleanValue, 
-                parsed, 
-                isNaN: isNaN(parsed) 
+            console.log('parseCurrency debug:', {
+                original: value,
+                sanitized,
+                normalized,
+                parsed,
+                isNaN: isNaN(parsed)
             });
         }
-        
         return isNaN(parsed) ? 0 : parsed;
     }
 
@@ -374,7 +388,7 @@ export function InvestmentProjectionPage() {
         };
         
         const next = {
-            initialAmount: formatCurrencyValue(totalInvestmentBalance || 0),
+            initialAmount: formatCurrencyValue(currentPortfolioBalance || 0),
             monthlyContribution: formatCurrencyValue(averageMonthlyInvestment || 0),
             goalContribution: formatCurrencyValue(investmentGoal || 0),
             annualRate: String(rate),
@@ -389,7 +403,7 @@ export function InvestmentProjectionPage() {
         // Debug para verificar valores na função calculateSimple
         if (process.env.NODE_ENV === 'development') {
             console.log('calculateSimple debug - valores sendo definidos:', {
-                totalInvestmentBalance,
+                currentPortfolioBalance,
                 averageMonthlyInvestment,
                 investmentGoal,
                 formattedMonthlyContribution: formatCurrencyValue(averageMonthlyInvestment || 0),
@@ -536,7 +550,7 @@ export function InvestmentProjectionPage() {
     useEffect(() => {
         calculateSimple();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [simpleRisk, simpleHorizon, totalInvestmentBalance, averageMonthlyInvestment, investmentGoal]);
+    }, [simpleRisk, simpleHorizon, currentPortfolioBalance, averageMonthlyInvestment, investmentGoal]);
 
     return (
         <>
