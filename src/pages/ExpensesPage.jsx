@@ -257,6 +257,11 @@ export function ExpensesPage() {
     setPerTxCategories(keptCategories);
     setPerTxPaymentMethods(keptPaymentMethods);
 
+    // Após remover duplicatas ignoradas e reindexar, limpamos o estado de duplicatas
+    // para evitar inconsistências de índice na etapa de confirmação da importação.
+    setDuplicatesFound([]);
+    setDuplicateDecisions({});
+
     setShowDuplicateDialog(false);
     if (keptTransactions.length > 0) {
       setIsImportOpen(true);
