@@ -38,9 +38,29 @@ const CurrencyInput = React.forwardRef(({ className, value, onChange, ...props }
   };
   
   const getRawValueForInput = (val) => {
-    if(typeof val === 'number') return val.toFixed(2).replace('.', ',');
+    if(typeof val === 'number') {
+      return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(val);
+    }
     if(typeof val === 'string' && val.trim() === '') return '';
     if(typeof val === 'string') {
+        // Se já está formatado corretamente, retorna como está
+        if(val.includes(',') && val.match(/^\d{1,3}(\.\d{3})*,\d{2}$/)) {
+          return val;
+        }
+        // Se é um número simples (sem formatação), converte e formata
+        if(val.match(/^\d+(\.\d{1,2})?$/)) {
+          const numberVal = parseFloat(val);
+          if(!isNaN(numberVal)) {
+            return new Intl.NumberFormat('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(numberVal);
+          }
+        }
+        // Se não está formatado, converte e formata
         const numericString = val.replace(/\./g, '').replace(',', '.');
         const numberVal = parseFloat(numericString);
         if(!isNaN(numberVal)) {

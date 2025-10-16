@@ -12,27 +12,63 @@ import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function InvestmentProjectionPage() {
-    const { investments, investmentGoal } = useFinance();
+    const { investments, accounts, investmentGoal } = useFinance();
 
-    const totalInvestmentBalance = useMemo(() => {
-        return investments.reduce((sum, investment) => sum + (investment.valor_aporte || 0), 0);
-    }, [investments]);
+    // Patrimônio atual: usar saldo das contas (evita inflar com soma histórica de aportes)
+    const currentPortfolioBalance = useMemo(() => {
+        if (!accounts || accounts.length === 0) return 0;
+        return accounts.reduce((sum, account) => sum + (account.saldo || 0), 0);
+    }, [accounts]);
 
     const averageMonthlyInvestment = useMemo(() => {
         if (!investments || investments.length === 0) return 0;
 
+        // Agrupa investimentos por mês
         const contributionsByMonth = investments.reduce((acc, inv) => {
             const date = new Date(inv.data);
             const monthKey = format(date, 'yyyy-MM');
-            acc[monthKey] = (acc[monthKey] || 0) + inv.valor_aporte;
+            if (!acc[monthKey]) {
+                acc[monthKey] = [];
+            }
+            acc[monthKey].push(inv.valor_aporte || 0);
             return acc;
         }, {});
 
-        const numberOfMonths = Object.keys(contributionsByMonth).length;
-        if (numberOfMonths === 0) return 0;
+        const months = Object.keys(contributionsByMonth);
+        if (months.length === 0) return 0;
 
-        const totalContributions = Object.values(contributionsByMonth).reduce((sum, amount) => sum + amount, 0);
-        return totalContributions / numberOfMonths;
+        // Calcula a média de duas formas para comparar:
+        // 1. Média dos totais mensais (método atual)
+        const totalByMonth = months.map(month => 
+            contributionsByMonth[month].reduce((sum, val) => sum + val, 0)
+        );
+        const averageByTotal = totalByMonth.reduce((sum, total) => sum + total, 0) / months.length;
+
+        // 2. Média simples de todos os aportes individuais
+        const allContributions = investments.map(inv => inv.valor_aporte || 0);
+        const averageByIndividual = allContributions.reduce((sum, val) => sum + val, 0) / allContributions.length;
+
+        // 3. Média ponderada por frequência (mais precisa)
+        const totalContributions = allContributions.reduce((sum, val) => sum + val, 0);
+        const averageWeighted = totalContributions / months.length;
+        
+        // Debug temporário para verificar cálculo da média
+        if (process.env.NODE_ENV === 'development') {
+            console.log('averageMonthlyInvestment debug:', {
+                investments: investments.length,
+                months: months.length,
+                contributionsByMonth,
+                totalByMonth,
+                allContributions,
+                averageByTotal,
+                averageByIndividual,
+                averageWeighted,
+                selected: averageWeighted
+            });
+        }
+        
+        // Usa a média ponderada por frequência (mais precisa para projeções)
+        return averageWeighted;
     }, [investments]);
 
     const [calcData, setCalcData] = useState({
@@ -49,13 +85,30 @@ export function InvestmentProjectionPage() {
     });
     
     useEffect(() => {
+        // Formata os valores monetários corretamente antes de definir no estado
+        const formatCurrencyValue = (value) => {
+            if (!value || value === 0) return '0';
+            // Arredonda para 2 casas decimais e converte para string
+            return Number(value.toFixed(2)).toString();
+        };
+        
         setCalcData(prev => ({
             ...prev,
-            initialAmount: (totalInvestmentBalance || 0).toString(),
-            monthlyContribution: (averageMonthlyInvestment || 0).toString(),
-            goalContribution: (investmentGoal || 0).toString()
+            initialAmount: formatCurrencyValue(currentPortfolioBalance || 0),
+            monthlyContribution: formatCurrencyValue(averageMonthlyInvestment || 0),
+            goalContribution: formatCurrencyValue(investmentGoal || 0)
         }));
-    }, [totalInvestmentBalance, averageMonthlyInvestment, investmentGoal]);
+        
+        // Debug para verificar valores
+        if (process.env.NODE_ENV === 'development') {
+            console.log('useEffect debug - valores sendo definidos:', {
+                currentPortfolioBalance,
+                averageMonthlyInvestment,
+                investmentGoal,
+                formattedMonthlyContribution: formatCurrencyValue(averageMonthlyInvestment || 0)
+            });
+        }
+    }, [currentPortfolioBalance, averageMonthlyInvestment, investmentGoal]);
 
     const [result, setResult] = useState(null);
     const [chartData, setChartData] = useState([]);
@@ -100,13 +153,52 @@ export function InvestmentProjectionPage() {
     };
 
     const handleCurrencyChange = (value, field) => {
+        // Debug para verificar mudanças no campo
+        if (process.env.NODE_ENV === 'development' && field === 'monthlyContribution') {
+            console.log('handleCurrencyChange debug - monthlyContribution:', {
+                field,
+                value,
+                currentCalcData: calcData,
+                averageMonthlyInvestment
+            });
+        }
         setCalcData({ ...calcData, [field]: value });
     };
 
     const parseCurrency = (value) => {
-        if (typeof value === 'number') return value;
-        if (typeof value === 'string' && value.trim() === '') return 0;
-        return parseFloat(String(value).replace(/\./g, '').replace(',', '.'));
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+        if (typeof value !== 'string') return 0;
+        const raw = value.trim();
+        if (raw === '') return 0;
+
+        // Mantém apenas dígitos, separadores e sinal
+        const sanitized = raw.replace(/[^\d.,-]/g, '');
+        const hasComma = sanitized.includes(',');
+        const hasDot = sanitized.includes('.');
+        let normalized = sanitized;
+
+        if (hasComma && hasDot) {
+            // Padrão pt-BR: "." milhares, "," decimal
+            normalized = sanitized.replace(/\./g, '').replace(',', '.');
+        } else if (hasComma && !hasDot) {
+            // Somente vírgula: considerar vírgula decimal
+            normalized = sanitized.replace(',', '.');
+        } else {
+            // Somente ponto ou nenhum: considerar ponto decimal (en-US) ou inteiro
+            normalized = sanitized;
+        }
+
+        const parsed = parseFloat(normalized);
+        if (process.env.NODE_ENV === 'development') {
+            console.log('parseCurrency debug:', {
+                original: value,
+                sanitized,
+                normalized,
+                parsed,
+                isNaN: isNaN(parsed)
+            });
+        }
+        return isNaN(parsed) ? 0 : parsed;
     }
 
     const calculateProjection = () => {
@@ -288,10 +380,17 @@ export function InvestmentProjectionPage() {
         futureDate.setFullYear(futureDate.getFullYear() + simpleHorizon);
         const targetDate = futureDate.toISOString().split('T')[0]; // formato YYYY-MM-DD
         
+        // Formata os valores monetários corretamente
+        const formatCurrencyValue = (value) => {
+            if (!value || value === 0) return '0';
+            // Arredonda para 2 casas decimais e converte para string
+            return Number(value.toFixed(2)).toString();
+        };
+        
         const next = {
-            initialAmount: (totalInvestmentBalance || 0).toString(),
-            monthlyContribution: (averageMonthlyInvestment || 0).toString(),
-            goalContribution: (investmentGoal || 0).toString(),
+            initialAmount: formatCurrencyValue(currentPortfolioBalance || 0),
+            monthlyContribution: formatCurrencyValue(averageMonthlyInvestment || 0),
+            goalContribution: formatCurrencyValue(investmentGoal || 0),
             annualRate: String(rate),
             volatilityAnnual: String(vol),
             inflationAnnual: calcData.inflationAnnual, // manter valor atual
@@ -300,6 +399,18 @@ export function InvestmentProjectionPage() {
             targetAmount: calcData.targetAmount,
             targetDate: targetDate,
         };
+        
+        // Debug para verificar valores na função calculateSimple
+        if (process.env.NODE_ENV === 'development') {
+            console.log('calculateSimple debug - valores sendo definidos:', {
+                currentPortfolioBalance,
+                averageMonthlyInvestment,
+                investmentGoal,
+                formattedMonthlyContribution: formatCurrencyValue(averageMonthlyInvestment || 0),
+                next
+            });
+        }
+        
         setCalcData(next);
         // calcular diretamente com os novos valores
         calculateProjectionWithData(next);
@@ -439,7 +550,7 @@ export function InvestmentProjectionPage() {
     useEffect(() => {
         calculateSimple();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [simpleRisk, simpleHorizon, totalInvestmentBalance, averageMonthlyInvestment, investmentGoal]);
+    }, [simpleRisk, simpleHorizon, currentPortfolioBalance, averageMonthlyInvestment, investmentGoal]);
 
     return (
         <>

@@ -4,9 +4,26 @@ import { useFinance } from '@/contexts/FinanceDataContext';
 export const useScenarioAnalysis = () => {
   const { expenses, investments, accounts, totalPatrimony } = useFinance();
 
+  // Calcula a média mensal de aportes a partir do histórico (evita somar todo o histórico como se fosse mensal)
+  const computeAverageMonthlyInvestment = useCallback((investmentList) => {
+    if (!investmentList || investmentList.length === 0) return 0;
+    const totalsByMonthKey = investmentList.reduce((acc, inv) => {
+      const d = new Date(inv.data);
+      // chave yyyy-mm
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!acc[key]) acc[key] = 0;
+      acc[key] += inv.valor_aporte || 0;
+      return acc;
+    }, {});
+    const monthKeys = Object.keys(totalsByMonthKey);
+    if (monthKeys.length === 0) return 0;
+    const sumOfMonthlyTotals = monthKeys.reduce((s, k) => s + totalsByMonthKey[k], 0);
+    return sumOfMonthlyTotals / monthKeys.length;
+  }, []);
+
   // Gerar cenários de investimento
   const generateScenarios = useCallback((data) => {
-    const currentMonthlyInvestment = data.investments.reduce((sum, investment) => sum + investment.valor_aporte, 0);
+    const currentMonthlyInvestment = computeAverageMonthlyInvestment(data.investments);
     const currentPatrimony = data.accounts.reduce((sum, account) => sum + (account.saldo || 0), 0);
     
     const scenarios = {
@@ -14,7 +31,7 @@ export const useScenarioAnalysis = () => {
         name: 'Cenário Conservador',
         description: 'Crescimento de 6% ao ano (CDB, Tesouro Direto)',
         annualReturn: 0.06,
-        monthlyReturn: 0.06 / 12,
+        monthlyReturn: Math.pow(1 + 0.06, 1/12) - 1,
         projection: calculateProjection(currentPatrimony, currentMonthlyInvestment, 0.06, 10),
         riskLevel: 'Baixo',
         color: '#10b981'
@@ -23,7 +40,7 @@ export const useScenarioAnalysis = () => {
         name: 'Cenário Moderado',
         description: 'Crescimento de 8% ao ano (Misto: Renda Fixa + Variável)',
         annualReturn: 0.08,
-        monthlyReturn: 0.08 / 12,
+        monthlyReturn: Math.pow(1 + 0.08, 1/12) - 1,
         projection: calculateProjection(currentPatrimony, currentMonthlyInvestment, 0.08, 10),
         riskLevel: 'Médio',
         color: '#3b82f6'
@@ -32,7 +49,7 @@ export const useScenarioAnalysis = () => {
         name: 'Cenário Otimista',
         description: 'Crescimento de 10% ao ano (Mais exposição em Renda Variável)',
         annualReturn: 0.10,
-        monthlyReturn: 0.10 / 12,
+        monthlyReturn: Math.pow(1 + 0.10, 1/12) - 1,
         projection: calculateProjection(currentPatrimony, currentMonthlyInvestment, 0.10, 10),
         riskLevel: 'Alto',
         color: '#f59e0b'
@@ -41,7 +58,7 @@ export const useScenarioAnalysis = () => {
         name: 'Cenário Agressivo',
         description: 'Crescimento de 12% ao ano (Alta exposição em Renda Variável)',
         annualReturn: 0.12,
-        monthlyReturn: 0.12 / 12,
+        monthlyReturn: Math.pow(1 + 0.12, 1/12) - 1,
         projection: calculateProjection(currentPatrimony, currentMonthlyInvestment, 0.12, 10),
         riskLevel: 'Muito Alto',
         color: '#ef4444'
@@ -53,7 +70,7 @@ export const useScenarioAnalysis = () => {
 
   // Calcular projeção de patrimônio
   const calculateProjection = useCallback((initialValue, monthlyContribution, annualReturn, years) => {
-    const monthlyReturn = annualReturn / 12;
+    const monthlyReturn = Math.pow(1 + annualReturn, 1/12) - 1;
     const months = years * 12;
     
     // Fórmula de valor futuro com contribuições mensais

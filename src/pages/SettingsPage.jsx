@@ -25,6 +25,10 @@ import {
   Bell,
   Shield,
   CreditCard,
+  Banknote,
+  Smartphone,
+  Building2,
+  FileText,
   Palette,
   Database,
   ChevronRight
@@ -44,6 +48,7 @@ import {
 import { useTheme } from '@/hooks/useTheme';
 import { AccountForm } from '@/components/AccountForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 
 // Componente para gerenciar categorias usando a mesma lógica do AccountForm
@@ -540,6 +545,209 @@ function BankSettings() {
   );
 }
 
+// Componente para gerenciar meios de pagamento
+function PaymentMethodsManager() {
+  const { paymentMethods, addPaymentMethod, updatePaymentMethod, deletePaymentMethod } = useFinance();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [formData, setFormData] = useState({ nome: '', tipo: 'dinheiro', cor: '#3b82f6' });
+
+  const paymentTypes = [
+    { value: 'dinheiro', label: 'Dinheiro' },
+    { value: 'pix', label: 'Pix' },
+    { value: 'cartao_credito', label: 'Cartão de Crédito' },
+    { value: 'cartao_debito', label: 'Cartão de Débito' },
+    { value: 'transferencia', label: 'Transferência' },
+    { value: 'boleto', label: 'Boleto' },
+    { value: 'outros', label: 'Outros' },
+  ];
+
+  const getPaymentMethodIcon = (tipo) => {
+    const iconMap = {
+      cartao_credito: CreditCard,
+      cartao_debito: CreditCard,
+      dinheiro: Banknote,
+      pix: Smartphone,
+      transferencia: Building2,
+      boleto: FileText,
+      outros: Wallet,
+    };
+    return iconMap[tipo] || Wallet;
+  };
+
+  const handleOpenChange = (open) => {
+    setIsOpen(open);
+    if (!open) {
+      setEditing(null);
+      setFormData({ nome: '', tipo: 'dinheiro', cor: '#3b82f6' });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.nome.trim()) {
+      toast({ title: 'Erro', description: 'O nome é obrigatório.', variant: 'destructive' });
+      return;
+    }
+    try {
+      if (editing) {
+        await updatePaymentMethod(editing.id, {
+          nome: formData.nome,
+          tipo: formData.tipo,
+          cor: formData.cor,
+        });
+        toast({ title: 'Meio de pagamento atualizado!' });
+      } else {
+        await addPaymentMethod({
+          nome: formData.nome,
+          tipo: formData.tipo,
+          cor: formData.cor,
+          ativo: true,
+        });
+        toast({ title: 'Meio de pagamento adicionado!' });
+      }
+      setIsOpen(false);
+      setEditing(null);
+      setFormData({ nome: '', tipo: 'dinheiro', cor: '#3b82f6' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleEdit = (pm) => {
+    setEditing(pm);
+    setFormData({ nome: pm.nome || '', tipo: pm.tipo || 'dinheiro', cor: pm.cor || '#3b82f6' });
+    setIsOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este meio de pagamento?')) return;
+    try {
+      await deletePaymentMethod(id);
+      toast({ title: 'Meio de pagamento excluído!' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <CreditCard className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Meios de Pagamento</h3>
+          <p className="text-sm text-muted-foreground">Crie e personalize suas formas de pagamento</p>
+        </div>
+      </div>
+
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <div className="flex">
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Meio de Pagamento
+            </Button>
+          </DialogTrigger>
+        </div>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Editar Meio de Pagamento' : 'Adicionar Meio de Pagamento'}</DialogTitle>
+            <DialogDescription>
+              {editing ? 'Atualize os dados do meio de pagamento.' : 'Cadastre um novo meio de pagamento.'}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
+              {(() => {
+                const Icon = getPaymentMethodIcon(formData.tipo);
+                return <Icon className="w-5 h-5" style={{ color: formData.cor }} />;
+              })()}
+              <span className="text-sm text-muted-foreground">Prévia do ícone</span>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pm-nome">Nome</Label>
+              <Input id="pm-nome" value={formData.nome} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} placeholder="Ex: Nubank, Carteira, Itaú" />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="pm-cor"
+                  type="color"
+                  value={formData.cor}
+                  onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
+                  className="w-6 h-6 p-0 rounded-full border-0 overflow-hidden cursor-pointer appearance-none"
+                />
+                <Select value={formData.tipo} onValueChange={(v) => setFormData({ ...formData, tipo: v })}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentTypes.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button type="submit" className="w-full">{editing ? 'Atualizar' : 'Adicionar'}</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">Lista de Meios de Pagamento</CardTitle>
+          <CardDescription>Edite ou remova quando precisar</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {paymentMethods?.length ? (
+            <div className="space-y-3">
+              {paymentMethods.map((pm, index) => (
+                <motion.div
+                  key={pm.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="flex items-center justify-between p-4 bg-secondary rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    {(() => {
+                      const Icon = getPaymentMethodIcon(pm.tipo);
+                      return <Icon className="w-4 h-4" style={{ color: pm.cor || '#94a3b8' }} />;
+                    })()}
+                    <div>
+                      <p className="font-semibold">{pm.nome}</p>
+                      <p className="text-xs text-muted-foreground">{paymentTypes.find(t => t.value === pm.tipo)?.label || 'Outro'}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(pm)} className="h-8 w-8 p-0">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(pm.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-8">
+              <CreditCard className="w-6 h-6 mx-auto opacity-60 mb-2" />
+              <p className="font-medium">Nenhum meio de pagamento cadastrado.</p>
+              <p className="text-sm">Adicione um novo clicando em "Novo Meio de Pagamento".</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Componente para planos e assinatura
 function PlansSettings() {
   const { toast } = useToast();
@@ -725,11 +933,18 @@ export function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="finance" className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <BankSettings />
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <BankSettings />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <PaymentMethodsManager />
+                </CardContent>
+              </Card>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardContent className="pt-6">
