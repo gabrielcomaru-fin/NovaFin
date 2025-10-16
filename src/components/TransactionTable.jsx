@@ -268,7 +268,7 @@ export const TransactionTable = ({
             {transactions.map((transaction) => {
               const category = categories.find(c => c.id === transaction.categoria_id);
               const institution = accounts?.find(a => a.id === transaction.instituicao_id);
-              const amount = isExpense ? transaction.valor : transaction.valor_aporte;
+              const amount = isExpense ? transaction.valor : (transaction.valor_aporte || transaction.valor);
               const description = transaction.descricao;
 
               return (

@@ -9,6 +9,7 @@ const RegisterPage = lazy(() => import('@/pages/RegisterPage').then(m => ({ defa
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const HomeSummaryPage = lazy(() => import('@/pages/HomeSummaryPage').then(m => ({ default: m.HomeSummaryPage })));
 const ExpensesPage = lazy(() => import('@/pages/ExpensesPage').then(m => ({ default: m.ExpensesPage })));
+const IncomesPage = lazy(() => import('@/pages/IncomesPage').then(m => ({ default: m.IncomesPage })));
 const InvestmentsPage = lazy(() => import('@/pages/InvestmentsPage').then(m => ({ default: m.InvestmentsPage })));
 const AccountsPage = lazy(() => import('@/pages/AccountsPage').then(m => ({ default: m.AccountsPage })));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
@@ -72,6 +73,7 @@ function AppContent() {
                 <Route path="/dashboard" element={user ? <HomeSummaryPage /> : <Navigate to="/login" />} />
                 <Route path="/resumo" element={user ? <HomeSummaryPage /> : <Navigate to="/login" />} />
                 <Route path="/gastos" element={user ? <ExpensesPage /> : <Navigate to="/login" />} />
+                <Route path="/receitas" element={user ? <IncomesPage /> : <Navigate to="/login" />} />
                 <Route path="/investimentos" element={user ? <InvestmentsPage /> : <Navigate to="/login" />} />
                 <Route path="/projecao-investimentos" element={user ? <InvestmentProjectionPage /> : <Navigate to="/login" />} />
                 <Route path="/contas" element={user ? <AccountsPage /> : <Navigate to="/login" />} />

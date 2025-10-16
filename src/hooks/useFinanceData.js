@@ -18,6 +18,7 @@ export const useFinanceData = () => {
     const [accounts, setAccounts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [paymentMethods, setPaymentMethods] = useState([]);
+    const [incomes, setIncomes] = useState([]);
     const [investmentGoal, setInvestmentGoal] = useState(0);
 
     const fetchData = useCallback(async () => {
@@ -52,6 +53,15 @@ export const useFinanceData = () => {
                 .order('data', { ascending: false });
             if (expensesError) throw expensesError;
             setExpenses(expensesData || []);
+
+            // Buscar receitas
+            const { data: incomesData, error: incomesError } = await supabase
+                .from('receitas')
+                .select('*')
+                .eq('usuario_id', user.id)
+                .order('data', { ascending: false });
+            if (incomesError) throw incomesError;
+            setIncomes(incomesData || []);
 
             // Buscar investimentos
             const { data: investmentsData, error: investmentsError } = await supabase
@@ -136,6 +146,46 @@ export const useFinanceData = () => {
         }
     }, [user, validateExpense, sanitizeText]);
 
+    const addIncome = useCallback(async (incomeData) => {
+        if (!user) return;
+        
+        // Validações básicas
+        if (!incomeData.descricao || incomeData.descricao.trim().length < 3) {
+            throw new Error('Descrição deve ter pelo menos 3 caracteres');
+        }
+        if (!incomeData.valor || incomeData.valor <= 0) {
+            throw new Error('Valor deve ser maior que zero');
+        }
+        if (!incomeData.data) {
+            throw new Error('Data é obrigatória');
+        }
+        
+        // Sanitizar dados
+        const sanitizedData = {
+            ...incomeData,
+            descricao: sanitizeText(incomeData.descricao),
+            usuario_id: user.id
+        };
+        
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('receitas')
+                .insert([sanitizedData])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            setIncomes(prev => [data, ...prev]);
+            return data;
+        } catch (error) {
+            console.error('Erro ao adicionar receita:', error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user, sanitizeText]);
+
     const updateExpense = useCallback(async (id, updates) => {
         setIsLoading(true);
         try {
@@ -159,6 +209,29 @@ export const useFinanceData = () => {
         }
     }, [user]);
 
+    const updateIncome = useCallback(async (id, updates) => {
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('receitas')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            setIncomes(prev => prev.map(income => 
+                income.id === id ? data : income
+            ));
+            return data;
+        } catch (error) {
+            console.error('Erro ao atualizar receita:', error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     const deleteExpense = useCallback(async (id) => {
         setIsLoading(true);
         try {
@@ -176,6 +249,24 @@ export const useFinanceData = () => {
             setIsLoading(false);
         }
     }, [user]);
+
+    const deleteIncome = useCallback(async (id) => {
+        setIsLoading(true);
+        try {
+            const { error } = await supabase
+                .from('receitas')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            setIncomes(prev => prev.filter(income => income.id !== id));
+        } catch (error) {
+            console.error('Erro ao excluir receita:', error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     const addInvestment = useCallback(async (investmentData) => {
         if (!user) return;
@@ -641,6 +732,17 @@ export const useFinanceData = () => {
     const totalPatrimony = useMemo(() => {
         return totalInvestmentBalance + totalAccountBalance;
     }, [totalInvestmentBalance, totalAccountBalance]);
+
+    // Computed values para receitas
+    const totalIncome = useMemo(() => {
+        return incomes.reduce((total, income) => total + income.valor, 0);
+    }, [incomes]);
+
+    const availableBalance = useMemo(() => {
+        const totalPaidExpenses = expenses.filter(exp => exp.pago).reduce((sum, exp) => sum + exp.valor, 0);
+        const totalInvestments = investments.reduce((sum, inv) => sum + inv.valor_aporte, 0);
+        return totalIncome - totalPaidExpenses - totalInvestments;
+    }, [totalIncome, expenses, investments]);
     
 
     return {
@@ -649,16 +751,22 @@ export const useFinanceData = () => {
         accounts,
         categories,
         paymentMethods,
+        incomes,
         investmentGoal,
         totalPatrimony,
         totalInvestmentBalance,
         totalAccountBalance,
+        totalIncome,
+        availableBalance,
         isLoading,
         fetchData,
         addExpense,
         updateExpense,
         deleteExpense,
         toggleExpensePayment,
+        addIncome,
+        updateIncome,
+        deleteIncome,
         addInvestment,
         updateInvestment,
         deleteInvestment,

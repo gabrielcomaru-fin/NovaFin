@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinance } from '@/contexts/FinanceDataContext';
+import { useIncomeInsights } from '@/hooks/useIncomeInsights';
 import { useExport } from '@/hooks/useExport';
 import { useAdvancedMetrics } from '@/hooks/useAdvancedMetrics';
 import { useSmartInsights } from '@/hooks/useSmartInsights';
@@ -31,7 +32,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const ReportsPage = memo(function ReportsPage() {
-  const { expenses, investments, categories, accounts, investmentGoal, loading } = useFinance();
+  const { expenses, investments, categories, accounts, investmentGoal, loading, incomes } = useFinance();
+  const incomeInsights = useIncomeInsights();
   const { isExporting, exportFullReport, exportExpenses, exportInvestments, exportAccounts } = useExport();
   
   // Novos hooks para relatórios avançados
@@ -228,7 +230,7 @@ const ReportsPage = memo(function ReportsPage() {
 
           <TabsContent value="overview" className="space-y-4 md:space-y-5">
             {/* Resumo do Período com deltas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -239,6 +241,20 @@ const ReportsPage = memo(function ReportsPage() {
               <div className="text-2xl font-bold">{formatCurrencyBRL(summaryStats.totalExpenses)}</div>
               <CardDescription className={summaryStats.expenseDelta >= 0 ? 'text-red-600' : 'text-green-600'}>
                 {summaryStats.expenseDelta >= 0 ? '+' : ''}{formatCurrencyBRL(summaryStats.expenseDelta)} vs período anterior
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total de Receitas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{formatCurrencyBRL(incomeInsights.totalCurrentMonthIncome)}</div>
+              <CardDescription>
+                Saldo disponível: {formatCurrencyBRL(incomeInsights.availableBalance)}
               </CardDescription>
             </CardContent>
           </Card>
@@ -313,7 +329,48 @@ const ReportsPage = memo(function ReportsPage() {
           </TabsContent>
 
           <TabsContent value="insights" className="space-y-4 md:space-y-5">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Insights de Receitas</CardTitle>
+                  <CardDescription>Análise da sua situação financeira atual</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <h4 className="font-medium text-blue-900">Capacidade de Gasto Diário</h4>
+                      <p className="text-2xl font-bold text-blue-600 mt-1">
+                        {formatCurrencyBRL(incomeInsights.dailySpendingCapacity)}
+                      </p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Você pode gastar este valor por dia pelos próximos {incomeInsights.daysRemaining} dias
+                      </p>
+                    </div>
+                    
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <h4 className="font-medium text-green-900">Taxa de Poupança</h4>
+                      <p className="text-2xl font-bold text-green-600 mt-1">
+                        {Math.round(incomeInsights.savingsRate)}%
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">
+                        {incomeInsights.savingsRate >= 20 ? 'Excelente! Você está no caminho certo.' :
+                         incomeInsights.savingsRate >= 10 ? 'Bom! Tente aumentar para 20%.' :
+                         'Considere investir pelo menos 10% da sua renda.'}
+                      </p>
+                    </div>
+
+                    {incomeInsights.daysUntilBalanceZero && incomeInsights.daysUntilBalanceZero < 30 && (
+                      <div className="p-4 bg-yellow-50 rounded-lg">
+                        <h4 className="font-medium text-yellow-900">Atenção ao Saldo</h4>
+                        <p className="text-sm text-yellow-700">
+                          Se continuar gastando na média atual, seu saldo pode se esgotar em {incomeInsights.daysUntilBalanceZero} dias.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardHeader>
                   <CardTitle>Insights Inteligentes</CardTitle>

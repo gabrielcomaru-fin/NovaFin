@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link } from 'react-router-dom';
 import { Progress } from '@/components/ui/progress';
 import { useFinance } from '@/contexts/FinanceDataContext';
+import { useIncomeInsights } from '@/hooks/useIncomeInsights';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CompactHeader } from '@/components/CompactHeader';
-import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb, Trophy } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb, Trophy, DollarSign } from 'lucide-react';
 import { useGamification } from '@/contexts/GamificationContext';
 // import { InfoTooltip } from '@/components/ui/tooltip';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, subMonths, parseISO, format } from 'date-fns';
@@ -14,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 
 const HomeSummaryPage = memo(function HomeSummaryPage() {
   const { expenses, investments, categories, accounts, investmentGoal, totalPatrimony, totalInvestmentBalance } = useFinance();
+  const incomeInsights = useIncomeInsights();
   const { evaluateAchievements } = useGamification();
 
   const [periodType, setPeriodType] = React.useState('monthly');
@@ -172,7 +174,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
         </CompactHeader>
 
         {/* KPIs principais - apenas os mais importantes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
           <Card className="border-l-4 border-l-destructive">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -184,6 +186,23 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span>✅ R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 <span>⏳ R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className={`border-l-4 ${incomeInsights.availableBalance >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Saldo Disponível
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-3xl font-bold ${incomeInsights.availableBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                R$ {incomeInsights.availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+              <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                <span>Pode gastar: R$ {incomeInsights.dailySpendingCapacity.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/dia</span>
               </div>
             </CardContent>
           </Card>
@@ -234,6 +253,38 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
 
         {/* Seção de insights e ações contextuais */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+          {/* Insights de Receitas */}
+          {incomeInsights.recommendations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-primary"/>
+                  Insights Financeiros
+                </CardTitle>
+                <CardDescription>Recomendações baseadas na sua situação atual</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {incomeInsights.recommendations.slice(0, 3).map((rec, i) => (
+                  <div key={i} className={`p-4 rounded-lg text-sm flex items-start gap-3 ${
+                    rec.type === 'warning' ? 'bg-red-50 border border-red-200' :
+                    rec.type === 'success' ? 'bg-green-50 border border-green-200' :
+                    'bg-blue-50 border border-blue-200'
+                  }`}>
+                    {rec.type === 'warning' && <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0"/>}
+                    {rec.type === 'success' && <Trophy className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0"/>}
+                    {rec.type === 'tip' && <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0"/>}
+                    <div>
+                      <p className="font-medium">{rec.message}</p>
+                      {rec.action && (
+                        <p className="text-xs text-muted-foreground mt-1">💡 {rec.action}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Dicas educativas */}
           {educationTips.length > 0 && (
             <Card>
