@@ -3,8 +3,6 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useValidation } from '@/hooks/useValidation';
 // import { useSupabaseCache } from '@/lib/cache';
-// import { useErrorHandler } from '@/hooks/useErrorHandler';
-// import { useLoading } from '@/hooks/useLoading';
 
 export const useFinanceData = () => {
     const { user } = useAuth();
@@ -357,6 +355,9 @@ export const useFinanceData = () => {
                 .eq('id', id);
             
             if (error) throw error;
+            // Atualizar estado remove o investimento da lista
+            // Isso automaticamente recalcula investmentsToAdd e totalPatrimony via useMemo
+            // Se o investimento excluído era posterior ao ajuste da conta, ele será removido do patrimônio
             setInvestments(prev => prev.filter(investment => investment.id !== id));
         } catch (error) {
             console.error('Erro ao excluir investimento:', error);
@@ -745,32 +746,124 @@ export const useFinanceData = () => {
         }
     }, []);
 
-    // Calcular patrimônio total (investimentos + saldos das contas bancárias) - MEMOIZADO
-    const totalInvestmentBalance = useMemo(() => {
-        return investments.reduce((total, investment) => {
-            // Tentar diferentes campos possíveis para o saldo
-            const saldo = investment.saldo_total || 
-                         investment.valor_atual || 
-                         investment.valor || 
-                         investment.saldo || 
-                         investment.valor_aporte || 
-                         investment.amount || 
-                         investment.balance || 
-                         0;
-            
-            return total + saldo;
-        }, 0);
-    }, [investments]);
-
+    // Calcular saldo total das contas bancárias
     const totalAccountBalance = useMemo(() => {
         return accounts.reduce((total, account) => {
-            return total + (account.saldo || 0);
+            return total + Number(account.saldo || 0);
         }, 0);
     }, [accounts]);
 
+    // Calcular investimentos que devem ser somados ao patrimônio
+    // Lógica:
+    // 1. Se uma conta foi ajustada (updated_at > created_at), o saldo ajustado é a "verdade absoluta"
+    //    e apenas investimentos feitos APÓS o ajuste devem ser somados
+    // 2. Se uma conta não foi ajustada, soma todos os investimentos dessa instituição
+    // 3. Investimentos sem instituicao_id: se todas as contas foram ajustadas, usar a data do ajuste mais recente
+    //    como referência. Se não, soma sempre (investimentos gerais)
+    // IMPORTANTE: Este cálculo é recalculado automaticamente quando investments ou accounts mudam
+    // (por exemplo, quando um investimento é excluído via deleteInvestment ou uma conta é atualizada)
+    const investmentsToAdd = useMemo(() => {
+        if (!investments.length) return 0;
+
+        // Criar um mapa de contas com data de último ajuste
+        const accountAdjustmentDates = accounts.reduce((map, account) => {
+            const createdDate = account.created_at ? new Date(account.created_at) : null;
+            const updatedDate = account.updated_at ? new Date(account.updated_at) : null;
+            
+            // Se updated_at existe e é posterior a created_at, houve ajuste
+            // Usar uma margem maior (5 segundos) para evitar problemas de precisão de timestamp
+            const hasAdjustment = updatedDate && createdDate && 
+                                 updatedDate.getTime() > createdDate.getTime() + 5000;
+            
+            // Se houve ajuste, usar updated_at como data de referência
+            // Caso contrário, usar null (significa que não houve ajuste, então soma todos os investimentos)
+            const adjustmentDate = hasAdjustment ? updatedDate : null;
+            
+            map[account.id] = adjustmentDate;
+            return map;
+        }, {});
+
+        // Encontrar a data do ajuste mais recente (para investimentos sem instituição)
+        const allAdjustmentDates = Object.values(accountAdjustmentDates).filter(date => date !== null);
+        const latestAdjustmentDate = allAdjustmentDates.length > 0 
+            ? new Date(Math.max(...allAdjustmentDates.map(d => d.getTime())))
+            : null;
+
+        // Verificar se todas as contas foram ajustadas
+        const allAccountsAdjusted = accounts.length > 0 && 
+                                   accounts.every(account => {
+                                       const adjustmentDate = accountAdjustmentDates[account.id];
+                                       return adjustmentDate !== null;
+                                   });
+
+        // Somar investimentos que devem ser considerados
+        return investments.reduce((total, investment) => {
+            // Usar valor_aporte (valor do aporte feito)
+            const valorAporte = Number(investment.valor_aporte || 0);
+            
+            if (!investment.instituicao_id) {
+                // Investimento sem instituição
+                if (allAccountsAdjusted && latestAdjustmentDate) {
+                    // Se todas as contas foram ajustadas, só soma investimentos após o ajuste mais recente
+                    const investmentDate = new Date(investment.data + 'T00:00:00'); // Garantir que é meia-noite para comparação correta
+                    const investmentDateOnly = new Date(investmentDate.getFullYear(), investmentDate.getMonth(), investmentDate.getDate());
+                    const latestAdjustmentDateOnly = new Date(latestAdjustmentDate.getFullYear(), latestAdjustmentDate.getMonth(), latestAdjustmentDate.getDate());
+                    
+                    // Se o investimento foi feito na mesma data ou após o ajuste mais recente, soma
+                    if (investmentDateOnly.getTime() >= latestAdjustmentDateOnly.getTime()) {
+                        return total + valorAporte;
+                    }
+                    return total;
+                } else {
+                    // Se nem todas as contas foram ajustadas, soma sempre (investimento geral)
+                    return total + valorAporte;
+                }
+            }
+
+            const adjustmentDate = accountAdjustmentDates[investment.instituicao_id];
+            
+            if (!adjustmentDate) {
+                // Se não há data de ajuste (conta nunca foi ajustada), soma sempre
+                return total + valorAporte;
+            }
+
+            // Verificar se o investimento foi feito após o ajuste
+            // IMPORTANTE: Se o investimento foi feito na mesma data ou após o ajuste, ele deve ser somado
+            const investmentDate = new Date(investment.data + 'T00:00:00'); // Garantir que é meia-noite para comparação correta
+            
+            // Comparar apenas as datas (sem hora) para evitar problemas de timezone
+            const investmentDateOnly = new Date(investmentDate.getFullYear(), investmentDate.getMonth(), investmentDate.getDate());
+            const adjustmentDateOnly = new Date(adjustmentDate.getFullYear(), adjustmentDate.getMonth(), adjustmentDate.getDate());
+            
+            // Se o investimento foi feito na mesma data ou após o ajuste, soma
+            // (>= significa que investimentos do mesmo dia também são considerados)
+            if (investmentDateOnly.getTime() >= adjustmentDateOnly.getTime()) {
+                // Investimento na mesma data ou após o ajuste: soma
+                return total + valorAporte;
+            }
+            // Investimento antes do ajuste: não soma (já está incluído no saldo ajustado)
+            return total;
+        }, 0);
+    }, [accounts, investments]);
+
+    // Calcular total de investimentos (soma de todos os aportes, sem considerar ajustes)
+    // Mantido para compatibilidade com outros componentes que precisam do total bruto
+    const totalInvestmentBalance = useMemo(() => {
+        return investments.reduce((total, investment) => {
+            const valor = investment.valor_aporte || 0;
+            return total + Number(valor);
+        }, 0);
+    }, [investments]);
+
+    // Calcular patrimônio total: saldos das contas (valores ajustados) + investimentos futuros
+    // Lógica: 
+    // - O saldo da conta é o valor base (ajustado manualmente ou inicial)
+    // - Investimentos feitos após o ajuste somam ao patrimônio
+    // - Investimentos anteriores ao ajuste já estão incluídos no saldo ajustado
     const totalPatrimony = useMemo(() => {
-        return totalInvestmentBalance + totalAccountBalance;
-    }, [totalInvestmentBalance, totalAccountBalance]);
+        // Patrimônio = saldos das contas (valores ajustados) + investimentos futuros
+        return totalAccountBalance + investmentsToAdd;
+    }, [totalAccountBalance, investmentsToAdd]);
 
     // Computed values para receitas
     const totalIncome = useMemo(() => {

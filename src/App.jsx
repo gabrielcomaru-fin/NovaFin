@@ -6,7 +6,6 @@ const LandingPage = lazy(() => import('@/pages/LandingPage').then(m => ({ defaul
 const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
-const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const HomeSummaryPage = lazy(() => import('@/pages/HomeSummaryPage').then(m => ({ default: m.HomeSummaryPage })));
 const ExpensesPage = lazy(() => import('@/pages/ExpensesPage').then(m => ({ default: m.ExpensesPage })));
 const IncomesPage = lazy(() => import('@/pages/IncomesPage').then(m => ({ default: m.IncomesPage })));

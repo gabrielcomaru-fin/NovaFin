@@ -3,11 +3,12 @@ import { Helmet } from 'react-helmet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { useIncomeInsights } from '@/hooks/useIncomeInsights';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CompactHeader } from '@/components/CompactHeader';
-import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb, Trophy, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb, Trophy, DollarSign, Settings } from 'lucide-react';
 import { useGamification } from '@/contexts/GamificationContext';
 // import { InfoTooltip } from '@/components/ui/tooltip';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, subMonths, parseISO, format } from 'date-fns';
@@ -167,8 +168,17 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               setYear={handleYearChange}
             />
             <div className="text-right">
-              <div className="text-2xl font-bold text-primary">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <p className="text-sm text-muted-foreground">Patrimônio Total</p>
+              <div className="flex items-center gap-2 justify-end">
+                <div>
+                  <div className="text-2xl font-bold text-primary">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                  <p className="text-sm text-muted-foreground">Patrimônio Total</p>
+                </div>
+                <Link to="/configuracoes">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </CompactHeader>
