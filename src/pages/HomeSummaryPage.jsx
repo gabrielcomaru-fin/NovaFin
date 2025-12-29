@@ -1,4 +1,4 @@
-import React, { useMemo, memo, useCallback } from 'react';
+import React, { useMemo, memo, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
@@ -8,9 +8,13 @@ import { useFinance } from '@/contexts/FinanceDataContext';
 import { useIncomeInsights } from '@/hooks/useIncomeInsights';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CompactHeader } from '@/components/CompactHeader';
-import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb, Trophy, DollarSign, Settings } from 'lucide-react';
+import { FinancialHealthMeter } from '@/components/dashboard/FinancialHealthMeter';
+import { QuickActionCard } from '@/components/dashboard/QuickActionCard';
+import { SelfComparisonCard } from '@/components/dashboard/SelfComparisonCard';
+import { FinancialJourneyCard } from '@/components/dashboard/FinancialJourneyCard';
+import { TrendingUp, TrendingDown, Target, AlertTriangle, PiggyBank, Lightbulb, Trophy, DollarSign, Settings, Eye, EyeOff, LayoutGrid, Minimize2 } from 'lucide-react';
 import { useGamification } from '@/contexts/GamificationContext';
-// import { InfoTooltip } from '@/components/ui/tooltip';
+import { motion, AnimatePresence } from 'framer-motion';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, subMonths, parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -19,10 +23,13 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
   const incomeInsights = useIncomeInsights();
   const { evaluateAchievements } = useGamification();
 
-  const [periodType, setPeriodType] = React.useState('monthly');
-  const [dateRange, setDateRange] = React.useState(undefined);
-  const [month, setMonth] = React.useState(new Date().getMonth());
-  const [year, setYear] = React.useState(new Date().getFullYear());
+  const [periodType, setPeriodType] = useState('monthly');
+  const [dateRange, setDateRange] = useState(undefined);
+  const [month, setMonth] = useState(new Date().getMonth());
+  const [year, setYear] = useState(new Date().getFullYear());
+  
+  // Focus Mode - modo simplificado
+  const [focusMode, setFocusMode] = useState(false);
 
   // Memoizar callbacks para evitar re-renders desnecessários
   const handlePeriodTypeChange = useCallback((type) => setPeriodType(type), []);
@@ -157,16 +164,38 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
           subtitle="Aqui está seu resumo financeiro"
         >
           <div className="flex items-center justify-between w-full">
-            <CompactPeriodFilter 
-              periodType={periodType}
-              setPeriodType={handlePeriodTypeChange}
-              dateRange={dateRange}
-              setDateRange={handleDateRangeChange}
-              month={month}
-              setMonth={handleMonthChange}
-              year={year}
-              setYear={handleYearChange}
-            />
+            <div className="flex items-center gap-2">
+              <CompactPeriodFilter 
+                periodType={periodType}
+                setPeriodType={handlePeriodTypeChange}
+                dateRange={dateRange}
+                setDateRange={handleDateRangeChange}
+                month={month}
+                setMonth={handleMonthChange}
+                year={year}
+                setYear={handleYearChange}
+              />
+              {/* Toggle Focus Mode */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFocusMode(!focusMode)}
+                className="h-8 gap-1.5 text-xs"
+                title={focusMode ? 'Modo completo' : 'Modo foco'}
+              >
+                {focusMode ? (
+                  <>
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Completo</span>
+                  </>
+                ) : (
+                  <>
+                    <Minimize2 className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Foco</span>
+                  </>
+                )}
+              </Button>
+            </div>
             <div className="text-right">
               <div className="flex items-center gap-2 justify-end">
                 <div>
@@ -182,6 +211,66 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
             </div>
           </div>
         </CompactHeader>
+
+        {/* FOCUS MODE - Versão simplificada */}
+        <AnimatePresence mode="wait">
+          {focusMode ? (
+            <motion.div
+              key="focus-mode"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-4"
+            >
+              {/* Termômetro de Saúde Financeira */}
+              <FinancialHealthMeter />
+              
+              {/* Próxima Ação Sugerida */}
+              <QuickActionCard />
+              
+              {/* Progresso da Meta Principal */}
+              <Card className="border-2 border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-lg">Meta do Mês</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {periodGoal > 0 
+                          ? `R$ ${totalInvested.toLocaleString('pt-BR')} de R$ ${periodGoal.toLocaleString('pt-BR')}`
+                          : 'Defina uma meta para acompanhar'}
+                      </p>
+                    </div>
+                    <div className="text-3xl font-bold text-primary">
+                      {periodGoal > 0 ? `${Math.round(goalProgress)}%` : '-'}
+                    </div>
+                  </div>
+                  {periodGoal > 0 && (
+                    <Progress value={Math.min(goalProgress, 100)} className="h-4" />
+                  )}
+                  {goalProgress >= 100 && (
+                    <p className="text-sm text-success mt-2 font-medium text-center">
+                      🎉 Parabéns! Meta atingida!
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Clique em "Completo" para ver mais detalhes
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="full-mode"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-4 md:space-y-5"
+            >
+              {/* Termômetro de Saúde Financeira - Novo componente principal */}
+              <FinancialHealthMeter />
 
         {/* KPIs principais - apenas os mais importantes */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
@@ -261,7 +350,16 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
           </Card>
         </div>
 
-        {/* Seção de insights e ações contextuais */}
+        {/* Seção de ações rápidas e evolução */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+          {/* Próxima Ação Sugerida - Novo componente inteligente */}
+          <QuickActionCard />
+
+          {/* Comparação com você do passado - Novo componente */}
+          <SelfComparisonCard monthsAgo={6} />
+        </div>
+
+        {/* Seção de insights e jornada */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
           {/* Insights de Receitas */}
           {incomeInsights.recommendations.length > 0 && (
@@ -295,119 +393,53 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
             </Card>
           )}
 
-          {/* Dicas educativas */}
-          {educationTips.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-warning"/>
-                  Insights para você
-                </CardTitle>
-                <CardDescription>Dicas personalizadas baseadas no seu momento atual</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {investStreak > 0 && (
-                  <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border bg-card text-xs">
-                    <Trophy className="h-3.5 w-3.5 text-primary" />
-                    Streak mensal: {investStreak}m
-                  </div>
-                )}
-                {educationTips.map((tip, i) => (
-                  <div key={i} className="p-4 rounded-lg bg-muted/60 border border-border/60 text-sm flex items-start gap-3 hover:bg-muted/80 transition-colors duration-200">
-                    {tip.type === 'warning' && <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0"/>}
-                    {tip.type === 'success' && <TrendingUp className="h-5 w-5 text-success mt-0.5 flex-shrink-0"/>}
-                    {tip.type === 'tip' && <Lightbulb className="h-5 w-5 text-primary mt-0.5 flex-shrink-0"/>}
-                    <span className="text-card-foreground">{tip.message}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          {/* Jornada Financeira - Novo componente de storytelling */}
+          <FinancialJourneyCard />
+        </div>
 
-          {/* Ações rápidas contextuais */}
+        {/* Dicas educativas humanizadas */}
+        {educationTips.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PiggyBank className="h-5 w-5 text-income"/>
-                Próximos passos
+                <Lightbulb className="h-5 w-5 text-warning"/>
+                Insights para você
               </CardTitle>
-              <CardDescription>Ações sugeridas baseadas no seu progresso</CardDescription>
+              <CardDescription>Dicas personalizadas baseadas no seu momento atual</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {totalPending > 0 && (
-                <Link to="/gastos" className="block p-3 rounded-lg border border-warning bg-warning-muted hover:bg-warning-muted/80 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-foreground">Quitar pendências</p>
-                      <p className="text-sm text-warning">R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em aberto</p>
-                    </div>
-                    <AlertTriangle className="h-5 w-5 text-warning" />
-                  </div>
-                </Link>
-              )}
-              
-              {goalProgress < 100 && periodGoal > 0 && (
-                <Link to="/investimentos" className="block p-3 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Fazer aporte</p>
-                      <p className="text-sm text-muted-foreground">
-                        Faltam R$ {(periodGoal - totalInvested).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} para a meta
-                      </p>
-                    </div>
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                  </div>
-                </Link>
-              )}
-
-              {goalProgress >= 100 && (
-                <Link to="/projecao-investimentos" className="block p-3 rounded-lg border border-success bg-success-muted hover:bg-success-muted/80 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-foreground">Meta atingida! 🎉</p>
-                      <p className="text-sm text-success">Veja projeções para o futuro</p>
-                    </div>
-                    <Target className="h-5 w-5 text-success" />
-                  </div>
-                </Link>
-              )}
-
-              <Link to="/investimentos" className="block p-3 rounded-lg border border-muted hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Gerenciar metas</p>
-                    <p className="text-sm text-muted-foreground">Ajustar objetivos de investimento</p>
-                  </div>
-                  <Target className="h-5 w-5 text-muted-foreground" />
+              {investStreak > 0 && (
+                <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border bg-card text-xs">
+                  <Trophy className="h-3.5 w-3.5 text-primary" />
+                  Streak mensal: {investStreak}m 🔥
                 </div>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Histórico de metas - movido para uma seção mais discreta */}
-        {series6.some(m => m.invested > 0) && (
-          <Card className="bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-muted-foreground"/>
-                Evolução dos Aportes
-              </CardTitle>
-              <CardDescription>Últimos 6 meses de atividade</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                {series6.map((m, idx) => (
-                  <div key={idx} className={`p-3 rounded-lg text-center ${m.achieved ? 'bg-success-muted border border-success' : 'bg-background border border-border'}`}>
-                    <div className="text-xs text-muted-foreground mb-1">{m.label}</div>
-                    <div className="text-sm font-semibold">R$ {m.invested.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</div>
-                    {m.achieved && <div className="text-xs text-success mt-1">✓ Meta</div>}
+              )}
+              {educationTips.map((tip, i) => (
+                <div key={i} className={`p-4 rounded-lg text-sm flex items-start gap-3 transition-colors duration-200 ${
+                  tip.type === 'warning' ? 'bg-warning/10 border border-warning/30 hover:bg-warning/20' :
+                  tip.type === 'success' ? 'bg-success/10 border border-success/30 hover:bg-success/20' :
+                  'bg-primary/10 border border-primary/30 hover:bg-primary/20'
+                }`}>
+                  {tip.type === 'warning' && <span className="text-lg">⚠️</span>}
+                  {tip.type === 'success' && <span className="text-lg">✨</span>}
+                  {tip.type === 'tip' && <span className="text-lg">💡</span>}
+                  <div className="flex-1">
+                    <span className="text-card-foreground">{tip.message}</span>
+                    {tip.type === 'tip' && (
+                      <p className="text-xs text-muted-foreground italic mt-1">
+                        Pequenos passos levam a grandes conquistas.
+                      </p>
+                    )}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         )}
+
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

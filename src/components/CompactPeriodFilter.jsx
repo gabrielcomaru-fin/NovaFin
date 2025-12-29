@@ -34,9 +34,27 @@ export function CompactPeriodFilter({
 
   const displayPeriodType = useMemo(() => (dateRange?.from ? 'custom' : periodType), [dateRange, periodType]);
 
+  // Função auxiliar para garantir que o valor seja um objeto Date válido
+  const ensureDate = (value) => {
+    if (!value) return null;
+    if (value instanceof Date && !isNaN(value.getTime())) return value;
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  };
+
   useEffect(() => {
     if (isPopoverOpen) {
-      setTempRange(dateRange);
+      // Garantir que as datas sejam objetos Date válidos ao abrir o popover
+      if (dateRange?.from) {
+        const fromDate = ensureDate(dateRange.from);
+        const toDate = ensureDate(dateRange.to);
+        setTempRange({
+          from: fromDate,
+          to: toDate
+        });
+      } else {
+        setTempRange(dateRange);
+      }
     }
   }, [isPopoverOpen, dateRange]);
 
@@ -49,9 +67,14 @@ export function CompactPeriodFilter({
 
   const getDisplayText = () => {
     if (dateRange?.from) {
-      return dateRange.to
-        ? `${format(dateRange.from, 'dd/MM')} - ${format(dateRange.to, 'dd/MM')}`
-        : format(dateRange.from, 'dd/MM/yy');
+      const fromDate = ensureDate(dateRange.from);
+      const toDate = ensureDate(dateRange.to);
+      
+      if (!fromDate) return 'Período';
+      
+      return toDate
+        ? `${format(fromDate, 'dd/MM')} - ${format(toDate, 'dd/MM')}`
+        : format(fromDate, 'dd/MM/yy');
     }
     
     if (periodType === 'monthly' && month !== undefined && year) {

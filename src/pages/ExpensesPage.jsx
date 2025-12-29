@@ -89,8 +89,14 @@ export function ExpensesPage() {
     let startDate, endDate;
 
     if (filter.dateRange && filter.dateRange.from) {
-      startDate = filter.dateRange.from;
-      endDate = filter.dateRange.to || filter.dateRange.from;
+      // Garantir que as datas sejam objetos Date (podem vir como string do localStorage)
+      startDate = filter.dateRange.from instanceof Date 
+        ? filter.dateRange.from 
+        : new Date(filter.dateRange.from);
+      const toDate = filter.dateRange.to || filter.dateRange.from;
+      endDate = toDate instanceof Date 
+        ? new Date(toDate) // Criar cópia para não modificar o original
+        : new Date(toDate);
     } else if (filter.periodType === 'yearly' && filter.year) {
       startDate = startOfYear(new Date(filter.year, 0, 1));
       endDate = endOfYear(new Date(filter.year, 11, 31));
@@ -100,6 +106,8 @@ export function ExpensesPage() {
     }
 
     if (startDate && endDate) {
+      // Criar cópia para não modificar o original
+      endDate = new Date(endDate);
       endDate.setHours(23, 59, 59, 999);
       filtered = expenses.filter(expense => {
         const expenseDate = parseISO(expense.data);

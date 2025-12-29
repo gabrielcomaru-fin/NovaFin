@@ -17,6 +17,7 @@ const CalculatorPage = lazy(() => import('@/pages/CalculatorPage').then(m => ({ 
 const InvestmentProjectionPage = lazy(() => import('@/pages/InvestmentProjectionPage').then(m => ({ default: m.InvestmentProjectionPage })));
 const ReportsPage = lazy(() => import('@/pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const GamificationPage = lazy(() => import('@/pages/GamificationPage').then(m => ({ default: m.GamificationPage })));
+const PatrimonyDetailPage = lazy(() => import('@/pages/PatrimonyDetailPage').then(m => ({ default: m.PatrimonyDetailPage })));
 import { MainLayout } from '@/components/MainLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -76,6 +77,7 @@ function AppContent() {
                 <Route path="/investimentos" element={user ? <InvestmentsPage /> : <Navigate to="/login" />} />
                 <Route path="/projecao-investimentos" element={user ? <InvestmentProjectionPage /> : <Navigate to="/login" />} />
                 <Route path="/contas" element={user ? <AccountsPage /> : <Navigate to="/login" />} />
+                <Route path="/patrimonio" element={user ? <PatrimonyDetailPage /> : <Navigate to="/login" />} />
                 <Route path="/calculadora" element={user ? <CalculatorPage /> : <Navigate to="/login" />} />
                 <Route path="/relatorios" element={user ? <ReportsPage /> : <Navigate to="/login" />} />
                 <Route path="/conquistas" element={user ? <GamificationPage /> : <Navigate to="/login" />} />

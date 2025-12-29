@@ -28,6 +28,7 @@ import {
   BarChart3,
   Wallet,
   Trophy,
+  PiggyBank,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -38,6 +39,7 @@ const navItems = [
   { to: '/gastos', label: 'Despesas', icon: Receipt },
   { to: '/receitas', label: 'Receitas', icon: DollarSign },
   { to: '/investimentos', label: 'Investimentos', icon: TrendingUp },
+  { to: '/patrimonio', label: 'Patrimônio', icon: PiggyBank },
   { to: '/projecao-investimentos', label: 'Projeção', icon: Target },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { to: '/calculadora', label: 'Calculadora', icon: Calculator },

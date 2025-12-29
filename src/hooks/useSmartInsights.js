@@ -159,8 +159,15 @@ export const useSmartInsights = () => {
     const totalInvestments = data.investments.reduce((sum, investment) => sum + investment.valor_aporte, 0);
     const totalAccounts = data.accounts.reduce((sum, account) => sum + (account.saldo || 0), 0);
     
-    // Calcular quanto poderia ser investido
-    const potentialInvestment = Math.max(0, totalAccounts - (totalExpenses * 3)); // Reserva de 3 meses
+    // Inclui investimentos marcados como reserva de emergência na liquidez
+    const emergencyFromInvestments = data.investments
+      .filter(inv => inv.is_reserva_emergencia === true)
+      .reduce((sum, inv) => sum + (inv.valor_aporte || 0), 0);
+    
+    const totalLiquidity = totalAccounts + emergencyFromInvestments;
+    
+    // Calcular quanto poderia ser investido (após garantir reserva de 3 meses)
+    const potentialInvestment = Math.max(0, totalLiquidity - (totalExpenses * 3));
     
     return {
       found: potentialInvestment > 100,
@@ -199,15 +206,21 @@ export const useSmartInsights = () => {
     return { score, topCategories };
   }, []);
 
-  // Analisar liquidez
+  // Analisar liquidez (considera investimentos de reserva de emergência)
   const analyzeLiquidity = useCallback((data) => {
     const totalExpenses = data.expenses.reduce((sum, expense) => sum + expense.valor, 0);
     const totalAccounts = data.accounts.reduce((sum, account) => sum + (account.saldo || 0), 0);
     
-    const ratio = totalExpenses > 0 ? totalAccounts / totalExpenses : 0;
+    // Inclui investimentos marcados como reserva de emergência
+    const emergencyFromInvestments = data.investments
+      .filter(inv => inv.is_reserva_emergencia === true)
+      .reduce((sum, inv) => sum + (inv.valor_aporte || 0), 0);
+    
+    const totalLiquidity = totalAccounts + emergencyFromInvestments;
+    const ratio = totalExpenses > 0 ? totalLiquidity / totalExpenses : 0;
     const months = Math.round(ratio);
     
-    return { ratio, months };
+    return { ratio, months, emergencyFromInvestments };
   }, []);
 
   // Analisar metas

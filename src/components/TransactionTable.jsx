@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, CheckCircle, Clock, CreditCard, CheckCircle2, XCircle, Wallet, Smartphone, Banknote, Building2, FileText } from 'lucide-react';
+import { Edit, Trash2, CheckCircle, Clock, CreditCard, CheckCircle2, XCircle, Wallet, Smartphone, Banknote, Building2, FileText, ShieldCheck } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -423,7 +424,21 @@ export const TransactionTable = ({
                   )}
                   {!isExpense && (
                     <TableCell className="hidden md:table-cell w-[18%]">
-                      <Badge variant="secondary">{institution?.nome_banco || 'Sem instituição'}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">{institution?.nome_banco || 'Sem instituição'}</Badge>
+                        {transaction.is_reserva_emergencia && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <ShieldCheck className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">Reserva de Emergência</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
                   )}
                   <TableCell className={`font-semibold w-[15%] ${isExpense ? 'text-destructive text-left' : 'text-green-500 text-left'}`}>

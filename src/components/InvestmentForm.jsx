@@ -4,10 +4,12 @@ import { Input, CurrencyInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, TrendingUp, Target } from 'lucide-react';
+import { Plus, TrendingUp, Target, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceDataContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpen }) {
   const { investmentGoal, handleSetInvestmentGoal, categories, accounts } = useFinance();
@@ -20,7 +22,8 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
     valor_aporte: '',
     categoria_id: '',
     instituicao_id: '',
-    data: new Date().toISOString().split('T')[0]
+    data: new Date().toISOString().split('T')[0],
+    is_reserva_emergencia: false
   };
 
   const defaultGoalFormData = { goal: '' };
@@ -47,7 +50,8 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
         valor_aporte: formatCurrencyForInput(investmentToEdit.valor_aporte),
         categoria_id: investmentToEdit.categoria_id?.toString() || '',
         instituicao_id: investmentToEdit.instituicao_id?.toString() || '',
-        data: investmentToEdit.data ? new Date(investmentToEdit.data).toISOString().split('T')[0] : defaultFormData.data
+        data: investmentToEdit.data ? new Date(investmentToEdit.data).toISOString().split('T')[0] : defaultFormData.data,
+        is_reserva_emergencia: investmentToEdit.is_reserva_emergencia || false
       });
     } else {
       setFormData(defaultFormData);
@@ -243,6 +247,41 @@ export function InvestmentForm({ onSubmit, investmentToEdit, onOpenChange, isOpe
                 )}
               </div>
             </div>
+
+            {/* Checkbox para Reserva de Emergência */}
+            <div className="flex items-center space-x-3 p-3 rounded-lg border bg-muted/30">
+              <Checkbox
+                id="is_reserva_emergencia"
+                checked={formData.is_reserva_emergencia}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, is_reserva_emergencia: checked === true })
+                }
+              />
+              <div className="flex items-center gap-2 flex-1">
+                <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                <Label 
+                  htmlFor="is_reserva_emergencia" 
+                  className="text-sm font-medium cursor-pointer flex-1"
+                >
+                  Este aporte faz parte da Reserva de Emergência
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="text-sm">
+                        Marque se este aporte compõe sua reserva de emergência. 
+                        Isso ajuda a calcular corretamente sua saúde financeira e 
+                        quantos meses de gastos você tem guardados.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+
             <Button type="submit" className="w-full">
               {investmentToEdit?.id ? 'Salvar Alterações' : 'Registrar Aporte'}
             </Button>

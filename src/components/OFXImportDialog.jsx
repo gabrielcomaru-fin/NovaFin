@@ -1191,29 +1191,101 @@ export function OFXImportDialog({
 
         {/* STEP: Complete */}
         {step === 'complete' && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
-            <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-full">
-              <CheckCircle2 className="h-12 w-12 text-green-600" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium text-lg">Importação concluída!</p>
-              <div className="mt-4 space-y-2">
-                <p className="text-sm">
-                  <span className="font-medium text-green-600">{importedCount}</span> transações importadas com sucesso
+          <div className="flex-1 flex flex-col gap-6 p-6 overflow-auto">
+            {/* Header de sucesso */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-full">
+                <CheckCircle2 className="h-12 w-12 text-green-600" />
+              </div>
+              <div className="text-center">
+                <p className="font-medium text-lg">Importação concluída!</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {importedCount} transações importadas com sucesso
                 </p>
-                {skippedCount > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    {skippedCount} transações não selecionadas
-                  </p>
-                )}
-                {errorCount > 0 && (
-                  <p className="text-sm text-red-600">
-                    {errorCount} transações com erro
-                  </p>
-                )}
               </div>
             </div>
-            <div className="flex flex-wrap gap-3 mt-4">
+
+            {/* Resumo contextualizado */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+              <h4 className="font-semibold flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                Resumo da Importação
+              </h4>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="bg-background rounded-lg p-3 border">
+                  <p className="text-xs text-muted-foreground">Total importado</p>
+                  <p className={`text-lg font-bold ${config.valueColor}`}>
+                    {currencyFormatter.format(totalValue)}
+                  </p>
+                </div>
+                <div className="bg-background rounded-lg p-3 border">
+                  <p className="text-xs text-muted-foreground">Transações</p>
+                  <p className="text-lg font-bold">{importedCount}</p>
+                </div>
+                <div className="bg-background rounded-lg p-3 border">
+                  <p className="text-xs text-muted-foreground">Valor médio</p>
+                  <p className="text-lg font-bold">
+                    {currencyFormatter.format(importedCount > 0 ? totalValue / importedCount : 0)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Categorização pendente */}
+              {(() => {
+                const uncategorized = ofxTransactions.filter((_, idx) => 
+                  selectedTransactions[idx] && !perTxCategories[idx] && globalCategoryId
+                ).length;
+                const withSuggested = Object.values(perTxCategories).filter(Boolean).length;
+                
+                return (
+                  <div className="space-y-2">
+                    {withSuggested > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-success">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>{withSuggested} transações com categoria sugerida automaticamente</span>
+                      </div>
+                    )}
+                    {uncategorized > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-warning">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>{uncategorized} transações usaram a categoria padrão</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Dica educativa */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg">💡</span>
+                  <div className="text-sm">
+                    <p className="font-medium text-primary">Dica:</p>
+                    <p className="text-muted-foreground mt-1">
+                      {type === 'expense' && 'Revise suas despesas e marque as recorrentes. Isso ajuda a prever gastos futuros!'}
+                      {type === 'income' && 'Identifique suas fontes de renda principais para um melhor planejamento.'}
+                      {type === 'investment' && 'Acompanhe seus aportes mensais para manter a consistência nos investimentos!'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Estatísticas adicionais */}
+              {skippedCount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {skippedCount} transações não foram selecionadas para importação
+                </p>
+              )}
+              {errorCount > 0 && (
+                <p className="text-xs text-red-600">
+                  {errorCount} transações tiveram erro durante a importação
+                </p>
+              )}
+            </div>
+
+            {/* Ações */}
+            <div className="flex flex-wrap justify-center gap-3">
               {onUndoImport && importedIds.length > 0 && (
                 <Button 
                   variant="outline" 
@@ -1235,7 +1307,7 @@ export function OFXImportDialog({
                 </Button>
               )}
               <Button onClick={handleClose}>
-                Fechar
+                Concluir
               </Button>
             </div>
           </div>
