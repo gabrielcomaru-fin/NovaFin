@@ -14,14 +14,12 @@ import { PaymentMethodChart } from '@/components/charts/PaymentMethodChart';
 import { SpendingPatternsChart } from '@/components/charts/SpendingPatternsChart';
 import { CompactSearchFilter } from '@/components/CompactSearchFilter';
 import { CompactHeader } from '@/components/CompactHeader';
+import { OFXImportDialog } from '@/components/OFXImportDialog';
 import { Receipt, DollarSign, BarChart3, ListChecks, ArrowUp, ArrowDown, CheckCircle2, Clock, Upload, CheckSquare, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
 import { Sparklines, SparklinesLine } from 'react-sparklines';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { parseOfxFile } from '@/lib/ofx';
 
 const ITEMS_PER_PAGE = 10;
 const PAGE_ID = 'expensesPage';
@@ -42,20 +40,7 @@ export function ExpensesPage() {
 
   // Importação OFX
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [ofxTransactions, setOfxTransactions] = useState([]);
-  const [perTxCategories, setPerTxCategories] = useState({}); // { index: categoria_id }
-  const [perTxDescriptions, setPerTxDescriptions] = useState({}); // { index: descricao }
-  const [perTxPaymentMethods, setPerTxPaymentMethods] = useState({}); // { index: meio_pagamento }
-  const [duplicatesFound, setDuplicatesFound] = useState([]); // Array de duplicatas encontradas
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [duplicateDecisions, setDuplicateDecisions] = useState({}); // { index: 'import' | 'skip' }
   const expenseCategories = useMemo(() => categories.filter(c => c.tipo === 'gasto'), [categories]);
-  const defaultCategoryId = expenseCategories[0]?.id || '';
-  const [importCategoryId, setImportCategoryId] = useState(defaultCategoryId);
-  const [importPaid, setImportPaid] = useState(false);
-  const [importPaymentMethod, setImportPaymentMethod] = useState('');
-  const fileInputId = 'ofx-file-input';
 
   const [filter, setFilter] = usePersistentState(`filter_${PAGE_ID}`, () => ({
     periodType: 'monthly',
@@ -80,211 +65,23 @@ export function ExpensesPage() {
     setFilter(f => ({ ...f, periodType: type, dateRange: undefined }));
   };
 
-  useEffect(() => {
-    if (!importCategoryId && defaultCategoryId) setImportCategoryId(defaultCategoryId);
-  }, [defaultCategoryId, importCategoryId]);
-
-  // Função para verificar duplicatas
-  const checkForDuplicates = (ofxTxs) => {
-    const duplicates = [];
-    
-    ofxTxs.forEach((ofxTx, ofxIndex) => {
-      const ofxDate = ofxTx.data;
-      const ofxDescription = ofxTx.descricao?.toLowerCase().trim() || '';
-      const ofxValue = Number(ofxTx.valor) || 0;
-      
-      // Verificar se existe despesa com mesma data, descrição e valor
-      const duplicate = expenses.find(expense => {
-        const expenseDate = expense.data;
-        const expenseDescription = expense.descricao?.toLowerCase().trim() || '';
-        const expenseValue = Number(expense.valor) || 0;
-        
-        return expenseDate === ofxDate && 
-               expenseDescription === ofxDescription && 
-               Math.abs(expenseValue - ofxValue) < 0.01; // Tolerância de 1 centavo
-      });
-      
-      if (duplicate) {
-        duplicates.push({
-          ofxIndex,
-          ofxTransaction: ofxTx,
-          existingExpense: duplicate
-        });
+  // Handler para importação OFX
+  const handleImportOFX = async (transactions) => {
+    const results = [];
+    for (const tx of transactions) {
+      const result = await addExpense(tx);
+      if (result?.id) {
+        results.push(result);
       }
-    });
-    
-    return duplicates;
-  };
-
-  const handleOfxSelectClick = () => {
-    const el = document.getElementById(fileInputId);
-    if (el) el.click();
-  };
-
-  const handleOfxFileChange = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    try {
-      const txs = await parseOfxFile(file);
-      // Apenas despesas: valores negativos (saídas) ou tipo DEBIT
-      const expenseTxs = txs.filter(t => (t.valor < 0) || (String(t.tipo).toUpperCase() === 'DEBIT'))
-        .map(t => ({ ...t, valor: Math.abs(t.valor) }));
-      if (expenseTxs.length === 0) {
-        toast({ title: 'Nenhuma despesa encontrada no OFX', description: 'Verifique se o arquivo contém lançamentos de saída.', variant: 'destructive' });
-        e.target.value = '';
-        return;
-      }
-      
-      // Verificar duplicatas
-      const duplicates = checkForDuplicates(expenseTxs);
-      setDuplicatesFound(duplicates);
-      setDuplicateDecisions({});
-      
-      setOfxTransactions(expenseTxs);
-      setPerTxCategories({});
-      setPerTxDescriptions(expenseTxs.reduce((acc, t, idx) => {
-        acc[idx] = t.descricao || 'Lançamento OFX';
-        return acc;
-      }, {}));
-      setPerTxPaymentMethods({});
-      
-      // Se há duplicatas, mostrar dialog de decisão primeiro
-      if (duplicates.length > 0) {
-        setShowDuplicateDialog(true);
-      } else {
-        setIsImportOpen(true);
-      }
-    } catch (err) {
-      toast({ title: 'Falha ao ler OFX', description: err?.message || 'Formato inválido.', variant: 'destructive' });
-    } finally {
-      // permite selecionar o mesmo arquivo novamente, se necessário
-      e.target.value = '';
     }
+    return results;
   };
 
-  const handleConfirmImport = async () => {
-    // Permite por-linha; se nenhuma linha tiver categoria e não houver default, bloqueia
-    const hasAnyCategory = ofxTransactions.some((_, idx) => perTxCategories[idx]) || !!importCategoryId;
-    if (!hasAnyCategory) {
-      toast({ title: 'Selecione uma categoria', description: 'Defina ao menos a categoria padrão ou por item.', variant: 'destructive' });
-      return;
+  // Handler para desfazer importação OFX
+  const handleUndoImportOFX = async (ids) => {
+    for (const id of ids) {
+      await deleteExpense(id);
     }
-    setIsImporting(true);
-    try {
-      let success = 0;
-      let skipped = 0;
-      
-      for (let i = 0; i < ofxTransactions.length; i++) {
-        const t = ofxTransactions[i];
-        
-        // Verificar se é duplicata e se deve ser pulada
-        const duplicate = duplicatesFound.find(d => d.ofxIndex === i);
-        if (duplicate && duplicateDecisions[i] === 'skip') {
-          skipped++;
-          continue;
-        }
-        
-        const categoria_id = perTxCategories[i] || importCategoryId;
-        if (!categoria_id) continue;
-        
-        const payload = {
-          descricao: perTxDescriptions[i] ?? t.descricao ?? 'Lançamento OFX',
-          valor: Number(t.valor) || 0,
-          categoria_id,
-          pago: importPaid,
-          recorrente: false,
-          data: t.data || new Date().toISOString().split('T')[0],
-          meio_pagamento_id: perTxPaymentMethods[i] || importPaymentMethod || null,
-        };
-        try {
-          await addExpense(payload);
-          success++;
-        } catch (e) {
-          // Continua para próximo
-        }
-      }
-      
-      let message = `${success} despesas adicionadas`;
-      if (skipped > 0) {
-        message += `, ${skipped} duplicatas ignoradas`;
-      }
-      
-      toast({ title: 'Importação concluída', description: message });
-      setIsImportOpen(false);
-      setOfxTransactions([]);
-      setPerTxCategories({});
-      setPerTxDescriptions({});
-      setPerTxPaymentMethods({});
-      setDuplicatesFound([]);
-      setDuplicateDecisions({});
-    } catch (e) {
-      toast({ title: 'Erro na importação', description: e?.message || 'Tente novamente.', variant: 'destructive' });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  // Funções para lidar com duplicatas
-  const handleDuplicateDecision = (ofxIndex, decision) => {
-    setDuplicateDecisions(prev => ({
-      ...prev,
-      [ofxIndex]: decision
-    }));
-  };
-
-  const handleProceedWithDuplicates = () => {
-    // Filtra as transações marcadas como "Ignorar" para não seguirem para classificação
-    const keptTransactions = [];
-    const keptDescriptions = {};
-    const keptCategories = {};
-    const keptPaymentMethods = {};
-
-    ofxTransactions.forEach((tx, idx) => {
-      const isDuplicate = duplicatesFound.some(d => d.ofxIndex === idx);
-      const decision = duplicateDecisions[idx];
-      if (isDuplicate && decision === 'skip') {
-        return; // ignora esta transação
-      }
-      const newIndex = keptTransactions.length;
-      keptTransactions.push(tx);
-      if (perTxDescriptions[idx] != null) keptDescriptions[newIndex] = perTxDescriptions[idx];
-      if (perTxCategories[idx] != null) keptCategories[newIndex] = perTxCategories[idx];
-      if (perTxPaymentMethods[idx] != null) keptPaymentMethods[newIndex] = perTxPaymentMethods[idx];
-    });
-
-    setOfxTransactions(keptTransactions);
-    setPerTxDescriptions(keptDescriptions);
-    setPerTxCategories(keptCategories);
-    setPerTxPaymentMethods(keptPaymentMethods);
-
-    // Após remover duplicatas ignoradas e reindexar, limpamos o estado de duplicatas
-    // para evitar inconsistências de índice na etapa de confirmação da importação.
-    setDuplicatesFound([]);
-    setDuplicateDecisions({});
-
-    setShowDuplicateDialog(false);
-    if (keptTransactions.length > 0) {
-      setIsImportOpen(true);
-    } else {
-      // Nada a importar após ignorar duplicatas
-      setIsImportOpen(false);
-    }
-  };
-
-  const handleSkipAllDuplicates = () => {
-    const skipDecisions = {};
-    duplicatesFound.forEach(dup => {
-      skipDecisions[dup.ofxIndex] = 'skip';
-    });
-    setDuplicateDecisions(skipDecisions);
-  };
-
-  const handleImportAllDuplicates = () => {
-    const importDecisions = {};
-    duplicatesFound.forEach(dup => {
-      importDecisions[dup.ofxIndex] = 'import';
-    });
-    setDuplicateDecisions(importDecisions);
   };
 
   const { filteredExpenses, totalSpent, trendData, paidExpenses, pendingExpenses, totalPaid, totalPending } = useMemo(() => {
@@ -518,8 +315,7 @@ export function ExpensesPage() {
               </TabsTrigger>
             </TabsList>
             <div className="w-full md:w-auto flex items-center gap-2">
-              <input id={fileInputId} type="file" accept=".ofx,.qfx,.ofc,.xml,.txt" className="hidden" onChange={handleOfxFileChange} />
-              <Button variant="outline" onClick={handleOfxSelectClick} className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setIsImportOpen(true)} className="flex items-center gap-2">
                 <Upload className="h-4 w-4" /> Importar OFX
               </Button>
               <CompactPeriodFilter
@@ -933,174 +729,19 @@ export function ExpensesPage() {
             )}
           </TabsContent>
         </Tabs>
-        <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-          <DialogContent className="sm:max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Importar despesas do OFX</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div className="text-sm text-muted-foreground">
-                  {ofxTransactions.length} lançamento{ofxTransactions.length !== 1 ? 's' : ''} de despesa encontrados.
-                </div>
-                <div className="text-sm font-medium">
-                  Total a importar: {currencyFormatter.format(ofxTransactions.reduce((s, t) => s + (Number(t.valor) || 0), 0))}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Categoria para as despesas</label>
-                  <Select value={importCategoryId || undefined} onValueChange={setImportCategoryId}>
-                    <SelectTrigger className="w-full mt-1">
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {expenseCategories.map(c => (
-                        <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Meio de pagamento</label>
-                  <Select value={importPaymentMethod || undefined} onValueChange={(val) => setImportPaymentMethod(val === 'none' ? '' : val)}>
-                    <SelectTrigger className="w-full mt-1">
-                      <SelectValue placeholder="Selecione o meio de pagamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Não especificado</SelectItem>
-                      {paymentMethods.map(pm => (
-                        <SelectItem key={pm.id} value={String(pm.id)}>{pm.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-2 pt-6">
-                  <input id="importPaid" type="checkbox" className="rounded accent-primary" checked={importPaid} onChange={(e) => setImportPaid(e.target.checked)} />
-                  <label htmlFor="importPaid" className="text-sm">Marcar como pago</label>
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Revise as descrições e categorias. Valores negativos são importados como despesas.
-              </div>
-              {/* Lista por lançamento para categorização individual */}
-              <div className="max-h-[60vh] overflow-auto border rounded-md">
-                <div className="grid grid-cols-12 gap-2 p-2 text-xs text-muted-foreground border-b">
-                  <div className="col-span-4">Descrição</div>
-                  <div className="col-span-2">Data</div>
-                  <div className="col-span-2 text-right">Valor</div>
-                  <div className="col-span-2">Categoria</div>
-                  <div className="col-span-2">Meio de Pagamento</div>
-                </div>
-                {ofxTransactions.map((t, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 p-2 items-center border-b last:border-b-0">
-                    <div className="col-span-4">
-                      <input
-                        className="w-full px-2 py-1 border rounded text-sm"
-                        value={perTxDescriptions[idx] ?? t.descricao ?? 'Lançamento OFX'}
-                        onChange={(e) => setPerTxDescriptions(prev => ({ ...prev, [idx]: e.target.value }))}
-                      />
-                    </div>
-                    <div className="col-span-2 text-xs">{t.data}</div>
-                    <div className="col-span-2 text-right font-medium">{currencyFormatter.format(Number(t.valor) || 0)}</div>
-                    <div className="col-span-2">
-                      <Select value={perTxCategories[idx] || importCategoryId || undefined} onValueChange={(val) => setPerTxCategories(prev => ({ ...prev, [idx]: val }))}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {expenseCategories.map(c => (
-                            <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <Select value={perTxPaymentMethods[idx] || importPaymentMethod || undefined} onValueChange={(val) => setPerTxPaymentMethods(prev => ({ ...prev, [idx]: val === 'none' ? '' : val }))}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Meio" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Não especificado</SelectItem>
-                          {paymentMethods.map(pm => (
-                            <SelectItem key={pm.id} value={String(pm.id)}>{pm.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsImportOpen(false)} disabled={isImporting}>Cancelar</Button>
-              <Button onClick={handleConfirmImport} disabled={isImporting || !importCategoryId}>
-                {isImporting ? 'Importando...' : 'Confirmar importação'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Dialog para lidar com duplicatas */}
-        <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-          <DialogContent className="sm:max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Duplicatas Encontradas</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                Foram encontradas {duplicatesFound.length} transação(ões) que podem ser duplicatas de despesas já cadastradas. 
-                Você pode escolher importar ou ignorar cada uma delas.
-              </div>
-              
-              <div className="max-h-[50vh] overflow-auto border rounded-md">
-                <div className="grid grid-cols-12 gap-2 p-2 text-xs text-muted-foreground border-b">
-                  <div className="col-span-3">Descrição</div>
-                  <div className="col-span-2">Data</div>
-                  <div className="col-span-2 text-right">Valor</div>
-                  <div className="col-span-3">Despesa Existente</div>
-                  <div className="col-span-2">Ação</div>
-                </div>
-                {duplicatesFound.map((dup, idx) => (
-                  <div key={dup.ofxIndex} className="grid grid-cols-12 gap-2 p-2 items-center border-b last:border-b-0">
-                    <div className="col-span-3 text-sm">{dup.ofxTransaction.descricao}</div>
-                    <div className="col-span-2 text-xs">{dup.ofxTransaction.data}</div>
-                    <div className="col-span-2 text-right font-medium">{currencyFormatter.format(Number(dup.ofxTransaction.valor) || 0)}</div>
-                    <div className="col-span-3 text-xs text-muted-foreground">
-                      {dup.existingExpense.descricao}
-                    </div>
-                    <div className="col-span-2">
-                      <Select 
-                        value={duplicateDecisions[dup.ofxIndex] || undefined} 
-                        onValueChange={(val) => handleDuplicateDecision(dup.ofxIndex, val)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Escolher" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="import">Importar</SelectItem>
-                          <SelectItem value="skip">Ignorar</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleSkipAllDuplicates}>
-                  Ignorar Todas
-                </Button>
-                <Button variant="outline" onClick={handleImportAllDuplicates}>
-                  Importar Todas
-                </Button>
-                <Button onClick={handleProceedWithDuplicates}>
-                  Prosseguir
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        
+        {/* Modal de Importação OFX */}
+        <OFXImportDialog
+          isOpen={isImportOpen}
+          onOpenChange={setIsImportOpen}
+          type="expense"
+          categories={expenseCategories}
+          paymentMethods={paymentMethods}
+          existingTransactions={expenses}
+          onImport={handleImportOFX}
+          onUndoImport={handleUndoImportOFX}
+          onClose={() => setIsImportOpen(false)}
+        />
       </div>
     </>
   );

@@ -10,7 +10,8 @@ import { Pagination } from '@/components/Pagination';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CompactSearchFilter } from '@/components/CompactSearchFilter';
 import { CompactHeader } from '@/components/CompactHeader';
-import { DollarSign, BarChart3, ListChecks, TrendingUp, Edit, Trash2 } from 'lucide-react';
+import { OFXImportDialog } from '@/components/OFXImportDialog';
+import { DollarSign, BarChart3, ListChecks, TrendingUp, Edit, Trash2, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, subMonths } from 'date-fns';
 import { Sparklines, SparklinesLine } from 'react-sparklines';
@@ -31,6 +32,12 @@ export function IncomesPage() {
   // Estados para busca e filtro
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
+  
+  // Estados para importação OFX
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  
+  // Categorias de receita
+  const incomeCategories = useMemo(() => categories.filter(c => c.tipo === 'receita'), [categories]);
 
   const [filter, setFilter] = usePersistentState(`filter_${PAGE_ID}`, () => ({
     periodType: 'monthly',
@@ -167,6 +174,25 @@ export function IncomesPage() {
     setIsFormOpen(open);
   };
 
+  // Handler para importação OFX
+  const handleImportOFX = async (transactions) => {
+    const results = [];
+    for (const tx of transactions) {
+      const result = await addIncome(tx);
+      if (result?.id) {
+        results.push(result);
+      }
+    }
+    return results;
+  };
+
+  // Handler para desfazer importação OFX
+  const handleUndoImportOFX = async (ids) => {
+    for (const id of ids) {
+      await deleteIncome(id);
+    }
+  };
+
   return (
     <>
       <Helmet>
@@ -198,6 +224,9 @@ export function IncomesPage() {
               </TabsTrigger>
             </TabsList>
             <div className="w-full md:w-auto flex items-center gap-2">
+              <Button variant="outline" onClick={() => setIsImportOpen(true)} className="flex items-center gap-2">
+                <Upload className="h-4 w-4" /> Importar OFX
+              </Button>
               <CompactPeriodFilter
                 periodType={filter.periodType}
                 setPeriodType={handleSetPeriodType}
@@ -305,6 +334,18 @@ export function IncomesPage() {
             </div>
           </TabsContent>
         </Tabs>
+        
+        {/* Modal de Importação OFX */}
+        <OFXImportDialog
+          isOpen={isImportOpen}
+          onOpenChange={setIsImportOpen}
+          type="income"
+          categories={incomeCategories}
+          existingTransactions={incomes}
+          onImport={handleImportOFX}
+          onUndoImport={handleUndoImportOFX}
+          onClose={() => setIsImportOpen(false)}
+        />
       </div>
     </>
   );

@@ -11,14 +11,21 @@ const TEXT_DECODER = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8
 export async function readAsText(input) {
   if (typeof input === 'string') return input;
   if (typeof window !== 'undefined' && input instanceof File) {
-    return await input.text();
+    try {
+      const text = await input.text();
+      return text;
+    } catch (err) {
+      console.error('[OFX Parser] Erro ao ler arquivo como texto:', err);
+      throw new Error(`Erro ao ler arquivo: ${err?.message || 'Arquivo pode estar corrompido'}`);
+    }
   }
   if (input && input.byteLength != null) {
     if (TEXT_DECODER) return TEXT_DECODER.decode(input);
     // fallback tosco
     return String.fromCharCode.apply(null, new Uint8Array(input));
   }
-  throw new Error('Entrada inválida para leitura de texto OFX');
+  console.error('[OFX Parser] Entrada inválida:', typeof input, input);
+  throw new Error('Entrada inválida para leitura de texto OFX. Selecione um arquivo .ofx válido.');
 }
 
 /**
@@ -87,14 +94,32 @@ export function isLikelyOfx(text) {
  * Campos retornados: data, valor, descricao, tipo, identificador
  */
 export function parseOfx(text) {
-  if (!text || !isLikelyOfx(text)) {
-    throw new Error('Arquivo OFX inválido ou não reconhecido');
+  console.log('[OFX Parser] Iniciando parse, tamanho do texto:', text?.length || 0);
+  
+  if (!text) {
+    throw new Error('Arquivo vazio ou não pôde ser lido');
   }
-  const lower = text.toLowerCase();
+  
+  if (!isLikelyOfx(text)) {
+    // Log mais detalhado para debug
+    console.error('[OFX Parser] Arquivo não reconhecido como OFX. Primeiros 500 caracteres:', text.substring(0, 500));
+    throw new Error('Arquivo OFX inválido ou não reconhecido. Verifique se o arquivo é um OFX válido do seu banco.');
+  }
+  
   // Extrair somente o bloco de transações
-  const bankTranList = (/\<banktranlist\>([\s\S]*?)\<\/banktranlist\>/i).exec(text)?.[1] || text;
+  const bankTranListMatch = (/\<banktranlist\>([\s\S]*?)\<\/banktranlist\>/i).exec(text);
+  const bankTranList = bankTranListMatch?.[1] || text;
+  
+  console.log('[OFX Parser] Bloco BANKTRANLIST encontrado:', !!bankTranListMatch);
+  
   const chunks = splitTransactions(bankTranList);
-  const txs = chunks.map(ch => {
+  console.log('[OFX Parser] Chunks de transação encontrados:', chunks.length);
+  
+  if (chunks.length === 0) {
+    throw new Error('Nenhuma transação (STMTTRN) encontrada no arquivo OFX. O arquivo pode estar vazio ou em formato não suportado.');
+  }
+  
+  const allTxs = chunks.map((ch, idx) => {
     // Trabalha sempre no texto do chunk
     const rawType = extractTag(ch, 'TRNTYPE') || extractTag(ch, 'trntype');
     const rawDt = extractTag(ch, 'DTPOSTED') || extractTag(ch, 'dtposted') || extractTag(ch, 'DTUSER');
@@ -107,8 +132,17 @@ export function parseOfx(text) {
     const descricao = (rawMemo || '').trim();
     const tipo = (rawType || '').toUpperCase();
 
-    return { data, valor, descricao, tipo, identificador: fitId };
-  }).filter(tx => tx.data && (tx.valor || tx.valor === 0));
+    return { data, valor, descricao, tipo, identificador: fitId, _rawDt: rawDt, _rawAmt: rawAmt };
+  });
+  
+  const txs = allTxs.filter(tx => tx.data && (tx.valor || tx.valor === 0));
+  
+  console.log('[OFX Parser] Transações totais:', allTxs.length, 'Válidas:', txs.length);
+  
+  if (allTxs.length > 0 && txs.length === 0) {
+    console.warn('[OFX Parser] Transações encontradas mas nenhuma válida. Exemplos:', allTxs.slice(0, 3));
+    throw new Error(`Foram encontradas ${allTxs.length} transações, mas nenhuma com data e valor válidos.`);
+  }
 
   return txs;
 }
@@ -117,8 +151,15 @@ export function parseOfx(text) {
  * Utilitário principal: recebe File/string, retorna transações normalizadas
  */
 export async function parseOfxFile(input) {
-  const text = await readAsText(input);
-  return parseOfx(text);
+  try {
+    console.log('[OFX Parser] Lendo arquivo...', input?.name || 'string input');
+    const text = await readAsText(input);
+    console.log('[OFX Parser] Arquivo lido com sucesso, tamanho:', text?.length || 0);
+    return parseOfx(text);
+  } catch (error) {
+    console.error('[OFX Parser] Erro ao processar arquivo:', error);
+    throw error;
+  }
 }
 
 export default {
