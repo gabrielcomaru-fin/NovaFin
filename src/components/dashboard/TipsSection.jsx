@@ -24,10 +24,10 @@ const TipsSection = memo(function TipsSection({ tips }) {
     <motion.div
       {...createStaggerAnimation(0.9)}
     >
-      <Card hover={true} animation="subtle">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-warning" />
+      <Card hover={true} animation="subtle" className="shadow-sm hover:shadow-md transition-shadow duration-200">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-h5 font-semibold">
+            <Lightbulb className="h-5 w-5 text-warning flex-shrink-0" />
             Dicas Financeiras
           </CardTitle>
         </CardHeader>
@@ -38,10 +38,10 @@ const TipsSection = memo(function TipsSection({ tips }) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 + index * 0.1 }}
-              className="p-3 rounded-lg flex items-start gap-3 bg-secondary"
+              className="p-4 rounded-lg flex items-start gap-3 bg-muted/60 border border-border/60 hover:bg-muted/80 transition-colors duration-200"
             >
               {getIcon(tip.type)}
-              <p className="text-sm text-muted-foreground">{tip.message}</p>
+              <p className="text-body-sm text-card-foreground leading-relaxed">{tip.message}</p>
             </motion.div>
           ))}
         </CardContent>

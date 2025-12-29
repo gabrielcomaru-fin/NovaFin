@@ -90,6 +90,75 @@ export const TransactionTable = ({
     return iconMap[tipo] || Wallet;
   };
 
+  // Função para ajustar a cor baseada no tema
+  const getAdjustedColor = (color) => {
+    if (!color) return 'hsl(var(--primary))';
+    
+    // Verificar se estamos no tema escuro
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    if (!isDark) {
+      // No tema claro, usar a cor original
+      return color;
+    }
+    
+    // No tema escuro, verificar se a cor é muito escura
+    let r, g, b;
+    
+    // Converter diferentes formatos de cor para RGB
+    if (color.startsWith('#')) {
+      // Formato hex
+      const hex = color.replace('#', '');
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+    } else if (color.startsWith('rgb')) {
+      // Formato rgb/rgba
+      const matches = color.match(/\d+/g);
+      if (matches && matches.length >= 3) {
+        r = parseInt(matches[0]);
+        g = parseInt(matches[1]);
+        b = parseInt(matches[2]);
+      } else {
+        return 'hsl(var(--primary))';
+      }
+    } else {
+      // Se não conseguir parsear, usar cor primária
+      return 'hsl(var(--primary))';
+    }
+    
+    // Calcular luminosidade relativa (0-1)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Se a cor for muito escura (luminosidade < 0.5), clarear significativamente
+    if (luminance < 0.5) {
+      // Para cores muito escuras, usar uma cor mais clara baseada na cor original
+      // mas garantindo visibilidade mínima
+      const minLuminance = 0.6; // Luminosidade mínima desejada
+      const targetLuminance = Math.max(minLuminance, luminance * 2.5);
+      
+      // Ajustar cada componente RGB para atingir a luminosidade desejada
+      const currentLum = luminance;
+      const ratio = targetLuminance / currentLum;
+      
+      let newR = Math.min(255, Math.round(r * ratio));
+      let newG = Math.min(255, Math.round(g * ratio));
+      let newB = Math.min(255, Math.round(b * ratio));
+      
+      // Garantir que pelo menos um componente seja significativamente claro
+      const maxComponent = Math.max(newR, newG, newB);
+      if (maxComponent < 150) {
+        // Se ainda estiver muito escuro, usar a cor primária como fallback
+        return 'hsl(var(--primary))';
+      }
+      
+      return `rgb(${newR}, ${newG}, ${newB})`;
+    }
+    
+    // Se já for clara o suficiente, usar a cor original
+    return color;
+  };
+
   const isDescFiltered = Boolean(searchTerm && String(searchTerm).trim() !== '');
   const isCategoryFiltered = Boolean(selectedCategory && selectedCategory !== 'all');
   const isStatusFiltered = Boolean(isExpense && paymentStatus && paymentStatus !== 'all');
@@ -335,6 +404,7 @@ export const TransactionTable = ({
                             );
                           }
                           const IconComponent = getPaymentMethodIcon(paymentMethod.tipo);
+                          const adjustedColor = getAdjustedColor(paymentMethod.cor);
                           return (
                             <button
                               onClick={() => handleEditPaymentMethod(transaction)}
@@ -343,7 +413,7 @@ export const TransactionTable = ({
                             >
                               <IconComponent 
                                 className="w-4 h-4" 
-                                style={{ color: paymentMethod.cor }}
+                                style={{ color: adjustedColor || 'hsl(var(--primary))' }}
                               />
                             </button>
                           );
@@ -460,9 +530,9 @@ export const TransactionTable = ({
                 >
                   <IconComponent 
                     className="w-4 h-4" 
-                    style={{ color: paymentMethod.cor }}
+                    style={{ color: getAdjustedColor(paymentMethod.cor) || 'hsl(var(--primary))' }}
                   />
-                  <span className="font-medium">{paymentMethod.nome}</span>
+                  <span className="font-medium text-card-foreground">{paymentMethod.nome}</span>
                 </button>
               );
             })}

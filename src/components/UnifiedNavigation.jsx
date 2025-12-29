@@ -111,13 +111,13 @@ export function UnifiedNavigation({
     <TooltipProvider>
     <div className="flex flex-col h-full relative">
       {/* Header */}
-      <div className="flex items-center justify-between p-2 border-b border-border">
-        <Link to="/dashboard" className="flex items-center space-x-2">
-          <div className="h-7 w-7 bg-primary rounded-lg flex items-center justify-center">
-            <DollarSign className="h-4 w-4 text-primary-foreground" />
+      <div className="flex items-center justify-between p-3 border-b border-border">
+        <Link to="/dashboard" className="flex items-center space-x-2.5 group">
+          <div className="h-8 w-8 bg-gradient-to-br from-primary via-primary to-info rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
+            <DollarSign className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
           {(!isCollapsed || isMobile) && (
-            <span className="text-base font-semibold text-foreground">Lumify</span>
+            <span className="text-base font-bold text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">Lumify</span>
           )}
         </Link>
         
@@ -220,9 +220,9 @@ export function UnifiedNavigation({
         aria-label={item.label}
         className={({ isActive }) =>
           cn(
-            "group flex items-center gap-3 px-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
             isActive
-              ? "bg-primary text-primary-foreground shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm hover:shadow-md"
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )
         }
@@ -302,11 +302,11 @@ export function UnifiedNavigation({
             <Menu className="h-4 w-4" />
           </Button>
           
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+          <Link to="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 bg-gradient-to-br from-primary via-primary to-info rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
               <DollarSign className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold">Lumify</span>
+            <span className="text-lg font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">Lumify</span>
           </Link>
           
           <DropdownMenu>

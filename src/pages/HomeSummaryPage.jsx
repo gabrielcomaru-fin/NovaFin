@@ -192,7 +192,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="text-3xl font-bold text-card-foreground">R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span>✅ R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 <span>⏳ R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -208,7 +208,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-3xl font-bold ${incomeInsights.availableBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`text-3xl font-bold ${incomeInsights.availableBalance >= 0 ? 'text-success' : 'text-error'}`}>
                 R$ {incomeInsights.availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
               <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
@@ -224,7 +224,7 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="text-3xl font-bold text-card-foreground">R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                 <span>Taxa de poupança: {Math.round(savingsRate)}%</span>
               </div>
@@ -240,12 +240,12 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
             <CardContent>
               {periodGoal > 0 ? (
                 <>
-                  <div className="text-3xl font-bold">{Math.round(goalProgress)}%</div>
+                  <div className="text-3xl font-bold text-card-foreground">{Math.round(goalProgress)}%</div>
                   <Progress value={Math.min(goalProgress, 100)} className="h-3 mt-3" />
                   <p className="text-xs text-muted-foreground mt-2">
                     R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ {periodGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     {goalProgress > 100 && (
-                      <span className="block text-green-600 font-medium">
+                      <span className="block text-success font-medium">
                         R$ {(totalInvested - periodGoal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} além da meta! 🎉
                       </span>
                     )}
@@ -276,15 +276,15 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
               <CardContent className="space-y-3">
                 {incomeInsights.recommendations.slice(0, 3).map((rec, i) => (
                   <div key={i} className={`p-4 rounded-lg text-sm flex items-start gap-3 ${
-                    rec.type === 'warning' ? 'bg-red-50 border border-red-200' :
-                    rec.type === 'success' ? 'bg-green-50 border border-green-200' :
-                    'bg-blue-50 border border-blue-200'
+                    rec.type === 'warning' ? 'bg-error-muted border border-error' :
+                    rec.type === 'success' ? 'bg-success-muted border border-success' :
+                    'bg-info-muted border border-info'
                   }`}>
-                    {rec.type === 'warning' && <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0"/>}
-                    {rec.type === 'success' && <Trophy className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0"/>}
-                    {rec.type === 'tip' && <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0"/>}
+                    {rec.type === 'warning' && <AlertTriangle className="h-5 w-5 text-error mt-0.5 flex-shrink-0"/>}
+                    {rec.type === 'success' && <Trophy className="h-5 w-5 text-success mt-0.5 flex-shrink-0"/>}
+                    {rec.type === 'tip' && <Lightbulb className="h-5 w-5 text-info mt-0.5 flex-shrink-0"/>}
                     <div>
-                      <p className="font-medium">{rec.message}</p>
+                      <p className="font-medium text-card-foreground">{rec.message}</p>
                       {rec.action && (
                         <p className="text-xs text-muted-foreground mt-1">💡 {rec.action}</p>
                       )}
@@ -313,11 +313,11 @@ const HomeSummaryPage = memo(function HomeSummaryPage() {
                   </div>
                 )}
                 {educationTips.map((tip, i) => (
-                  <div key={i} className="p-4 rounded-lg bg-secondary/50 text-sm flex items-start gap-3">
+                  <div key={i} className="p-4 rounded-lg bg-muted/60 border border-border/60 text-sm flex items-start gap-3 hover:bg-muted/80 transition-colors duration-200">
                     {tip.type === 'warning' && <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0"/>}
                     {tip.type === 'success' && <TrendingUp className="h-5 w-5 text-success mt-0.5 flex-shrink-0"/>}
                     {tip.type === 'tip' && <Lightbulb className="h-5 w-5 text-primary mt-0.5 flex-shrink-0"/>}
-                    <span className="text-foreground">{tip.message}</span>
+                    <span className="text-card-foreground">{tip.message}</span>
                   </div>
                 ))}
               </CardContent>

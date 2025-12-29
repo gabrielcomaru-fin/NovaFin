@@ -21,10 +21,10 @@ const ExpenseBreakdown = memo(function ExpenseBreakdown({
     <motion.div
       {...createStaggerAnimation(0.8)}
     >
-      <Card hover={true} animation="subtle">
-        <CardHeader>
-          <CardTitle>Gastos por Categoria</CardTitle>
-          <CardDescription>Distribuição dos seus gastos no período</CardDescription>
+      <Card hover={true} animation="subtle" className="shadow-sm hover:shadow-md transition-shadow duration-200">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-h5 font-semibold">Gastos por Categoria</CardTitle>
+          <CardDescription className="text-body-sm mt-2">Distribuição dos seus gastos no período</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -52,11 +52,11 @@ const ExpenseBreakdown = memo(function ExpenseBreakdown({
               .filter(c => (expensesByCategory[c.id] || 0) > 0)
               .sort((a, b) => (expensesByCategory[b.id] || 0) - (expensesByCategory[a.id] || 0))
               .map(category => (
-                <div key={category.id} className="flex items-center justify-between">
+                <div key={category.id} className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">{category.nome}</span>
+                    <span className="text-body-sm font-semibold text-card-foreground">{category.nome}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-body-sm text-muted-foreground font-medium">
                     R$ {(expensesByCategory[category.id] || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>

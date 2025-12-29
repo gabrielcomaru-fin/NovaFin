@@ -37,9 +37,11 @@ const LandingPage = () => {
         {/* Header */}
         <header className="container mx-auto px-4 py-6">
           <nav className="flex items-center justify-between" aria-label="Primary">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold">Lumify</span>
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 bg-gradient-to-br from-primary via-primary to-info rounded-lg flex items-center justify-center shadow-md">
+                <DollarSign className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/80 bg-clip-text text-transparent">Lumify</span>
             </div>
             <div className="flex items-center space-x-4">
               <Link to="/login">
@@ -56,18 +58,18 @@ const LandingPage = () => {
         <main className="container mx-auto px-4 py-16">
           {/* Hero compacto */}
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl font-bold tracking-tight mb-5">
-              Clareza financeira <span className="text-primary">em minutos</span>
+            <h1 className="text-display-sm md:text-display font-bold tracking-tight mb-6 bg-gradient-to-r from-foreground via-foreground to-foreground/90 bg-clip-text text-transparent">
+              Clareza financeira <span className="bg-gradient-to-r from-primary via-info to-primary bg-clip-text text-transparent">em minutos</span>
             </h1>
-            <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+            <p className="text-body-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
               Orçamento, gastos, investimentos e metas em um só lugar. Simples, direto e bonito.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
-                <Button size="lg" className="w-full sm:w-auto">Começar grátis</Button>
+                <Button size="lg" className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-shadow duration-200">Começar grátis</Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">Ver demo</Button>
+                <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 hover:border-primary/50 transition-all duration-200">Ver demo</Button>
               </Link>
             </div>
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -79,9 +81,9 @@ const LandingPage = () => {
           </div>
 
           {/* Mockup visual minimalista */}
-          <div className="relative mt-12">
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-primary/20 via-fuchsia-500/10 to-cyan-500/10 blur-3xl rounded-3xl" aria-hidden />
-            <div className="relative mx-auto max-w-5xl rounded-2xl border bg-card/80 backdrop-blur shadow-xl p-6">
+          <div className="relative mt-16">
+            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-primary/20 via-info/10 to-primary/20 blur-3xl rounded-3xl" aria-hidden />
+            <div className="relative mx-auto max-w-5xl rounded-2xl border bg-card/90 backdrop-blur-md shadow-2xl p-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 rounded-xl border bg-background">
                   <p className="text-sm text-muted-foreground">Saldo</p>
@@ -119,65 +121,65 @@ const LandingPage = () => {
             </div>
 
           {/* Features condensadas */}
-          <section className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 rounded-xl border bg-card">
-              <BarChart className="h-5 w-5 text-primary mb-2" />
-              <p className="font-medium">Dashboards claros</p>
-              <p className="text-sm text-muted-foreground">KPIs essenciais, sem ruído.</p>
+          <section className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow duration-200">
+              <BarChart className="h-6 w-6 text-primary mb-3" />
+              <p className="font-semibold text-h6 mb-1">Dashboards claros</p>
+              <p className="text-body-sm text-muted-foreground">KPIs essenciais, sem ruído.</p>
             </div>
-            <div className="p-5 rounded-xl border bg-card">
-              <Target className="h-5 w-5 text-primary mb-2" />
-              <p className="font-medium">Metas guiadas</p>
-              <p className="text-sm text-muted-foreground">Acompanhamento simples e objetivo.</p>
+            <div className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow duration-200">
+              <Target className="h-6 w-6 text-primary mb-3" />
+              <p className="font-semibold text-h6 mb-1">Metas guiadas</p>
+              <p className="text-body-sm text-muted-foreground">Acompanhamento simples e objetivo.</p>
             </div>
-            <div className="p-5 rounded-xl border bg-card">
-              <ShieldCheck className="h-5 w-5 text-primary mb-2" />
-              <p className="font-medium">Privacidade e segurança</p>
-              <p className="text-sm text-muted-foreground">Boas práticas por padrão.</p>
+            <div className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow duration-200">
+              <ShieldCheck className="h-6 w-6 text-primary mb-3" />
+              <p className="font-semibold text-h6 mb-1">Privacidade e segurança</p>
+              <p className="text-body-sm text-muted-foreground">Boas práticas por padrão.</p>
             </div>
           </section>
 
           {/* Problema → Solução (compacto) */}
-          <section className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <section className="mt-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             <div>
-              <h2 className="text-2xl font-semibold">Problemas comuns</h2>
-              <ul className="mt-4 list-disc pl-5 text-sm text-muted-foreground space-y-2">
+              <h2 className="text-h2 font-semibold mb-6">Problemas comuns</h2>
+              <ul className="list-disc pl-6 text-body-sm text-muted-foreground space-y-3">
                 <li>Gastos dispersos e pouca clareza do todo</li>
                 <li>Metas sem acompanhamento real ao longo do mês</li>
                 <li>Relatórios que não se traduzem em ação</li>
               </ul>
             </div>
             <div>
-              <h3 className="text-2xl font-semibold">Como o Lumify resolve</h3>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-4 rounded-lg border bg-card">
-                  <BarChart className="h-5 w-5 text-primary mb-2" />
-                  <p className="font-medium">Insights diretos</p>
-                  <p className="text-xs text-muted-foreground">KPIs essenciais, prontos para agir.</p>
+              <h3 className="text-h2 font-semibold mb-6">Como o Lumify resolve</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <BarChart className="h-5 w-5 text-primary mb-3" />
+                  <p className="font-semibold text-h6 mb-1">Insights diretos</p>
+                  <p className="text-caption text-muted-foreground">KPIs essenciais, prontos para agir.</p>
                 </div>
-                <div className="p-4 rounded-lg border bg-card">
-                  <Target className="h-5 w-5 text-primary mb-2" />
-                  <p className="font-medium">Metas acompanhadas</p>
-                  <p className="text-xs text-muted-foreground">Alertas e progresso mensal sempre à vista.</p>
+                <div className="p-5 rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <Target className="h-5 w-5 text-primary mb-3" />
+                  <p className="font-semibold text-h6 mb-1">Metas acompanhadas</p>
+                  <p className="text-caption text-muted-foreground">Alertas e progresso mensal sempre à vista.</p>
                 </div>
-                <div className="p-4 rounded-lg border bg-card">
-                  <ShieldCheck className="h-5 w-5 text-primary mb-2" />
-                  <p className="font-medium">Dados organizados</p>
-                  <p className="text-xs text-muted-foreground">Tudo centralizado e seguro, sem planilhas quebradas.</p>
+                <div className="p-5 rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <ShieldCheck className="h-5 w-5 text-primary mb-3" />
+                  <p className="font-semibold text-h6 mb-1">Dados organizados</p>
+                  <p className="text-caption text-muted-foreground">Tudo centralizado e seguro, sem planilhas quebradas.</p>
                 </div>
               </div>
             </div>
           </section>
 
           {/* CTA final compacto */}
-          <section className="mt-16 text-center">
-            <p className="text-sm text-muted-foreground">Pronto para começar?</p>
-            <div className="mt-3 flex flex-col sm:flex-row gap-3 justify-center">
+          <section className="mt-20 text-center">
+            <p className="text-body-sm text-muted-foreground mb-6">Pronto para começar?</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
-                <Button size="lg" className="w-full sm:w-auto">Criar conta</Button>
+                <Button size="lg" className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-shadow duration-200">Criar conta</Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">Explorar demo</Button>
+                <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 hover:border-primary/50 transition-all duration-200">Explorar demo</Button>
               </Link>
             </div>
           </section>

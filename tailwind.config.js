@@ -13,6 +13,30 @@ module.exports = {
     		}
     	},
     	extend: {
+    		fontSize: {
+    			'display': ['3.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
+    			'display-sm': ['2.5rem', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '700' }],
+    			'h1': ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }],
+    			'h2': ['1.875rem', { lineHeight: '1.3', letterSpacing: '-0.01em', fontWeight: '600' }],
+    			'h3': ['1.5rem', { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }],
+    			'h4': ['1.25rem', { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }],
+    			'h5': ['1.125rem', { lineHeight: '1.5', letterSpacing: '0', fontWeight: '600' }],
+    			'h6': ['1rem', { lineHeight: '1.5', letterSpacing: '0', fontWeight: '600' }],
+    			'body-lg': ['1.125rem', { lineHeight: '1.6', letterSpacing: '0' }],
+    			'body': ['1rem', { lineHeight: '1.5', letterSpacing: '0' }],
+    			'body-sm': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0' }],
+    			'caption': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.01em' }],
+    			'caption-sm': ['0.625rem', { lineHeight: '1.4', letterSpacing: '0.01em' }],
+    		},
+    		boxShadow: {
+    			'sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    			'DEFAULT': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+    			'md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+    			'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    			'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+    			'2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+    			'inner': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
+    		},
     		colors: {
     			border: 'hsl(var(--border))',
     			input: 'hsl(var(--input))',

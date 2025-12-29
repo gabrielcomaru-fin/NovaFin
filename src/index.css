@@ -4,18 +4,18 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* #F5F5F5 */
-    --foreground: 0 0% 3.9%; /* #121212 */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%; /* #4A90E2 */
+    --primary: 217 91% 60%; /* Azul vibrante */
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%; /* #737373 a bit darker than B0B0B0 for better contrast */
+    --muted-foreground: 0 0% 50%; /* Melhor contraste para legibilidade */
     --accent: 0 0% 96.1%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
@@ -27,41 +27,41 @@
     --vibrant-accent: 340 82% 52%; /* A vibrant pink/magenta for highlights */ 
     
     /* Semantic Colors - Light Theme */
-    --success: 142 76% 36%; /* Green for success states */
+    --success: 142 71% 45%; /* Verde mais vibrante e legível */
     --success-foreground: 0 0% 98%;
-    --success-muted: 142 76% 95%;
-    --success-border: 142 76% 85%;
+    --success-muted: 142 71% 96%;
+    --success-border: 142 71% 80%;
     
-    --warning: 38 92% 50%; /* Yellow/Orange for warnings */
-    --warning-foreground: 0 0% 98%;
-    --warning-muted: 38 92% 95%;
-    --warning-border: 38 92% 85%;
+    --warning: 38 92% 55%; /* Amarelo/laranja mais visível */
+    --warning-foreground: 0 0% 15%;
+    --warning-muted: 38 92% 96%;
+    --warning-border: 38 92% 80%;
     
-    --error: 0 84% 60%; /* Red for errors */
+    --error: 0 84% 58%; /* Vermelho ajustado para melhor contraste */
     --error-foreground: 0 0% 98%;
-    --error-muted: 0 84% 95%;
+    --error-muted: 0 84% 96%;
     --error-border: 0 84% 85%;
     
-    --info: 217 91% 60%; /* Blue for information */
+    --info: 217 91% 60%; /* Azul consistente com primary */
     --info-foreground: 0 0% 98%;
-    --info-muted: 217 91% 95%;
-    --info-border: 217 91% 85%;
+    --info-muted: 217 91% 96%;
+    --info-border: 217 91% 80%;
     
     /* Financial specific colors */
-    --income: 142 76% 36%; /* Green for income/investments */
+    --income: 142 71% 45%; /* Verde harmonizado com success */
     --income-foreground: 0 0% 98%;
-    --income-muted: 142 76% 95%;
-    --income-border: 142 76% 85%;
+    --income-muted: 142 71% 96%;
+    --income-border: 142 71% 80%;
     
-    --expense: 0 84% 60%; /* Red for expenses */
+    --expense: 0 84% 58%; /* Vermelho harmonizado */
     --expense-foreground: 0 0% 98%;
-    --expense-muted: 0 84% 95%;
+    --expense-muted: 0 84% 96%;
     --expense-border: 0 84% 85%;
     
-    --pending: 38 92% 50%; /* Yellow for pending states */
-    --pending-foreground: 0 0% 98%;
-    --pending-muted: 38 92% 95%;
-    --pending-border: 38 92% 85%;
+    --pending: 38 92% 55%; /* Amarelo harmonizado */
+    --pending-foreground: 0 0% 15%;
+    --pending-muted: 38 92% 96%;
+    --pending-border: 38 92% 80%;
     
     --chart-1: 12 76% 61%; 
     --chart-2: 173 58% 39%; 
@@ -71,20 +71,20 @@
   }
 
   .dark {
-    --background: 0 0% 6%; /* Slightly lighter than pure black */
-    --foreground: 0 0% 95%; /* High contrast white */
-    --card: 0 0% 8%; /* Darker cards for better separation */
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 95%;
+    --background: 0 0% 4%; /* Fundo mais escuro */
+    --foreground: 0 0% 98%; /* Alto contraste branco */
+    --card: 0 0% 10%; /* Cards mais claros que o background para melhor separação */
+    --card-foreground: 0 0% 98%; /* Texto claro nos cards */
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
     --primary: 217 91% 60%; /* Blue primary for dark mode */
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 65%; /* Better contrast for muted text */
-    --accent: 0 0% 12%;
-    --accent-foreground: 0 0% 95%;
+    --secondary: 0 0% 14%; /* Secondary mais claro para melhor contraste */
+    --secondary-foreground: 0 0% 98%; /* Texto claro no secondary */
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 75%; /* Melhor contraste no modo escuro */
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 18%; /* More visible borders */
@@ -93,41 +93,41 @@
     --vibrant-accent: 340 82% 52%;
     
     /* Semantic Colors - Dark Theme */
-    --success: 142 76% 50%; /* Brighter green for dark mode */
+    --success: 142 71% 55%; /* Verde mais vibrante no modo escuro */
     --success-foreground: 0 0% 98%;
-    --success-muted: 142 76% 15%;
-    --success-border: 142 76% 25%;
+    --success-muted: 142 71% 12%;
+    --success-border: 142 71% 22%;
     
-    --warning: 38 92% 60%; /* Brighter yellow for dark mode */
-    --warning-foreground: 0 0% 98%;
-    --warning-muted: 38 92% 15%;
-    --warning-border: 38 92% 25%;
+    --warning: 38 92% 65%; /* Amarelo mais visível no modo escuro */
+    --warning-foreground: 0 0% 10%;
+    --warning-muted: 38 92% 12%;
+    --warning-border: 38 92% 22%;
     
-    --error: 0 84% 70%; /* Brighter red for dark mode */
+    --error: 0 84% 65%; /* Vermelho ajustado para modo escuro */
     --error-foreground: 0 0% 98%;
-    --error-muted: 0 84% 15%;
-    --error-border: 0 84% 25%;
+    --error-muted: 0 84% 12%;
+    --error-border: 0 84% 22%;
     
-    --info: 217 91% 70%; /* Brighter blue for dark mode */
+    --info: 217 91% 65%; /* Azul consistente no modo escuro */
     --info-foreground: 0 0% 98%;
-    --info-muted: 217 91% 15%;
-    --info-border: 217 91% 25%;
+    --info-muted: 217 91% 12%;
+    --info-border: 217 91% 22%;
     
     /* Financial specific colors - Dark Theme */
-    --income: 142 76% 50%; /* Brighter green for dark mode */
+    --income: 142 71% 55%; /* Verde harmonizado no modo escuro */
     --income-foreground: 0 0% 98%;
-    --income-muted: 142 76% 15%;
-    --income-border: 142 76% 25%;
+    --income-muted: 142 71% 12%;
+    --income-border: 142 71% 22%;
     
-    --expense: 0 84% 70%; /* Brighter red for dark mode */
+    --expense: 0 84% 65%; /* Vermelho harmonizado no modo escuro */
     --expense-foreground: 0 0% 98%;
-    --expense-muted: 0 84% 15%;
-    --expense-border: 0 84% 25%;
+    --expense-muted: 0 84% 12%;
+    --expense-border: 0 84% 22%;
     
-    --pending: 38 92% 60%; /* Brighter yellow for dark mode */
-    --pending-foreground: 0 0% 98%;
-    --pending-muted: 38 92% 15%;
-    --pending-border: 38 92% 25%;
+    --pending: 38 92% 65%; /* Amarelo harmonizado no modo escuro */
+    --pending-foreground: 0 0% 10%;
+    --pending-muted: 38 92% 12%;
+    --pending-border: 38 92% 22%;
     
     --chart-1: 220 70% 60%;
     --chart-2: 160 60% 55%;
@@ -158,8 +158,17 @@
   .gradient-text-blue {
     @apply bg-gradient-to-r from-blue-400 to-primary bg-clip-text text-transparent;
   }
+  .gradient-text-primary {
+    @apply bg-gradient-to-r from-primary via-info to-primary bg-clip-text text-transparent;
+  }
   .gradient-bg-vibrant {
     @apply bg-gradient-to-br from-primary via-blue-500 to-[hsl(var(--vibrant-accent))];
+  }
+  .gradient-bg-subtle {
+    @apply bg-gradient-to-br from-background via-background to-muted/30;
+  }
+  .gradient-bg-card {
+    @apply bg-gradient-to-br from-card via-card to-card/80;
   }
 
   .bg-grid-pattern {
@@ -167,6 +176,9 @@
                       linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
     background-size: 3rem 3rem;
   }
+
+  /* Typography Utilities - Use diretamente as classes do Tailwind config */
+  /* Exemplos: text-display, text-display-sm, text-h1, text-h2, text-body-lg, etc. */
 
   /* Semantic Color Utilities */
   .text-success { color: hsl(var(--success)); }
