@@ -203,15 +203,15 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
 
   return (
     <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-background via-background to-muted/30">
-      <CardContent className="p-4 md:p-6">
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+      <CardContent className="p-3 md:p-4">
+        <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4">
           {/* Indicador circular */}
           <div className="relative flex-shrink-0">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-              className="relative w-24 h-24 md:w-28 md:h-28"
+              className="relative w-16 h-16 md:w-20 md:h-20"
             >
               {/* Círculo de fundo */}
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
@@ -221,7 +221,7 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
                   r="42"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   className="text-muted/30"
                 />
                 <motion.circle
@@ -229,7 +229,7 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
                   cy="50"
                   r="42"
                   fill="none"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   strokeLinecap="round"
                   className={healthStatus.color}
                   stroke="currentColor"
@@ -247,7 +247,7 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className={`text-2xl md:text-3xl font-bold ${healthStatus.color}`}
+                  className={`text-xl md:text-2xl font-bold ${healthStatus.color}`}
                 >
                   {score}
                 </motion.span>
@@ -257,10 +257,10 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
           </div>
 
           {/* Informações */}
-          <div className="flex-1 text-center md:text-left space-y-2">
+          <div className="flex-1 text-center md:text-left space-y-1.5">
             <div className="flex items-center justify-center md:justify-start gap-2">
-              <Heart className={`h-5 w-5 ${healthStatus.color}`} />
-              <h3 className="text-lg md:text-xl font-semibold">
+              <Heart className={`h-4 w-4 ${healthStatus.color}`} />
+              <h3 className="text-base md:text-lg font-semibold">
                 Saúde Financeira: <span className={healthStatus.color}>{healthStatus.label}</span>
               </h3>
               <span className="text-xl">{healthStatus.emoji}</span>
@@ -295,7 +295,7 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
                 <div className={`absolute inset-1 rounded-full ${healthStatus.bgColor}`} />
               </motion.div>
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+            <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
               <span>0</span>
               <span>50</span>
               <span>100</span>
@@ -305,7 +305,7 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
 
         {/* Fatores principais */}
         <TooltipProvider>
-          <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 pt-4 border-t border-border/50">
+          <div className="grid grid-cols-3 gap-2 md:gap-3 mt-3 pt-3 border-t border-border/50">
             {topFactors.map((factor, index) => (
               <Tooltip key={factor.name}>
                 <TooltipTrigger asChild>
@@ -313,7 +313,7 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 + index * 0.1 }}
-                    className="text-center p-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors cursor-help"
+                    className="text-center p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors cursor-help"
                   >
                     <div className="flex items-center justify-center gap-1 mb-1">
                       <span className={`w-2 h-2 rounded-full ${
@@ -322,7 +322,7 @@ const FinancialHealthMeter = memo(function FinancialHealthMeter({ showBreakdownO
                       }`} />
                       <span className="text-xs text-muted-foreground truncate">{factor.name}</span>
                     </div>
-                    <span className="text-sm md:text-base font-semibold">{factor.value}</span>
+                    <span className="text-xs md:text-sm font-semibold">{factor.value}</span>
                   </motion.div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs">
