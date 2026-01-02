@@ -192,7 +192,13 @@ export function OFXImportDialog({
       // Filtrar transações baseado no tipo
       const filteredTxs = txs
         .filter(config.filterFn)
-        .map(t => ({ ...t, valor: config.transformValue(t.valor) }));
+        .map(t => ({ ...t, valor: config.transformValue(t.valor) }))
+        // Ordenar por data decrescente para validação
+        .sort((a, b) => {
+          const dateA = new Date(a.data);
+          const dateB = new Date(b.data);
+          return dateB - dateA; // Decrescente (mais recente primeiro)
+        });
       
       if (filteredTxs.length === 0) {
         toast({
@@ -676,7 +682,7 @@ export function OFXImportDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {config.icon}
@@ -923,7 +929,7 @@ export function OFXImportDialog({
                     </SelectTrigger>
                     <SelectContent>
                       {institutions.map(inst => (
-                        <SelectItem key={inst.id} value={String(inst.id)}>{inst.nome}</SelectItem>
+                        <SelectItem key={inst.id} value={String(inst.id)}>{inst.nome_banco || inst.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1059,7 +1065,7 @@ export function OFXImportDialog({
                             </SelectTrigger>
                             <SelectContent>
                               {institutions.map(inst => (
-                                <SelectItem key={inst.id} value={String(inst.id)}>{inst.nome}</SelectItem>
+                                <SelectItem key={inst.id} value={String(inst.id)}>{inst.nome_banco || inst.nome}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -1147,7 +1153,7 @@ export function OFXImportDialog({
                             </SelectTrigger>
                             <SelectContent>
                               {institutions.map(inst => (
-                                <SelectItem key={inst.id} value={String(inst.id)}>{inst.nome}</SelectItem>
+                                <SelectItem key={inst.id} value={String(inst.id)}>{inst.nome_banco || inst.nome}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

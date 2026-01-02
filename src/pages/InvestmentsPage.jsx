@@ -13,9 +13,7 @@ import { Pagination } from '@/components/Pagination';
 import { CompactPeriodFilter } from '@/components/CompactPeriodFilter';
 import { CompactSearchFilter } from '@/components/CompactSearchFilter';
 import { CompactHeader } from '@/components/CompactHeader';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { parseOfxFile } from '@/lib/ofx';
+import { OFXImportDialog } from '@/components/OFXImportDialog';
 
 import { TrendingUp, DollarSign, BarChart3, ListChecks, AlertCircle, Flame, Target, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -43,20 +41,7 @@ export function InvestmentsPage() {
 
   // Importação OFX para investimentos
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [ofxTransactions, setOfxTransactions] = useState([]);
-  const [perTxCategories, setPerTxCategories] = useState({});
-  const [perTxDescriptions, setPerTxDescriptions] = useState({});
-  const [perTxInstitutions, setPerTxInstitutions] = useState({});
-  const [duplicatesFound, setDuplicatesFound] = useState([]);
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [duplicateDecisions, setDuplicateDecisions] = useState({});
   const investmentCategories = useMemo(() => categories.filter(c => c.tipo === 'investimento'), [categories]);
-  const defaultCategoryId = investmentCategories[0]?.id || '';
-  const defaultInstitutionId = accounts[0]?.id || '';
-  const [importCategoryId, setImportCategoryId] = useState(defaultCategoryId);
-  const [importInstitutionId, setImportInstitutionId] = useState(defaultInstitutionId);
-  const fileInputId = 'ofx-investments-file-input';
 
   // Filtro persistente, alinhado ao ExpensesPage
   const [filter, setFilter] = usePersistentState(`filter_${PAGE_ID}`, () => ({
@@ -87,223 +72,23 @@ export function InvestmentsPage() {
     setCurrentPage(1);
   }, [searchTerm, selectedCategory, sortBy, filter, activeTab]);
 
-  useEffect(() => {
-    if (!importCategoryId && defaultCategoryId) setImportCategoryId(defaultCategoryId);
-  }, [defaultCategoryId, importCategoryId]);
-
-  useEffect(() => {
-    if (!importInstitutionId && defaultInstitutionId) setImportInstitutionId(defaultInstitutionId);
-  }, [defaultInstitutionId, importInstitutionId]);
-
-  const checkForInvestmentDuplicates = (ofxTxs) => {
-    const duplicates = [];
-
-    ofxTxs.forEach((ofxTx, ofxIndex) => {
-      const ofxDate = ofxTx.data;
-      const ofxDescription = ofxTx.descricao?.toLowerCase().trim() || '';
-      const ofxValue = Number(ofxTx.valor) || 0;
-
-      const duplicate = investments.find(investment => {
-        const invDate = investment.data;
-        const invDescription = investment.descricao?.toLowerCase().trim() || '';
-        const invValue = Number(investment.valor_aporte) || 0;
-
-        return invDate === ofxDate &&
-          invDescription === ofxDescription &&
-          Math.abs(invValue - ofxValue) < 0.01;
-      });
-
-      if (duplicate) {
-        duplicates.push({
-          ofxIndex,
-          ofxTransaction: ofxTx,
-          existingInvestment: duplicate,
-        });
+  // Handler para importação OFX
+  const handleImportOFX = async (transactions) => {
+    const results = [];
+    for (const tx of transactions) {
+      const result = await addInvestment(tx);
+      if (result?.id) {
+        results.push(result);
       }
-    });
-
-    return duplicates;
-  };
-
-  const handleOfxSelectClick = () => {
-    const el = document.getElementById(fileInputId);
-    if (el) el.click();
-  };
-
-  const handleOfxFileChange = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    try {
-      const txs = await parseOfxFile(file);
-      // Considera como aportes: saídas (valores negativos) ou tipo DEBIT
-      const investmentTxs = txs
-        .filter(t => (t.valor < 0) || (String(t.tipo).toUpperCase() === 'DEBIT'))
-        .map(t => ({ ...t, valor: Math.abs(t.valor) }));
-
-      if (investmentTxs.length === 0) {
-        toast({
-          title: 'Nenhum aporte encontrado no OFX',
-          description: 'Verifique se o arquivo contém lançamentos de saída relacionados a investimentos.',
-          variant: 'destructive',
-        });
-        e.target.value = '';
-        return;
-      }
-
-      const duplicates = checkForInvestmentDuplicates(investmentTxs);
-      setDuplicatesFound(duplicates);
-      setDuplicateDecisions({});
-
-      setOfxTransactions(investmentTxs);
-      setPerTxCategories({});
-      setPerTxDescriptions(
-        investmentTxs.reduce((acc, t, idx) => {
-          acc[idx] = t.descricao || 'Aporte OFX';
-          return acc;
-        }, {})
-      );
-      setPerTxInstitutions({});
-
-      if (duplicates.length > 0) {
-        setShowDuplicateDialog(true);
-      } else {
-        setIsImportOpen(true);
-      }
-    } catch (err) {
-      toast({
-        title: 'Falha ao ler OFX',
-        description: err?.message || 'Formato inválido.',
-        variant: 'destructive',
-      });
-    } finally {
-      // permite selecionar o mesmo arquivo novamente, se necessário
-      e.target.value = '';
     }
+    return results;
   };
 
-  const handleConfirmImport = async () => {
-    // Necessário ter pelo menos uma categoria e instituição (global ou por linha)
-    const hasAnyCategory = ofxTransactions.some((_, idx) => perTxCategories[idx]) || !!importCategoryId;
-    const hasAnyInstitution = ofxTransactions.some((_, idx) => perTxInstitutions[idx]) || !!importInstitutionId;
-
-    if (!hasAnyCategory || !hasAnyInstitution) {
-      toast({
-        title: 'Selecione categoria e instituição',
-        description: 'Defina ao menos a categoria e a instituição padrão ou por item.',
-        variant: 'destructive',
-      });
-      return;
+  // Handler para desfazer importação OFX
+  const handleUndoImportOFX = async (ids) => {
+    for (const id of ids) {
+      await deleteInvestment(id);
     }
-
-    setIsImporting(true);
-    try {
-      let success = 0;
-      let skipped = 0;
-
-      for (let i = 0; i < ofxTransactions.length; i++) {
-        const t = ofxTransactions[i];
-
-        const duplicate = duplicatesFound.find(d => d.ofxIndex === i);
-        if (duplicate && duplicateDecisions[i] === 'skip') {
-          skipped++;
-          continue;
-        }
-
-        const categoria_id = perTxCategories[i] || importCategoryId;
-        const instituicao_id = perTxInstitutions[i] || importInstitutionId;
-        if (!categoria_id || !instituicao_id) continue;
-
-        const payload = {
-          descricao: perTxDescriptions[i] ?? t.descricao ?? 'Aporte OFX',
-          valor_aporte: Number(t.valor) || 0,
-          categoria_id,
-          instituicao_id,
-          data: t.data || new Date().toISOString().split('T')[0],
-        };
-
-        try {
-          await addInvestment(payload);
-          success++;
-        } catch (e) {
-          // continua para o próximo
-        }
-      }
-
-      let message = `${success} aportes adicionados`;
-      if (skipped > 0) {
-        message += `, ${skipped} duplicatas ignoradas`;
-      }
-
-      toast({ title: 'Importação concluída', description: message });
-      setIsImportOpen(false);
-      setOfxTransactions([]);
-      setPerTxCategories({});
-      setPerTxDescriptions({});
-      setPerTxInstitutions({});
-      setDuplicatesFound([]);
-      setDuplicateDecisions({});
-    } catch (e) {
-      toast({
-        title: 'Erro na importação',
-        description: e?.message || 'Tente novamente.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const handleDuplicateDecision = (ofxIndex, decision) => {
-    setDuplicateDecisions(prev => ({
-      ...prev,
-      [ofxIndex]: decision,
-    }));
-  };
-
-  const handleProceedWithDuplicates = () => {
-    const keptTransactions = [];
-    const keptDescriptions = {};
-    const keptCategories = {};
-    const keptInstitutions = {};
-
-    ofxTransactions.forEach((tx, idx) => {
-      const isDuplicate = duplicatesFound.some(d => d.ofxIndex === idx);
-      const decision = duplicateDecisions[idx];
-      if (isDuplicate && decision === 'skip') {
-        return;
-      }
-      const newIndex = keptTransactions.length;
-      keptTransactions.push(tx);
-      if (perTxDescriptions[idx] != null) keptDescriptions[newIndex] = perTxDescriptions[idx];
-      if (perTxCategories[idx] != null) keptCategories[newIndex] = perTxCategories[idx];
-      if (perTxInstitutions[idx] != null) keptInstitutions[newIndex] = perTxInstitutions[idx];
-    });
-
-    setOfxTransactions(keptTransactions);
-    setPerTxDescriptions(keptDescriptions);
-    setPerTxCategories(keptCategories);
-    setPerTxInstitutions(keptInstitutions);
-
-    setDuplicatesFound([]);
-    setDuplicateDecisions({});
-    setShowDuplicateDialog(false);
-    setIsImportOpen(true);
-  };
-
-  const handleSkipAllDuplicates = () => {
-    const skipDecisions = {};
-    duplicatesFound.forEach(dup => {
-      skipDecisions[dup.ofxIndex] = 'skip';
-    });
-    setDuplicateDecisions(skipDecisions);
-  };
-
-  const handleImportAllDuplicates = () => {
-    const importDecisions = {};
-    duplicatesFound.forEach(dup => {
-      importDecisions[dup.ofxIndex] = 'import';
-    });
-    setDuplicateDecisions(importDecisions);
   };
 
   const { filteredInvestments, totalInvested } = useMemo(() => {
@@ -584,18 +369,7 @@ export function InvestmentsPage() {
               </TabsTrigger>
             </TabsList>
             <div className="w-full md:w-auto flex items-center gap-2">
-              <input
-                id={fileInputId}
-                type="file"
-                accept=".ofx,.qfx,.ofc,.xml,.txt"
-                className="hidden"
-                onChange={handleOfxFileChange}
-              />
-              <Button
-                variant="outline"
-                onClick={handleOfxSelectClick}
-                className="flex items-center gap-2"
-              >
+              <Button variant="outline" onClick={() => setIsImportOpen(true)} className="flex items-center gap-2">
                 <Upload className="h-4 w-4" /> Importar OFX
               </Button>
               <CompactPeriodFilter 
@@ -817,230 +591,19 @@ export function InvestmentsPage() {
             </div>
           </TabsContent>
         </Tabs>
-
-        <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-          <DialogContent className="sm:max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Importar aportes do OFX</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div className="text-sm text-muted-foreground">
-                  {ofxTransactions.length} lançamento{ofxTransactions.length !== 1 ? 's' : ''} de aporte
-                  encontrados.
-                </div>
-                <div className="text-sm font-medium">
-                  Total a importar:{' '}
-                  {currencyFormatter.format(
-                    ofxTransactions.reduce(
-                      (s, t) => s + (Number(t.valor) || 0),
-                      0
-                    )
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Categoria para os aportes</label>
-                  <Select
-                    value={importCategoryId || undefined}
-                    onValueChange={setImportCategoryId}
-                  >
-                    <SelectTrigger className="w-full mt-1">
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {investmentCategories.map(c => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Instituição financeira</label>
-                  <Select
-                    value={importInstitutionId || undefined}
-                    onValueChange={setImportInstitutionId}
-                  >
-                    <SelectTrigger className="w-full mt-1">
-                      <SelectValue placeholder="Selecione a instituição" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map(acc => (
-                        <SelectItem key={acc.id} value={String(acc.id)}>
-                          {acc.nome_banco}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Revise as descrições, categorias e instituições. Valores negativos são tratados como
-                aportes (saídas da conta corrente).
-              </div>
-              <div className="max-h-[60vh] overflow-auto border rounded-md">
-                <div className="grid grid-cols-12 gap-2 p-2 text-xs text-muted-foreground border-b">
-                  <div className="col-span-4">Descrição</div>
-                  <div className="col-span-2">Data</div>
-                  <div className="col-span-2 text-right">Valor</div>
-                  <div className="col-span-2">Categoria</div>
-                  <div className="col-span-2">Instituição</div>
-                </div>
-                {ofxTransactions.map((t, idx) => (
-                  <div
-                    key={idx}
-                    className="grid grid-cols-12 gap-2 p-2 items-center border-b last:border-b-0"
-                  >
-                    <div className="col-span-4">
-                      <input
-                        className="w-full px-2 py-1 border rounded text-sm"
-                        value={perTxDescriptions[idx] ?? t.descricao ?? 'Aporte OFX'}
-                        onChange={e =>
-                          setPerTxDescriptions(prev => ({
-                            ...prev,
-                            [idx]: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="col-span-2 text-xs">{t.data}</div>
-                    <div className="col-span-2 text-right font-medium">
-                      {currencyFormatter.format(Number(t.valor) || 0)}
-                    </div>
-                    <div className="col-span-2">
-                      <Select
-                        value={perTxCategories[idx] || importCategoryId || undefined}
-                        onValueChange={val =>
-                          setPerTxCategories(prev => ({
-                            ...prev,
-                            [idx]: val,
-                          }))
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {investmentCategories.map(c => (
-                            <SelectItem key={c.id} value={String(c.id)}>
-                              {c.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <Select
-                        value={perTxInstitutions[idx] || importInstitutionId || undefined}
-                        onValueChange={val =>
-                          setPerTxInstitutions(prev => ({
-                            ...prev,
-                            [idx]: val,
-                          }))
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Instituição" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {accounts.map(acc => (
-                            <SelectItem key={acc.id} value={String(acc.id)}>
-                              {acc.nome_banco}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="ghost"
-                onClick={() => setIsImportOpen(false)}
-                disabled={isImporting}
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleConfirmImport} disabled={isImporting}>
-                {isImporting ? 'Importando...' : 'Confirmar importação'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-          <DialogContent className="sm:max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Duplicatas encontradas</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                Foram encontradas {duplicatesFound.length} transação(ões) que podem ser duplicatas de
-                aportes já cadastrados. Você pode escolher importar ou ignorar cada uma delas.
-              </div>
-
-              <div className="max-h-[50vh] overflow-auto border rounded-md">
-                <div className="grid grid-cols-12 gap-2 p-2 text-xs text-muted-foreground border-b">
-                  <div className="col-span-3">Descrição</div>
-                  <div className="col-span-2">Data</div>
-                  <div className="col-span-2 text-right">Valor</div>
-                  <div className="col-span-3">Aporte existente</div>
-                  <div className="col-span-2">Ação</div>
-                </div>
-                {duplicatesFound.map(dup => (
-                  <div
-                    key={dup.ofxIndex}
-                    className="grid grid-cols-12 gap-2 p-2 items-center border-b last:border-b-0"
-                  >
-                    <div className="col-span-3 text-sm">
-                      {dup.ofxTransaction.descricao}
-                    </div>
-                    <div className="col-span-2 text-xs">
-                      {dup.ofxTransaction.data}
-                    </div>
-                    <div className="col-span-2 text-right font-medium">
-                      {currencyFormatter.format(Number(dup.ofxTransaction.valor) || 0)}
-                    </div>
-                    <div className="col-span-3 text-xs text-muted-foreground">
-                      {dup.existingInvestment.descricao}
-                    </div>
-                    <div className="col-span-2">
-                      <Select
-                        value={duplicateDecisions[dup.ofxIndex] || undefined}
-                        onValueChange={val => handleDuplicateDecision(dup.ofxIndex, val)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Escolher" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="import">Importar</SelectItem>
-                          <SelectItem value="skip">Ignorar</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleSkipAllDuplicates}>
-                  Ignorar todas
-                </Button>
-                <Button variant="outline" onClick={handleImportAllDuplicates}>
-                  Importar todas
-                </Button>
-                <Button onClick={handleProceedWithDuplicates}>
-                  Prosseguir
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        
+        {/* Modal de Importação OFX */}
+        <OFXImportDialog
+          isOpen={isImportOpen}
+          onOpenChange={setIsImportOpen}
+          type="investment"
+          categories={investmentCategories}
+          institutions={accounts}
+          existingTransactions={investments}
+          onImport={handleImportOFX}
+          onUndoImport={handleUndoImportOFX}
+          onClose={() => setIsImportOpen(false)}
+        />
       </div>
     </>
   );
