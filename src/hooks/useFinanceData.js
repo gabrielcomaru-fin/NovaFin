@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useValidation } from '@/hooks/useValidation';
+import { startOfMonth, endOfMonth, subMonths, parseISO } from 'date-fns';
 // import { useSupabaseCache } from '@/lib/cache';
 
 export const useFinanceData = () => {
@@ -18,9 +19,13 @@ export const useFinanceData = () => {
     const [paymentMethods, setPaymentMethods] = useState([]);
     const [incomes, setIncomes] = useState([]);
     const [investmentGoal, setInvestmentGoal] = useState(0);
+    const carryOverProcessedRef = useRef(false);
 
     const fetchData = useCallback(async () => {
         if (!user) return;
+
+        // Resetar flag de processamento quando recarregar dados
+        carryOverProcessedRef.current = false;
 
         setIsLoading(true);
         try {
@@ -142,6 +147,147 @@ export const useFinanceData = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // Função auxiliar para limpar meses antigos do localStorage (manter apenas últimos 12 meses)
+    const cleanupOldExcludedMonths = useCallback(() => {
+        try {
+            const excludedMonths = JSON.parse(localStorage.getItem('novaFin_carryover_excluded_months') || '[]');
+            const today = new Date();
+            const twelveMonthsAgo = subMonths(today, 12);
+            const cutoffKey = `${twelveMonthsAgo.getFullYear()}-${String(twelveMonthsAgo.getMonth() + 1).padStart(2, '0')}`;
+            
+            const filteredMonths = excludedMonths.filter(monthKey => {
+                // Manter apenas meses dos últimos 12 meses
+                return monthKey >= cutoffKey;
+            });
+            
+            if (filteredMonths.length !== excludedMonths.length) {
+                localStorage.setItem('novaFin_carryover_excluded_months', JSON.stringify(filteredMonths));
+            }
+        } catch (e) {
+            console.error('Erro ao limpar meses antigos:', e);
+        }
+    }, []);
+
+    // Função para calcular o saldo do mês anterior
+    const calculatePreviousMonthBalance = useCallback((incomesList, expensesList, investmentsList) => {
+        const today = new Date();
+        const previousMonth = subMonths(today, 1);
+        const prevMonthStart = startOfMonth(previousMonth);
+        const prevMonthEnd = endOfMonth(previousMonth);
+        
+        const prevMonthIncomes = incomesList.filter(income => {
+            const incomeDate = parseISO(income.data);
+            return incomeDate >= prevMonthStart && incomeDate <= prevMonthEnd;
+        });
+        
+        const prevMonthExpenses = expensesList.filter(expense => {
+            const expenseDate = parseISO(expense.data);
+            return expenseDate >= prevMonthStart && expenseDate <= prevMonthEnd;
+        });
+        
+        const prevMonthInvestments = investmentsList.filter(investment => {
+            const investmentDate = parseISO(investment.data);
+            return investmentDate >= prevMonthStart && investmentDate <= prevMonthEnd;
+        });
+        
+        const totalIncome = prevMonthIncomes.reduce((sum, income) => sum + Number(income.valor || 0), 0);
+        const totalExpenses = prevMonthExpenses.filter(exp => exp.pago).reduce((sum, exp) => sum + Number(exp.valor || 0), 0);
+        const totalInvestments = prevMonthInvestments.reduce((sum, inv) => sum + Number(inv.valor_aporte || 0), 0);
+        
+        return totalIncome - totalExpenses - totalInvestments;
+    }, []);
+
+    // Efeito para adicionar automaticamente o saldo do mês anterior como receita
+    useEffect(() => {
+        if (!user || isLoading) return;
+
+        // Limpar meses antigos do localStorage periodicamente
+        cleanupOldExcludedMonths();
+
+        // Resetar a flag quando os dados são recarregados
+        if (incomes.length === 0 && expenses.length === 0 && investments.length === 0) {
+            carryOverProcessedRef.current = false;
+            return;
+        }
+
+        // Evitar processamento múltiplo
+        if (carryOverProcessedRef.current) return;
+
+        const addCarryOverIncome = async () => {
+            try {
+                const today = new Date();
+                const currentMonthStart = startOfMonth(today);
+                const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                
+                // Verificar se o usuário excluiu manualmente o saldo do mês anterior para este mês
+                try {
+                    const excludedMonths = JSON.parse(localStorage.getItem('novaFin_carryover_excluded_months') || '[]');
+                    if (excludedMonths.includes(currentMonthKey)) {
+                        carryOverProcessedRef.current = true;
+                        return; // Usuário excluiu manualmente, não recriar
+                    }
+                } catch (e) {
+                    console.error('Erro ao verificar meses excluídos:', e);
+                }
+                
+                // Verificar se já existe uma receita de "Saldo do mês anterior" no mês atual
+                const hasCarryOverIncome = incomes.some(income => {
+                    const incomeDate = parseISO(income.data);
+                    const incomeMonthStart = startOfMonth(incomeDate);
+                    return (
+                        income.descricao.toLowerCase().includes('saldo do mês anterior') &&
+                        incomeMonthStart.getTime() === currentMonthStart.getTime()
+                    );
+                });
+
+                if (hasCarryOverIncome) {
+                    carryOverProcessedRef.current = true;
+                    return; // Já existe, não precisa criar
+                }
+
+                // Calcular o saldo do mês anterior
+                const previousBalance = calculatePreviousMonthBalance(incomes, expenses, investments);
+                
+                // Só adiciona se o saldo for positivo e maior que 0.01 (para evitar valores muito pequenos)
+                if (previousBalance > 0.01) {
+                    const carryOverIncome = {
+                        descricao: `Saldo do mês anterior`,
+                        valor: Math.round(previousBalance * 100) / 100, // Arredondar para 2 casas decimais
+                        data: currentMonthStart.toISOString().split('T')[0]
+                    };
+
+                    // Usar addIncome sem mostrar loading para não interferir na UI
+                    const { data, error } = await supabase
+                        .from('receitas')
+                        .insert([{
+                            ...carryOverIncome,
+                            usuario_id: user.id
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) {
+                        console.error('Erro ao adicionar saldo do mês anterior:', error);
+                        return;
+                    }
+                    
+                    // Atualizar o estado local
+                    setIncomes(prev => [data, ...prev]);
+                    carryOverProcessedRef.current = true;
+                } else {
+                    carryOverProcessedRef.current = true;
+                }
+            } catch (error) {
+                console.error('Erro ao processar saldo do mês anterior:', error);
+                carryOverProcessedRef.current = true;
+            }
+        };
+
+        // Executar após um pequeno delay para garantir que os dados foram carregados
+        const timeoutId = setTimeout(addCarryOverIncome, 1000);
+        return () => clearTimeout(timeoutId);
+    }, [user, incomes, expenses, investments, isLoading, calculatePreviousMonthBalance, cleanupOldExcludedMonths]);
 
     // Funções CRUD simplificadas
     const addExpense = useCallback(async (expenseData) => {
@@ -286,12 +432,32 @@ export const useFinanceData = () => {
     const deleteIncome = useCallback(async (id) => {
         setIsLoading(true);
         try {
+            // Buscar a receita antes de excluir para verificar se é "Saldo do mês anterior"
+            const incomeToDelete = incomes.find(income => income.id === id);
+            
             const { error } = await supabase
                 .from('receitas')
                 .delete()
                 .eq('id', id);
             
             if (error) throw error;
+            
+            // Se for uma receita de "Saldo do mês anterior", marcar como excluída manualmente
+            if (incomeToDelete && incomeToDelete.descricao.toLowerCase().includes('saldo do mês anterior')) {
+                const incomeDate = parseISO(incomeToDelete.data);
+                const monthKey = `${incomeDate.getFullYear()}-${String(incomeDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                try {
+                    const excludedMonths = JSON.parse(localStorage.getItem('novaFin_carryover_excluded_months') || '[]');
+                    if (!excludedMonths.includes(monthKey)) {
+                        excludedMonths.push(monthKey);
+                        localStorage.setItem('novaFin_carryover_excluded_months', JSON.stringify(excludedMonths));
+                    }
+                } catch (e) {
+                    console.error('Erro ao salvar preferência de exclusão:', e);
+                }
+            }
+            
             setIncomes(prev => prev.filter(income => income.id !== id));
         } catch (error) {
             console.error('Erro ao excluir receita:', error);
@@ -299,7 +465,7 @@ export const useFinanceData = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [incomes]);
 
     const addInvestment = useCallback(async (investmentData) => {
         if (!user) return;
