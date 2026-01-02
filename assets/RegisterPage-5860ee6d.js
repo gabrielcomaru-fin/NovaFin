@@ -1,1 +1,0 @@
-import{u as e,j as r,H as s}from"./index-9965e3b2.js";import{A as i}from"./AuthForm-0bba54f4.js";import"./label-0e5b703b.js";function a(){const{signUp:t}=e();return r.jsxs(r.Fragment,{children:[r.jsx(s,{children:r.jsx("title",{children:"Criar Conta - Lumify"})}),r.jsx(i,{onRegister:t})]})}export{a as RegisterPage};
