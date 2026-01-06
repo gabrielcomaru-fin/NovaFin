@@ -212,16 +212,34 @@ export function PatrimonyDetailPage() {
   }, [investments, accountMap]);
 
   // Cálculo da Reserva de Emergência
+  // CORRIGIDO: Usa APENAS investimentos marcados com is_reserva_emergencia === true
+  // para manter consistência com o cálculo da saúde financeira
   const emergencyReserveData = useMemo(() => {
-    const reserveCategories = investmentsByCategory.filter(cat => cat.isEmergencyReserve);
-    const totalReserve = reserveCategories.reduce((sum, cat) => sum + cat.value, 0);
+    // Filtra apenas investimentos explicitamente marcados como reserva de emergência
+    const reserveInvestments = investments.filter(inv => inv.is_reserva_emergencia === true);
+    const totalReserve = reserveInvestments.reduce((sum, inv) => sum + (Number(inv.valor_aporte) || 0), 0);
+    
+    // Agrupa por categoria para exibição
+    const categoryTotals = {};
+    reserveInvestments.forEach(inv => {
+      const catId = inv.categoria_id;
+      const category = categoryMap[catId];
+      const catName = category?.nome || 'Sem Categoria';
+      
+      if (!categoryTotals[catId]) {
+        categoryTotals[catId] = {
+          id: catId,
+          name: catName,
+          value: 0,
+          isEmergencyReserve: true
+        };
+      }
+      categoryTotals[catId].value += Number(inv.valor_aporte) || 0;
+    });
+    const reserveCategories = Object.values(categoryTotals).sort((a, b) => b.value - a.value);
     
     // Detalhes dos investimentos que compõem a reserva
-    const reserveDetails = investments
-      .filter(inv => {
-        const category = categoryMap[inv.categoria_id];
-        return isEmergencyReserveCategory(category?.nome);
-      })
+    const reserveDetails = reserveInvestments
       .map(inv => ({
         id: inv.id,
         description: inv.descricao,
@@ -238,7 +256,7 @@ export function PatrimonyDetailPage() {
       details: reserveDetails,
       percentOfPatrimony: totalPatrimony > 0 ? (totalReserve / totalPatrimony) * 100 : 0
     };
-  }, [investmentsByCategory, investments, categoryMap, accountMap, totalPatrimony]);
+  }, [investments, categoryMap, accountMap, totalPatrimony]);
 
   // Cálculo de meses de despesas cobertas pela reserva
   const monthsCovered = useMemo(() => {
@@ -805,9 +823,9 @@ export function PatrimonyDetailPage() {
                     </div>
                     <h3 className="text-lg font-semibold mb-2">Nenhuma Reserva Identificada</h3>
                     <p className="text-muted-foreground mb-6 max-w-md">
-                      Não encontramos investimentos categorizados como reserva de emergência. 
-                      Crie categorias com nomes como "Reserva de Emergência", "Tesouro Selic" ou 
-                      "CDB Liquidez" para que seus aportes sejam identificados automaticamente.
+                      Não encontramos investimentos marcados como reserva de emergência. 
+                      Ao registrar um aporte, marque a opção "Este aporte faz parte da Reserva de Emergência" 
+                      para que ele seja contabilizado na sua reserva.
                     </p>
                     <div className="flex gap-3">
                       <Link to="/investimentos">
@@ -827,25 +845,24 @@ export function PatrimonyDetailPage() {
               </Card>
             )}
 
-            {/* Categorias que são consideradas reserva */}
+            {/* Informação sobre como marcar reserva */}
             <Card className="bg-muted/30">
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Info className="h-4 w-4" />
-                  Categorias Consideradas Reserva
+                  Como Marcar Investimentos como Reserva de Emergência
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Investimentos nas seguintes categorias são automaticamente identificados como reserva de emergência:
+                  Para que um investimento seja contabilizado como reserva de emergência, você precisa marcá-lo explicitamente 
+                  ao registrar o aporte. No formulário de investimentos, marque a opção 
+                  <strong className="mx-1">"Este aporte faz parte da Reserva de Emergência"</strong>.
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {EMERGENCY_RESERVE_KEYWORDS.map((keyword, index) => (
-                    <Badge key={index} variant="secondary" className="capitalize">
-                      {keyword}
-                    </Badge>
-                  ))}
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  Isso garante que apenas os investimentos que você realmente considera como reserva sejam incluídos no cálculo, 
+                  mantendo consistência com o cálculo da sua saúde financeira.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
